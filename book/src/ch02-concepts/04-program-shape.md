@@ -37,9 +37,8 @@ call your `main` makes.
 
 ## The canonical program
 
-This is the whole shape, and every example in the book is a variation on it. From
-`book/.research/00-shared.md`, which quotes the crate's own documentation in
-`crates/vrobots-sdk/src/lib.rs`:
+This is the whole shape, and every example in the book is a variation on it, quoted
+from the SDK's own crate documentation:
 
 
 {{#tabs global="lang" }}

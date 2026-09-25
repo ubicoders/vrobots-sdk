@@ -152,22 +152,23 @@ rely on colour alone to carry meaning.
 
 ## 9. Naming and files
 
-- Directories: `book/core/chNN-slug/`. Files: `NN-slug.md`. Filesystem order equals
-  reading order.
+- Directories: `book/src/chNN-slug/`. Files: `NN-slug.md`. Filesystem order equals
+  reading order. The index is `book/src/SUMMARY.md`.
 - Image and asset files live beside the page that uses them.
 
 ## 10. Hard rules
 
-1. **Never edit `book/README.md`.** It is the table of contents, authored once, and it
-   is the reason parallel drafting does not conflict.
+1. **Never edit `book/src/SUMMARY.md` while drafting a chapter.** It is the table of
+   contents, authored once, and it is the reason parallel drafting does not conflict.
 2. **Never edit anything under `examples/`, `crates/`, or another chapter's
    directory.**
-3. **Never state an API fact that is not in your chapter's fact sheet under
-   `book/.research/` or directly verifiable in the source.** If you need a fact you
-   cannot verify, write the sentence you would have written, mark it
-   `<!-- VERIFY: ... -->`, and list it in your final report.
+3. **Never state an API fact that is not in your chapter's fact sheet or directly
+   verifiable in the SDK's public API and examples.** The fact sheets are kept by
+   the maintainers outside this repository. If you need a fact you cannot verify,
+   write the sentence you would have written, mark it `<!-- VERIFY: ... -->`, and
+   list it in your final report.
 4. **Never invent numbers.** No made-up default masses, rates, ranges or catalog
    entries. An unknown default is "not documented", not a guess.
 5. **Every claim about simulator behaviour is traceable.** If it did not come from
-   the fact sheet, add a line to `book/.research/NOTES.md` saying where it came
-   from (source file, `issues/` file, or example doc comment).
+   the fact sheet, record where it came from (the maintainers' notes, an example
+   doc comment, or a live check against the simulator) so a reviewer can follow it.
