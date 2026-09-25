@@ -1,0 +1,378 @@
+/* Ubicoders Blueprint palette for the VRobots Book.
+ *
+ * One surface, white first, ten accents that carry meaning. The dark scheme is
+ * the palette as specified (zinc 900 surface). The light scheme mirrors it on
+ * zinc 50 with the same hues darkened until every text accent clears 4.5:1.
+ *
+ * mdBook theme classes: "light" is the light scheme; "navy" is the dark scheme,
+ * and the other built-in dark themes (coal, ayu, rust) are mapped onto it so a
+ * stale localStorage choice can never leave the palette. blueprint.js trims
+ * the picker down to System / Light / Dark.
+ */
+
+:root {
+    /* Canonical accents (dark scheme values). */
+    --accent-1: #FFFFFF;   /* white: default text, strokes, boxes */
+    --accent-2: #FFFF00;   /* yellow: highlight, section code, feedback */
+    --accent-3: #536DFE;   /* electric blue: forward flow, links */
+    --accent-4: #44F2C4;   /* mint: success, pass, "after" */
+    --accent-5: #FB1557;   /* pink red: error, fail, "before" */
+    --accent-6: #FF9E1A;   /* fluorescent orange: caution */
+    --accent-7: #7CFF00;   /* electric lime: series only */
+    --accent-8: #FF2BD6;   /* hot magenta: series only */
+    --accent-9: #FF3D00;   /* vermilion: series only; x axis */
+    --accent-10: #37BAFA;  /* sky blue: series only */
+}
+
+/* ---------- Dark scheme: the Blueprint palette as specified ---------- */
+
+.navy, .coal, .ayu, .rust {
+    --ink: #FFFFFF;
+    --highlight: #FFFF00;
+    --flow: #536DFE;
+    --ok: #44F2C4;
+    --fail: #FB1557;
+    --caution: #FF9E1A;
+    --series-7: #7CFF00;
+    --series-8: #FF2BD6;
+    --series-9: #FF3D00;
+    --series-10: #37BAFA;
+
+    --muted: rgba(255, 255, 255, 0.60);
+    --guide: rgba(255, 255, 255, 0.15);
+    --plate: rgba(24, 24, 27, 0.85);
+
+    --surface: #18181b;        /* zinc 900 */
+    --console-bg: #09090b;     /* zinc 950: terminal console */
+    --console-bar: #27272a;    /* zinc 800: terminal title bar */
+    --code-outline: #3f3f46;   /* zinc 700: code panel outline */
+
+    --copy-button-filter: invert(100%) opacity(0.6);
+    --copy-button-filter-hover: invert(100%);
+    --color-scheme: dark;
+}
+
+/* ---------- Light scheme: same hues, darkened for a zinc 50 surface ---------- */
+
+.light, html:not(.js) {
+    --ink: #18181b;
+    --highlight: #7A6B00;
+    --flow: #3B4FCF;
+    --ok: #087A5D;
+    --fail: #C0003C;
+    --caution: #B35900;
+    --series-7: #3D8500;
+    --series-8: #C4009E;
+    --series-9: #D03400;
+    --series-10: #0072B5;
+
+    --muted: rgba(24, 24, 27, 0.60);
+    --guide: rgba(24, 24, 27, 0.15);
+    --plate: rgba(250, 250, 250, 0.85);
+
+    --surface: #fafafa;        /* zinc 50 */
+    --console-bg: #f4f4f5;     /* zinc 100 */
+    --console-bar: #e4e4e7;    /* zinc 200 */
+    --code-outline: #d4d4d8;   /* zinc 300 */
+
+    --copy-button-filter: opacity(0.6);
+    --copy-button-filter-hover: none;
+    --color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.js) {
+        --ink: #FFFFFF;
+        --highlight: #FFFF00;
+        --flow: #536DFE;
+        --ok: #44F2C4;
+        --fail: #FB1557;
+        --caution: #FF9E1A;
+        --series-7: #7CFF00;
+        --series-8: #FF2BD6;
+        --series-9: #FF3D00;
+        --series-10: #37BAFA;
+        --muted: rgba(255, 255, 255, 0.60);
+        --guide: rgba(255, 255, 255, 0.15);
+        --plate: rgba(24, 24, 27, 0.85);
+        --surface: #18181b;
+        --console-bg: #09090b;
+        --console-bar: #27272a;
+        --code-outline: #3f3f46;
+        --copy-button-filter: invert(100%) opacity(0.6);
+        --copy-button-filter-hover: invert(100%);
+        --color-scheme: dark;
+    }
+}
+
+/* ---------- mdBook variables, both schemes ---------- */
+
+.light, .navy, .coal, .ayu, .rust, html:not(.js) {
+    --bg: var(--surface);
+    --fg: var(--ink);
+
+    --sidebar-bg: var(--surface);
+    --sidebar-fg: var(--muted);
+    --sidebar-non-existant: var(--guide);
+    --sidebar-active: var(--highlight);
+    --sidebar-spacer: var(--guide);
+
+    --scrollbar: var(--guide);
+
+    --icons: var(--muted);
+    --icons-hover: var(--ink);
+
+    --links: var(--flow);
+
+    --inline-code-color: var(--ink);
+
+    --theme-popup-bg: var(--surface);
+    --theme-popup-border: var(--guide);
+    --theme-hover: var(--guide);
+
+    --quote-bg: var(--surface);
+    --quote-border: var(--guide);
+
+    --warning-border: var(--caution);
+
+    --table-border-color: var(--guide);
+    --table-header-bg: var(--surface);
+    --table-alternate-bg: var(--surface);
+
+    --searchbar-border-color: var(--guide);
+    --searchbar-bg: var(--surface);
+    --searchbar-fg: var(--ink);
+    --searchbar-shadow-color: var(--highlight);
+    --searchresults-header-fg: var(--muted);
+    --searchresults-border-color: var(--guide);
+    --searchresults-li-bg: var(--surface);
+    --search-mark-bg: rgba(255, 255, 0, 0.30);
+
+    --footnote-highlight: rgba(255, 255, 0, 0.30);
+
+    --overlay-bg: rgba(24, 24, 27, 0.60);
+
+    --blockquote-note-color: var(--flow);
+    --blockquote-tip-color: var(--ok);
+    --blockquote-important-color: var(--highlight);
+    --blockquote-warning-color: var(--caution);
+    --blockquote-caution-color: var(--fail);
+
+    --sidebar-header-border-color: var(--guide);
+}
+
+/* Sidebar: same surface, separated by a hairline, not a band. */
+.sidebar {
+    border-inline-end: 1px solid var(--guide);
+}
+.chapter li a:hover {
+    color: var(--ink);
+}
+.chapter li a.active {
+    color: var(--highlight);
+    font-weight: bold;
+}
+.sidebar .part-title {
+    color: var(--muted);
+}
+#mdbook-menu-bar.bordered {
+    border-block-end-color: var(--guide);
+}
+
+/* Theme picker: System / Light / Dark (trimmed by blueprint.js). */
+.theme-popup {
+    border: 1px solid var(--guide);
+    box-shadow: none;
+}
+.theme-popup .theme-selected {
+    color: var(--highlight);
+    font-weight: bold;
+}
+
+/* Headings and rules. */
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
+    color: var(--ink);
+}
+.content h1 {
+    padding-block-end: 0.3em;
+    border-block-end: 1px solid var(--guide);
+}
+hr {
+    border: none;
+    border-block-start: 1px solid var(--guide);
+}
+
+/* Tables: no filled header band; the header is bold with a 2 px rule. */
+table thead {
+    background: var(--surface);
+}
+table thead tr {
+    border: none;
+    border-block-end: 2px solid var(--ink);
+}
+table thead th {
+    color: var(--ink);
+    font-weight: bold;
+}
+table td {
+    border: 1px solid var(--guide);
+}
+table tbody tr:nth-child(2n) {
+    background: var(--surface);
+}
+
+/* Blockquotes: one surface, hairlines, colour only on the tag. */
+blockquote {
+    background-color: var(--surface);
+    border-block-start: 1px solid var(--guide);
+    border-block-end: 1px solid var(--guide);
+    color: var(--ink);
+}
+
+/* Code panels: surface background with a zinc outline. */
+pre > code.hljs,
+pre > code {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--code-outline);
+    border-radius: 4px;
+}
+:not(pre) > code.hljs,
+:not(pre) > code {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--code-outline);
+    border-radius: 3px;
+    padding: 0.05em 0.3em;
+}
+a > code.hljs,
+a > code {
+    color: var(--flow);
+}
+
+/* Shell and console blocks read as a terminal. */
+pre > code.language-sh,
+pre > code.language-bash,
+pre > code.language-shell,
+pre > code.language-console,
+pre > code.language-text,
+pre > code.language-txt {
+    background: var(--console-bg);
+}
+
+/* Dark scheme only: Monokai token colours over mdBook's own highlight sheet.
+ * The light scheme keeps mdBook's default light highlight sheet. */
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-comment,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-quote {
+    color: #75715e;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-keyword,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-selector-tag,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-tag,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-name,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-deletion {
+    color: #f92672;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-string,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-symbol,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-bullet,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-regexp,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-addition {
+    color: #e6db74;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-number,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-literal,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-meta,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-link {
+    color: #ae81ff;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-title,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-section,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-selector-id,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-selector-class,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-builtin-name {
+    color: #a6e22e;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-type,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-built_in,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-class .hljs-title {
+    color: #66d9ef;
+    font-style: italic;
+}
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-attr,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-attribute,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-variable,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-template-variable,
+:is(.navy, .coal, .ayu, .rust) .hljs .hljs-params {
+    color: #fd971f;
+}
+.hljs .hljs-addition,
+.hljs .hljs-deletion {
+    background: transparent;
+}
+.hljs .hljs-emphasis {
+    font-style: italic;
+}
+.hljs .hljs-strong {
+    font-weight: bold;
+}
+
+/* Copy button: ink on hover, muted otherwise. */
+pre > .buttons button {
+    border-color: var(--code-outline);
+    background-color: var(--surface);
+    color: var(--muted);
+}
+pre > .buttons :hover {
+    color: var(--ink);
+    border-color: var(--ink);
+    background-color: var(--theme-hover);
+}
+
+/* mdbook-tabs: emphasis by weight and a highlight rule, never a fill. */
+.mdbook-tabs {
+    border-block-end: 1px solid var(--guide);
+}
+.mdbook-tab {
+    background-color: var(--surface);
+    color: var(--muted);
+    border-block-end: 2px solid transparent;
+    margin-block-end: -1px;
+}
+.mdbook-tab:hover {
+    color: var(--ink);
+}
+.mdbook-tab.active {
+    background-color: var(--surface);
+    color: var(--ink);
+    font-weight: bold;
+    border-block-end-color: var(--highlight);
+}
+
+/* Search. */
+#mdbook-searchbar:focus,
+#mdbook-searchbar.active {
+    box-shadow: 0 0 0 1px var(--highlight);
+}
+ul#mdbook-searchresults li {
+    border: none;
+    border-block-end: 1px solid var(--guide);
+}
+mark {
+    color: var(--ink);
+}
+
+/* Footnotes, kbd, and misc chrome. */
+kbd {
+    background-color: var(--surface);
+    border: 1px solid var(--code-outline);
+    box-shadow: none;
+    color: var(--ink);
+}
+.nav-chapters {
+    color: var(--muted);
+}
+.nav-chapters:hover {
+    color: var(--ink);
+    background-color: var(--theme-hover);
+}

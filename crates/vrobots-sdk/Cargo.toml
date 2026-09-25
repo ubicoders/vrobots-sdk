@@ -1,0 +1,11 @@
+[package]
+name = "vrobots-sdk"
+version = "0.1.10"
+edition = "2021"
+description = "Rust client SDK for the Ubicoders virtual robots simulator"
+repository = "https://github.com/ubicoders/vrobots-sdk"
+# No `license` key yet: the licence has not been chosen. Add it here (and in
+# crates/vrobots-sdk-sys/Cargo.toml) before the first publish to crates.io.
+
+[dependencies]
+vrobots-sdk-sys = { path = "../vrobots-sdk-sys", version = "0.1.10" }

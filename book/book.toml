@@ -1,0 +1,14 @@
+[book]
+authors = []
+language = "en"
+src = "src"
+title = "VRobots Book"
+
+[preprocessor.tabs]
+
+[output.html]
+site-url = "/vrobots-sdk/"
+default-theme = "light"
+preferred-dark-theme = "navy"
+additional-css = ["theme/tabs.css", "theme/blueprint.css"]
+additional-js = ["theme/tabs.js", "theme/blueprint.js"]
