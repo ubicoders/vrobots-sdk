@@ -167,6 +167,15 @@ your build actually carries. The pins are exact on purpose:
 [Versions and pins](ch08-tooling/03-version-and-pins.md) explains what a caret pin one patch
 off does, and why it looks like the simulator has stopped publishing.
 
+## Licence
+
+The SDK, the examples and this book are released under
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/): free for study,
+teaching, research and personal projects; not for commercial use; modified versions and
+derived works must carry the same licence. `LICENSE-ADDENDUM` forbids patenting the SDK or any derived
+work: such a patent is licensed royalty-free to everyone and ends the filer's rights. Both files
+are in the repository root.
+
 **Next:** [Getting started](ch01-getting-started/00-intro.md)
 
 **See also:** [Five rules that explain everything](ch02-concepts/06-five-rules.md), [Appendix D: Glossary](appendix-d-glossary.md)

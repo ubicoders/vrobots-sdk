@@ -83,3 +83,23 @@ services, with every code sample in Python, C++ and Rust:
 
 Each example is a complete program: setup, then a plain loop. Start the
 simulator in Play mode before running one.
+
+## Licence
+
+VRobots SDK is released under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](LICENSE)
+licence (CC BY-NC-SA 4.0). In plain terms:
+
+- **Non-commercial.** You may use, copy and modify the SDK, the examples and the
+  book for study, teaching, research and personal projects. Commercial use is
+  not permitted. For a commercial licence, contact Ubicoders.
+- **Share-alike.** If you distribute a modified version or a work built on the
+  SDK, you must publish it under the same licence, with attribution.
+- **No warranty.** The software is provided as is, without warranty or liability
+  of any kind.
+- **No patents (addendum).** [`LICENSE-ADDENDUM`](LICENSE-ADDENDUM) forbids patenting the SDK, anything it
+  does, or any work derived from it. Any such patent is automatically licensed
+  royalty-free to everyone, and filing one, or suing over one, ends your rights
+  under the licence.
+
+The full legal text is in [`LICENSE`](LICENSE) and [`LICENSE-ADDENDUM`](LICENSE-ADDENDUM).

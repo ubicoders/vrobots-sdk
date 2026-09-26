@@ -6,5 +6,4 @@ description = "Raw FFI bindings to the VRobots SDK C library (vrobots_sdk_capi)"
 repository = "https://github.com/ubicoders/vrobots-sdk"
 links = "vrobots_sdk_capi"
 build = "build.rs"
-# No `license` key yet: the licence has not been chosen. Add it here (and in
-# crates/vrobots-sdk/Cargo.toml) before the first publish to crates.io.
+license = "CC-BY-NC-SA-4.0"
