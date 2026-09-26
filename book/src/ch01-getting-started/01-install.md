@@ -1,135 +1,125 @@
 # Installing the SDK and the simulator
 
-The SDK is installed per language: one command for Python, one download for C++, one
-`cargo add` for Rust. Pick your section below, then get a simulator running on Windows,
-Ubuntu or WSL.
+Three steps: check your platform, install the SDK for your language, get a simulator
+running. Each is short.
 
-> **Platforms.** Every prebuilt piece of the SDK is built for **x86-64 only**: Windows
-> x86-64 (MSVC) and Linux x86-64. There is no ARM build (no Apple Silicon, no Raspberry Pi,
-> no AArch64 Linux, no Windows on ARM) and no macOS build at present. On any other
-> platform, `pip` stops with `No matching distribution found`, there is no C bundle to
-> download, and the Rust crate's build stops with a message naming the supported targets.
+## Platforms
 
-| Language | Install | Runtime requirement |
-|---|---|---|
-| Python | `pip install ubicoders-vrsdk` | Python 3.8 or newer; Linux glibc 2.17 or newer |
-| C++ | download the C bundle from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) | a C++17 compiler; Linux glibc 2.28 or newer |
-| Rust | `cargo add vrobots-sdk` | Rust 1.88 or newer; Linux glibc 2.28 or newer |
+| Platform | Python wheel | C bundle (C++) | Rust crate |
+|---|---|---|---|
+| Windows x86-64 | yes | yes (MSVC) | yes |
+| Linux x86-64 | yes (glibc 2.17 or newer) | yes (glibc 2.28 or newer) | yes (glibc 2.28 or newer) |
+| macOS | no | no | no |
+| ARM, any OS (Apple Silicon, Raspberry Pi, AArch64 Linux, Windows on ARM) | no | no | no |
+
+Every prebuilt piece of the SDK is built for x86-64 only. On an unsupported platform, `pip`
+stops with `No matching distribution found`, there is no C bundle to download, and the Rust
+crate's build stops with a message naming the supported targets.
+
+## Install the SDK
 
 Every route uses the same prebuilt `vrobots_sdk_capi` core, so nothing of the SDK is ever
-compiled on your machine, and the three languages behave identically.
+compiled on your machine, and the three languages behave identically. The Unity simulator,
+in Play mode, is required by anything that talks to a robot.
 
-## Python
-
-```sh
-pip install ubicoders-vrsdk
-```
-
-That command is the whole SDK install: the wheel carries the compiled Rust core, so no Rust
-toolchain, no `flatc`, no `protoc` and no repository clone is involved. It puts two things on
-your machine: `vrsdk`, the package every Python example in this book imports, and `vrobots`,
-the command line tool of [The vrobots command](../ch08-tooling/01-cli.md), which runs the Rust
-core's own command line code rather than a second implementation.
-
-| Requirement | Version | Notes |
-|---|---|---|
-| Python | 3.8 or newer | one `abi3` wheel per platform covers 3.8 through 3.13 and later |
-| Platform | Windows x86-64, Linux x86-64 | Linux needs glibc 2.17 or newer (`manylinux2014`); no ARM or macOS wheel |
-| The Unity simulator | in Play mode | required by anything that talks to a robot |
-
-`numpy` arrives with the wheel, because `frame.image` hands back an ndarray. `opencv-python`
-does not, and three of the Python camera examples need it:
-
-```sh
-pip install "ubicoders-vrsdk[examples]"
-```
-
-The Python programs of [Hello image](06-hello-image.md),
-[Saving a frame](../ch05-cameras/07-saving-frames.md) and
-[Showing frames in a window](../ch05-cameras/08-showing-frames.md) import `cv2` at the top,
-so without OpenCV they stop at that import. Among the C++ programs only the window one,
-`ex34_camera_view`, needs OpenCV, and the C++ build skips it when OpenCV is not installed.
-
-> **Gotcha.** No source distribution is published, deliberately: the core is built and
-> released as prebuilt wheels only. On a platform with no wheel, pip therefore stops
-> with `No matching distribution found for ubicoders-vrsdk` rather than starting a compile
-> that cannot finish.
-
-The wheel ships the library, not the example programs the pages of this book run. Those live
-in the repository, and the Python ones need nothing from it but themselves:
-
-```sh
-git clone https://github.com/ubicoders/vrobots-sdk
-python vrobots-sdk/examples/python/ex01_hello_states.py
-```
-
-Every Python example imports `vrsdk` and nothing else from the tree, so one file copied out
-of it runs just as well on its own.
-
-## C++
-
-C++ needs no build of the SDK: download the C bundle for your OS from
-<https://github.com/ubicoders/vrobots-sdk/releases> and unpack it into a folder of its own.
-Two bundles exist, `vrobots_sdk-cpp-<version>-windows-x86_64.zip` (MSVC) and
-`vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` (glibc 2.28 or newer). The archive has no
-top-level folder, and it holds everything a C++ program compiles and links against:
-
-| Path | What it is |
-|---|---|
-| `include/vrobots_sdk.h` | The C API. |
-| `include/vrobots_sdk.hpp` | The header-only C++17 wrapper. It includes `vrobots_sdk.h`, so keep the two in one folder. |
-| `lib/` | The prebuilt `vrobots_sdk_capi` library: `libvrobots_sdk_capi.so` on Linux, `vrobots_sdk_capi.dll` and its import library `vrobots_sdk_capi.dll.lib` on Windows. |
-| `examples/` | The C++ example programs, which also build inside the unpacked bundle. |
-| `bindings.rs` | The same C API declared for Rust, used when the Rust crate builds. C++ ignores it. |
-| `LICENSE` | The licence the SDK is released under. |
-
-The Releases page also carries `SHA256SUMS`, the checksums of every asset, so on Linux
-`sha256sum -c SHA256SUMS --ignore-missing` verifies a download.
-
-To build the examples from your clone of this repository, follow
-[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
-CMake picks up a bundle unpacked beside the repository on its own, or takes its location
-from `-DVROBOTS_SDK_DIR`:
-
-```sh
-cmake -S examples/cpp -B target/cpp-build -DCMAKE_BUILD_TYPE=Release
-cmake --build target/cpp-build --config Release
-```
-
-That puts one binary per example under `target/cpp-build/`, which is the path the `sh` block
-on each page names. On Windows the binaries land in `target\cpp-build\Release\` with an
-`.exe` suffix and the DLL copied beside each one; on Linux the build rpath points at the
-bundle's `lib/`, so no `LD_LIBRARY_PATH` is needed.
-
-## Rust
+{{#tabs global="lang" }}
+{{#tab name="Rust" }}
 
 ```sh
 cargo add vrobots-sdk
 ```
 
-That is the whole Rust install. If you do not have Rust yet, install it with
-[rustup](https://rustup.rs), which puts `cargo` and the compiler on your machine together;
-the crate needs Rust 1.88 or newer, which any current stable toolchain satisfies. The crate
-is a safe wrapper over the same `vrobots_sdk_capi` library. Its dependency `vrobots-sdk-sys`
-is fetched by cargo on its own; you never name it. On the first build the crate downloads the
-C bundle of its own version from the Releases page, checks it against `SHA256SUMS` and links
-it, so `cargo run` finds the library without any step of yours.
+That is the whole install. Needs Rust 1.88 or newer; if you do not have Rust, install it
+with [rustup](https://rustup.rs). The crate's dependency `vrobots-sdk-sys` is fetched by
+cargo on its own; you never name it. On the first build the crate downloads the C bundle
+of its own version from the Releases page, checks it against `SHA256SUMS` and links it, so
+`cargo run` finds the library without any step of yours. Offline builds and the `static`
+feature are described in
+[`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md).
 
-The Rust examples are the package `vrobots-examples` of this repository's workspace, and
-they run from the root of your clone:
+{{#endtab }}
+{{#tab name="C++" }}
+
+Download the C bundle for your OS from the
+[Releases page](https://github.com/ubicoders/vrobots-sdk/releases) and unpack it into a
+folder of its own:
+
+| File | For |
+|---|---|
+| `vrobots_sdk-cpp-<version>-windows-x86_64.zip` | Windows, MSVC |
+| `vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` | Linux, glibc 2.28 or newer |
+
+The bundle holds `include/vrobots_sdk.h` (the C API), `include/vrobots_sdk.hpp` (the
+header-only C++17 wrapper), `lib/` (the prebuilt library), the C++ examples and the
+licence. Point your build at `include/` and `lib/`; a complete CMake setup is in
+[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
+`SHA256SUMS` on the Releases page verifies a download
+(`sha256sum -c SHA256SUMS --ignore-missing` on Linux).
+
+{{#endtab }}
+{{#tab name="Python" }}
+
+```sh
+pip install ubicoders-vrsdk
+```
+
+That is the whole install. Needs Python 3.8 or newer; one `abi3` wheel per platform covers
+3.8 through 3.13 and later. It puts two things on your machine: `vrsdk`, the package every
+Python example in this book imports, and `vrobots`, the command line tool of
+[The vrobots command](../ch08-tooling/01-cli.md). `numpy` comes with it; the three camera
+examples that open a window also need OpenCV:
+
+```sh
+pip install "ubicoders-vrsdk[examples]"
+```
+
+No source distribution is published, deliberately, so on a platform with no wheel pip stops
+instead of starting a compile that cannot finish.
+
+{{#endtab }}
+{{#endtabs }}
+
+## Get the examples
+
+The packages ship the library, not the example programs the pages of this book run. Those
+live in the repository, one program per language under the same name:
 
 ```sh
 git clone https://github.com/ubicoders/vrobots-sdk
 cd vrobots-sdk
+```
+
+{{#tabs global="lang" }}
+{{#tab name="Rust" }}
+
+```sh
 cargo run -p vrobots-examples --bin ex01_hello_states
 ```
 
-For an offline build, unpack the C bundle into a folder of its own, set `VROBOTS_SDK_DIR` to
-the absolute path of that folder (the one holding `bindings.rs`, `include/` and `lib/`), and
-put its `lib/` folder on `LD_LIBRARY_PATH` on Linux or `PATH` on Windows before running.
-[`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md)
-covers both routes, and the `static` feature, which links the static library so that a
-program needs no shared library at run time.
+{{#endtab }}
+{{#tab name="C++" }}
+
+```sh
+cmake -S examples/cpp -B target/cpp-build -DCMAKE_BUILD_TYPE=Release
+cmake --build target/cpp-build --config Release
+./target/cpp-build/ex01_hello_states
+```
+
+CMake finds a bundle unpacked beside the repository on its own, or takes `-DVROBOTS_SDK_DIR`.
+On Windows the binaries land in `target\cpp-build\Release\` with the DLL beside them.
+
+{{#endtab }}
+{{#tab name="Python" }}
+
+```sh
+python examples/python/ex01_hello_states.py
+```
+
+Every Python example imports `vrsdk` and nothing else from the tree, so one file copied out
+of it runs on its own.
+
+{{#endtab }}
+{{#endtabs }}
 
 ## Getting the simulator
 
