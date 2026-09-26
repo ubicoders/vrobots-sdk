@@ -9,6 +9,11 @@ layers over it, so all three behave the same way and report the same numbers.
 
 ## Install
 
+Every prebuilt piece of the SDK is **x86-64 only**: Windows x86-64 (MSVC) and
+Linux x86-64. There is no ARM build (Apple Silicon, Raspberry Pi, AArch64
+Linux, Windows on ARM) and no macOS build at present. Pick your language:
+
+
 ### Python
 
 ```sh

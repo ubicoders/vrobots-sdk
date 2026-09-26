@@ -1,12 +1,29 @@
 # Installing the SDK and the simulator
 
-Install the SDK with one `pip` command, then get a simulator running on Windows, Ubuntu or WSL.
+The SDK is installed per language: one command for Python, one download for C++, one
+`cargo add` for Rust. Pick your section below, then get a simulator running on Windows,
+Ubuntu or WSL.
+
+> **Platforms.** Every prebuilt piece of the SDK is built for **x86-64 only**: Windows
+> x86-64 (MSVC) and Linux x86-64. There is no ARM build (no Apple Silicon, no Raspberry Pi,
+> no AArch64 Linux, no Windows on ARM) and no macOS build at present. On any other
+> platform, `pip` stops with `No matching distribution found`, there is no C bundle to
+> download, and the Rust crate's build stops with a message naming the supported targets.
+
+| Language | Install | Runtime requirement |
+|---|---|---|
+| Python | `pip install ubicoders-vrsdk` | Python 3.8 or newer; Linux glibc 2.17 or newer |
+| C++ | download the C bundle from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) | a C++17 compiler; Linux glibc 2.28 or newer |
+| Rust | `cargo add vrobots-sdk` | Rust 1.88 or newer; Linux glibc 2.28 or newer |
+
+Every route uses the same prebuilt `vrobots_sdk_capi` core, so nothing of the SDK is ever
+compiled on your machine, and the three languages behave identically.
+
+## Python
 
 ```sh
 pip install ubicoders-vrsdk
 ```
-
-## What pip gives you
 
 That command is the whole SDK install: the wheel carries the compiled Rust core, so no Rust
 toolchain, no `flatc`, no `protoc` and no repository clone is involved. It puts two things on
@@ -17,7 +34,7 @@ core's own command line code rather than a second implementation.
 | Requirement | Version | Notes |
 |---|---|---|
 | Python | 3.8 or newer | one `abi3` wheel per platform covers 3.8 through 3.13 and later |
-| Platform | Windows x86-64, Linux x86-64 | Linux needs glibc 2.17 or newer (`manylinux2014`); macOS is not published yet |
+| Platform | Windows x86-64, Linux x86-64 | Linux needs glibc 2.17 or newer (`manylinux2014`); no ARM or macOS wheel |
 | The Unity simulator | in Play mode | required by anything that talks to a robot |
 
 `numpy` arrives with the wheel, because `frame.image` hands back an ndarray. `opencv-python`
@@ -38,8 +55,6 @@ so without OpenCV they stop at that import. Among the C++ programs only the wind
 > with `No matching distribution found for ubicoders-vrsdk` rather than starting a compile
 > that cannot finish.
 
-## Getting the example programs
-
 The wheel ships the library, not the example programs the pages of this book run. Those live
 in the repository, and the Python ones need nothing from it but themselves:
 
@@ -51,18 +66,19 @@ python vrobots-sdk/examples/python/ex01_hello_states.py
 Every Python example imports `vrsdk` and nothing else from the tree, so one file copied out
 of it runs just as well on its own.
 
-## The C++ and Rust surfaces
+## C++
 
-Skip this section unless you are working in C++ or Rust. C++ needs no build of the SDK:
-download the C bundle for your OS from <https://github.com/ubicoders/vrobots-sdk/releases>
-and unpack it into a folder of its own. The archive has no top-level folder, and it holds
-everything a C++ program compiles and links against:
+C++ needs no build of the SDK: download the C bundle for your OS from
+<https://github.com/ubicoders/vrobots-sdk/releases> and unpack it into a folder of its own.
+Two bundles exist, `vrobots_sdk-cpp-<version>-windows-x86_64.zip` (MSVC) and
+`vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` (glibc 2.28 or newer). The archive has no
+top-level folder, and it holds everything a C++ program compiles and links against:
 
 | Path | What it is |
 |---|---|
 | `include/vrobots_sdk.h` | The C API. |
 | `include/vrobots_sdk.hpp` | The header-only C++17 wrapper. It includes `vrobots_sdk.h`, so keep the two in one folder. |
-| `lib/` | The prebuilt `vrobots_sdk_capi` library: `libvrobots_sdk_capi.so` on Linux, `vrobots_sdk_capi.dll` and its import library `vrobots_sdk_capi.dll.lib` on Windows. The Linux library needs glibc 2.28 or newer. |
+| `lib/` | The prebuilt `vrobots_sdk_capi` library: `libvrobots_sdk_capi.so` on Linux, `vrobots_sdk_capi.dll` and its import library `vrobots_sdk_capi.dll.lib` on Windows. |
 | `examples/` | The C++ example programs, which also build inside the unpacked bundle. |
 | `bindings.rs` | The same C API declared for Rust, used when the Rust crate builds. C++ ignores it. |
 | `LICENSE` | The licence the SDK is released under. |
@@ -85,29 +101,32 @@ on each page names. On Windows the binaries land in `target\cpp-build\Release\` 
 `.exe` suffix and the DLL copied beside each one; on Linux the build rpath points at the
 bundle's `lib/`, so no `LD_LIBRARY_PATH` is needed.
 
-Rust needs no build of the SDK either. The `vrobots-sdk` crate is a safe wrapper over the same
-`vrobots_sdk_capi` library, and its build downloads the C bundle of the crate's own version
-from the Releases page, checks it against `SHA256SUMS` and links it, so `cargo run` finds the
-library on its own. The Rust examples are the package `vrobots-examples` of this repository's
-workspace, and they run from the root of your clone:
-
-```sh
-cargo run -p vrobots-examples --bin ex01_hello_states
-```
-
-For a project of your own, the crate is on crates.io:
+## Rust
 
 ```sh
 cargo add vrobots-sdk
 ```
 
-If you do not have Rust yet, install it with [rustup](https://rustup.rs) (`rustup` installs
-`cargo` and the compiler together; the crate needs Rust 1.88 or newer, which any current
-stable toolchain satisfies). The first build downloads the C bundle of the crate's version
-from the Releases page. For an offline build, unpack the C bundle into a folder of its own,
-set `VROBOTS_SDK_DIR` to the
-absolute path of that folder (the one holding `bindings.rs`, `include/` and `lib/`), and put
-its `lib/` folder on `LD_LIBRARY_PATH` on Linux or `PATH` on Windows before running.
+That is the whole Rust install. If you do not have Rust yet, install it with
+[rustup](https://rustup.rs), which puts `cargo` and the compiler on your machine together;
+the crate needs Rust 1.88 or newer, which any current stable toolchain satisfies. The crate
+is a safe wrapper over the same `vrobots_sdk_capi` library. Its dependency `vrobots-sdk-sys`
+is fetched by cargo on its own; you never name it. On the first build the crate downloads the
+C bundle of its own version from the Releases page, checks it against `SHA256SUMS` and links
+it, so `cargo run` finds the library without any step of yours.
+
+The Rust examples are the package `vrobots-examples` of this repository's workspace, and
+they run from the root of your clone:
+
+```sh
+git clone https://github.com/ubicoders/vrobots-sdk
+cd vrobots-sdk
+cargo run -p vrobots-examples --bin ex01_hello_states
+```
+
+For an offline build, unpack the C bundle into a folder of its own, set `VROBOTS_SDK_DIR` to
+the absolute path of that folder (the one holding `bindings.rs`, `include/` and `lib/`), and
+put its `lib/` folder on `LD_LIBRARY_PATH` on Linux or `PATH` on Windows before running.
 [`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md)
 covers both routes, and the `static` feature, which links the static library so that a
 program needs no shared library at run time.
