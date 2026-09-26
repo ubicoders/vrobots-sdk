@@ -40,21 +40,39 @@ feature are described in
 {{#endtab }}
 {{#tab name="C++" }}
 
-Download the C bundle for your OS from the
-[Releases page](https://github.com/ubicoders/vrobots-sdk/releases) and unpack it into a
-folder of its own:
+This book documents SDK 0.1.11, and the C bundle of that version is on the
+[Releases page](https://github.com/ubicoders/vrobots-sdk/releases/tag/v0.1.11). The
+commands below download it, verify it and unpack it into a folder `vrobots_sdk/` next to
+your project, which then holds `include/vrobots_sdk.h`, `include/vrobots_sdk.hpp` and
+`lib/`.
 
-| File | For |
-|---|---|
-| `vrobots_sdk-cpp-<version>-windows-x86_64.zip` | Windows, MSVC |
-| `vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` | Linux, glibc 2.28 or newer |
+Linux (glibc 2.28 or newer):
 
-The bundle holds `include/vrobots_sdk.h` (the C API), `include/vrobots_sdk.hpp` (the
-header-only C++17 wrapper), `lib/` (the prebuilt library), the C++ examples and the
-licence. Point your build at `include/` and `lib/`; a complete CMake setup is in
+```sh
+V=0.1.11
+curl -LO "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/vrobots_sdk-cpp-$V-linux-x86_64.tar.gz"
+curl -LO "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/SHA256SUMS"
+sha256sum -c SHA256SUMS --ignore-missing
+mkdir -p vrobots_sdk && tar -xzf "vrobots_sdk-cpp-$V-linux-x86_64.tar.gz" -C vrobots_sdk
+```
+
+Windows (PowerShell, MSVC toolchain):
+
+```powershell
+$V = "0.1.11"
+Invoke-WebRequest "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/vrobots_sdk-cpp-$V-windows-x86_64.zip" -OutFile "vrobots_sdk-cpp-$V-windows-x86_64.zip"
+Expand-Archive "vrobots_sdk-cpp-$V-windows-x86_64.zip" -DestinationPath vrobots_sdk
+```
+
+Then point your build at `vrobots_sdk/include` and `vrobots_sdk/lib`:
+
+```cmake
+target_include_directories(my_controller PRIVATE ${CMAKE_SOURCE_DIR}/vrobots_sdk/include)
+target_link_libraries(my_controller PRIVATE ${CMAKE_SOURCE_DIR}/vrobots_sdk/lib/libvrobots_sdk_capi.so)   # Windows: vrobots_sdk_capi.dll.lib, with the DLL beside the executable
+```
+
+A complete CMake setup, including the OpenCV example, is in
 [`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
-`SHA256SUMS` on the Releases page verifies a download
-(`sha256sum -c SHA256SUMS --ignore-missing` on Linux).
 
 {{#endtab }}
 {{#tab name="Python" }}
