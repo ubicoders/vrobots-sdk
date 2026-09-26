@@ -45,16 +45,10 @@ simulator is publishing.
 cargo add vrobots-sdk
 ```
 
-The [`vrobots-sdk`](crates/vrobots-sdk) crate is a safe wrapper over the same C
-library, for Rust 1.88 or later. It is not on crates.io until its first
-publication; until then, clone this repository and add the crate to your
-project as a path dependency:
-
-```sh
-git clone https://github.com/ubicoders/vrobots-sdk
-cd my_controller
-cargo add --path ../vrobots-sdk/crates/vrobots-sdk
-```
+The [`vrobots-sdk`](crates/vrobots-sdk) crate on crates.io is a safe wrapper
+over the same C library, for Rust 1.88 or later (install Rust with
+[rustup](https://rustup.rs) if you do not have it). Its dependency
+`vrobots-sdk-sys` is fetched by cargo on its own; you never name it.
 
 Nothing of the SDK is compiled from source. At build time the crate downloads
 the C bundle of its own version from the

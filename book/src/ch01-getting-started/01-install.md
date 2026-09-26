@@ -95,16 +95,22 @@ workspace, and they run from the root of your clone:
 cargo run -p vrobots-examples --bin ex01_hello_states
 ```
 
-The crate is not on crates.io until its first publication. Once it is,
-`cargo add vrobots-sdk` adds it to a project of your own; until then, add the crate in your
-clone as a path dependency, with `cargo add --path <clone>/crates/vrobots-sdk`. The download
-needs a Release of the crate's version. For an offline build, or for a version that has no
-Release yet, unpack the C bundle into a folder of its own, set `VROBOTS_SDK_DIR` to the
+For a project of your own, the crate is on crates.io:
+
+```sh
+cargo add vrobots-sdk
+```
+
+If you do not have Rust yet, install it with [rustup](https://rustup.rs) (`rustup` installs
+`cargo` and the compiler together; the crate needs Rust 1.88 or newer, which any current
+stable toolchain satisfies). The first build downloads the C bundle of the crate's version
+from the Releases page. For an offline build, unpack the C bundle into a folder of its own,
+set `VROBOTS_SDK_DIR` to the
 absolute path of that folder (the one holding `bindings.rs`, `include/` and `lib/`), and put
 its `lib/` folder on `LD_LIBRARY_PATH` on Linux or `PATH` on Windows before running.
 [`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md)
 covers both routes, and the `static` feature, which links the static library so that a
-program needs no shared library at run time. The crate needs Rust 1.88 or newer.
+program needs no shared library at run time.
 
 ## Getting the simulator
 

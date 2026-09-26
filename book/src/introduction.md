@@ -24,7 +24,7 @@ timestamps, and the same stable error codes in
 | The example programs | The wheel ships the library, not the examples. A plain `git clone` of this repository gets them; the Python ones import `vrsdk` and nothing else. |
 | The Unity simulator, in Play mode | Required for anything that talks to a robot. |
 | A C++17 compiler, for C++ | The SDK itself comes prebuilt in the C bundle for your OS, a download from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) that holds the C header, the header-only C++ wrapper and the `vrobots_sdk_capi` library, so nothing of the SDK is compiled on your machine. The examples build with CMake 3.16 or newer. Windows x86-64 (MSVC) and Linux x86-64 with glibc 2.28 or newer. |
-| Rust 1.88 or newer, for Rust | The `vrobots-sdk` crate links the same prebuilt `vrobots_sdk_capi` library, and its build downloads the C bundle of the crate's own version from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases), so the SDK's library is never compiled on your machine. Once the crate is published on crates.io, `cargo add vrobots-sdk` adds it to a project; until then, use it from a clone of this repository. Windows x86-64 (MSVC) and Linux x86-64 with glibc 2.28 or newer. |
+| Rust 1.88 or newer, for Rust | The `vrobots-sdk` crate links the same prebuilt `vrobots_sdk_capi` library, and its build downloads the C bundle of the crate's own version from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases), so the SDK's library is never compiled on your machine. `cargo add vrobots-sdk` adds it to a project (install Rust with [rustup](https://rustup.rs) if needed). Windows x86-64 (MSVC) and Linux x86-64 with glibc 2.28 or newer. |
 
 [Installing the SDK and the simulator](ch01-getting-started/01-install.md) covers them in
 order.
@@ -176,10 +176,9 @@ declarations come from the `vrobots-sdk` crate's source in `crates/vrobots-sdk/s
 from the C bundle's `include/vrobots_sdk.h` and `include/vrobots_sdk.hpp`, and Python ones
 from the type stubs that pip installs with the package, such as `vrsdk/_vrsdk.pyi`.
 
-> **Note.** The `vrobots-sdk` crate is not on crates.io until its first publication, so for
-> now a Rust program builds against the crate in a clone of this repository. Its build
-> downloads the C bundle from the GitHub Release of the crate's own version, and a version
-> with no Release yet builds only against an unpacked bundle named by `VROBOTS_SDK_DIR`.
+> **Note.** `cargo add vrobots-sdk` is the whole Rust install: the crate is on crates.io,
+> and its build downloads the C bundle from the GitHub Release of the crate's own version.
+> For an offline build, point `VROBOTS_SDK_DIR` at an unpacked bundle of the same version.
 
 ## Versions
 
