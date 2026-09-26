@@ -14,54 +14,55 @@ Linux x86-64. There is no ARM build (Apple Silicon, Raspberry Pi, AArch64
 Linux, Windows on ARM) and no macOS build at present. Pick your language:
 
 
-### Python
-
-```sh
-pip install ubicoders-vrsdk
-```
-
-The package is imported as `vrsdk` and supports Python 3.8 and later. It also
-installs the `vrobots` command-line tool; `vrobots topic list` shows what the
-simulator is publishing.
-
-### C++
-
-1. Download the C bundle for your OS from the
-   [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) (see
-   [Downloads](#downloads)).
-2. Unpack it into a folder of its own. It contains `include/` (the C header
-   `vrobots_sdk.h` and the header-only C++17 wrapper `vrobots_sdk.hpp`) and
-   `lib/` (the `vrobots_sdk_capi` library).
-3. Point CMake at `include/` and `lib/`:
-
-   ```cmake
-   target_include_directories(my_controller PRIVATE /path/to/bundle/include)
-   target_link_libraries(my_controller PRIVATE /path/to/bundle/lib/<library file>)
-   ```
-
-   The library file is `libvrobots_sdk_capi.so` on Linux and the import library
-   `vrobots_sdk_capi.dll.lib` on Windows, where `vrobots_sdk_capi.dll` must sit
-   beside your executable. [`examples/cpp`](examples/cpp) shows a complete
-   CMake setup.
-
 ### Rust
 
 ```sh
 cargo add vrobots-sdk
 ```
 
-The [`vrobots-sdk`](crates/vrobots-sdk) crate on crates.io is a safe wrapper
-over the same C library, for Rust 1.88 or later (install Rust with
-[rustup](https://rustup.rs) if you do not have it). Its dependency
-`vrobots-sdk-sys` is fetched by cargo on its own; you never name it.
-
-Nothing of the SDK is compiled from source. At build time the crate downloads
-the C bundle of its own version from the
+That is the whole install. The [`vrobots-sdk`](crates/vrobots-sdk) crate on
+crates.io is a safe wrapper over the same C library, for Rust 1.88 or later
+(install Rust with [rustup](https://rustup.rs) if you do not have it). Its
+dependency `vrobots-sdk-sys` is fetched by cargo on its own; you never name it.
+On the first build the crate downloads the C bundle of its own version from the
 [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) and checks it
-against that Release's `SHA256SUMS`, so the version must have a Release. For
-offline builds, or for a version without one, set `VROBOTS_SDK_DIR` to an
-unpacked C bundle of the same version. The
-[crate README](crates/vrobots-sdk/README.md) describes both.
+against that Release's `SHA256SUMS`. Offline builds (`VROBOTS_SDK_DIR`) and the
+`static` feature are in the [crate README](crates/vrobots-sdk/README.md).
+
+### Python
+
+```sh
+pip install ubicoders-vrsdk
+```
+
+That is the whole install. The package is imported as `vrsdk` and supports
+Python 3.8 and later. It also installs the `vrobots` command-line tool;
+`vrobots topic list` shows what the simulator is publishing.
+
+### C++
+
+Clone this repository and run one script. It downloads the C bundle of this
+checkout's version from the Releases page, verifies it against `SHA256SUMS`,
+and unpacks it next to the repository, where the examples' CMake build finds it
+on its own:
+
+```sh
+git clone https://github.com/ubicoders/vrobots-sdk
+cd vrobots-sdk
+bash scripts/get_cpp_bundle.sh          # Linux x86-64
+# pwsh scripts/get_cpp_bundle.ps1       # Windows x86-64 (MSVC)
+cmake -S examples/cpp -B target/cpp-build -DCMAKE_BUILD_TYPE=Release
+cmake --build target/cpp-build --config Release
+./target/cpp-build/ex01_hello_states    # Windows: .\target\cpp-build\Release\ex01_hello_states.exe
+```
+
+The unpacked folder holds `include/` (the C header `vrobots_sdk.h` and the
+header-only C++17 wrapper `vrobots_sdk.hpp`) and `lib/` (the `vrobots_sdk_capi`
+library). For a project of your own, add `include/` to the include path and
+link `lib/libvrobots_sdk_capi.so` on Linux or the import library
+`lib/vrobots_sdk_capi.dll.lib` on Windows, keeping `vrobots_sdk_capi.dll`
+beside the executable. [`examples/cpp`](examples/cpp) shows a complete CMake
+setup.
 
 ## Downloads
 

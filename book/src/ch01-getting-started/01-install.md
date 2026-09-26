@@ -38,43 +38,6 @@ feature are described in
 [`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md).
 
 {{#endtab }}
-{{#tab name="C++" }}
-
-This book documents SDK 0.1.11, and the C bundle of that version is on the
-[Releases page](https://github.com/ubicoders/vrobots-sdk/releases/tag/v0.1.11). The
-commands below download it, verify it and unpack it into a folder `vrobots_sdk/` next to
-your project, which then holds `include/vrobots_sdk.h`, `include/vrobots_sdk.hpp` and
-`lib/`.
-
-Linux (glibc 2.28 or newer):
-
-```sh
-V=0.1.11
-curl -LO "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/vrobots_sdk-cpp-$V-linux-x86_64.tar.gz"
-curl -LO "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/SHA256SUMS"
-sha256sum -c SHA256SUMS --ignore-missing
-mkdir -p vrobots_sdk && tar -xzf "vrobots_sdk-cpp-$V-linux-x86_64.tar.gz" -C vrobots_sdk
-```
-
-Windows (PowerShell, MSVC toolchain):
-
-```powershell
-$V = "0.1.11"
-Invoke-WebRequest "https://github.com/ubicoders/vrobots-sdk/releases/download/v$V/vrobots_sdk-cpp-$V-windows-x86_64.zip" -OutFile "vrobots_sdk-cpp-$V-windows-x86_64.zip"
-Expand-Archive "vrobots_sdk-cpp-$V-windows-x86_64.zip" -DestinationPath vrobots_sdk
-```
-
-Then point your build at `vrobots_sdk/include` and `vrobots_sdk/lib`:
-
-```cmake
-target_include_directories(my_controller PRIVATE ${CMAKE_SOURCE_DIR}/vrobots_sdk/include)
-target_link_libraries(my_controller PRIVATE ${CMAKE_SOURCE_DIR}/vrobots_sdk/lib/libvrobots_sdk_capi.so)   # Windows: vrobots_sdk_capi.dll.lib, with the DLL beside the executable
-```
-
-A complete CMake setup, including the OpenCV example, is in
-[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
-
-{{#endtab }}
 {{#tab name="Python" }}
 
 ```sh
@@ -93,6 +56,29 @@ pip install "ubicoders-vrsdk[examples]"
 
 No source distribution is published, deliberately, so on a platform with no wheel pip stops
 instead of starting a compile that cannot finish.
+
+{{#endtab }}
+{{#tab name="C++" }}
+
+Clone this repository and run one script. It downloads the C bundle of the checkout's
+version from the Releases page, verifies it against `SHA256SUMS`, and unpacks it next to
+the repository, where the examples' CMake build finds it on its own:
+
+```sh
+git clone https://github.com/ubicoders/vrobots-sdk
+cd vrobots-sdk
+bash scripts/get_cpp_bundle.sh          # Linux x86-64 (glibc 2.28 or newer)
+# pwsh scripts/get_cpp_bundle.ps1       # Windows x86-64 (MSVC)
+```
+
+The unpacked folder, `../vrobots_sdk-cpp-<version>-<os>/`, holds `include/vrobots_sdk.h`
+(the C API), `include/vrobots_sdk.hpp` (the header-only C++17 wrapper) and `lib/` (the
+prebuilt library). For a project of your own, add `include/` to the include path and link
+`lib/libvrobots_sdk_capi.so` on Linux or `lib/vrobots_sdk_capi.dll.lib` on Windows, with
+the DLL beside the executable. A complete CMake setup is in
+[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
+Without the script: this book documents SDK 0.1.11, whose two bundles sit on the
+[v0.1.11 Release](https://github.com/ubicoders/vrobots-sdk/releases/tag/v0.1.11).
 
 {{#endtab }}
 {{#endtabs }}
@@ -115,6 +101,16 @@ cargo run -p vrobots-examples --bin ex01_hello_states
 ```
 
 {{#endtab }}
+{{#tab name="Python" }}
+
+```sh
+python examples/python/ex01_hello_states.py
+```
+
+Every Python example imports `vrsdk` and nothing else from the tree, so one file copied out
+of it runs on its own.
+
+{{#endtab }}
 {{#tab name="C++" }}
 
 ```sh
@@ -125,16 +121,6 @@ cmake --build target/cpp-build --config Release
 
 CMake finds a bundle unpacked beside the repository on its own, or takes `-DVROBOTS_SDK_DIR`.
 On Windows the binaries land in `target\cpp-build\Release\` with the DLL beside them.
-
-{{#endtab }}
-{{#tab name="Python" }}
-
-```sh
-python examples/python/ex01_hello_states.py
-```
-
-Every Python example imports `vrsdk` and nothing else from the tree, so one file copied out
-of it runs on its own.
 
 {{#endtab }}
 {{#endtabs }}
