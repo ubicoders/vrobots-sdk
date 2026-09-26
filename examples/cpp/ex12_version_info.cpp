@@ -12,7 +12,7 @@
 // nothing, which reads exactly like "the sim isn't publishing". So the pins
 // have to be printable from the binary you are actually running.
 //
-// C++ has one more version to check than the other surfaces: `check_version()`
+// C++ and Rust have one more version to check than Python: `check_version()`
 // asserts that this header and the linked library are the same release. The
 // snapshot structs are shared between them **by layout**, so a mismatched pair
 // reads every field after the first difference at the wrong offset, with
@@ -41,7 +41,7 @@ constexpr double HZ = 25.0;
 int main() {
     try {
         // ===== what this build is =====
-        vrsdk::check_version();  // header vs library -- the C++-only check
+        vrsdk::check_version();  // header vs library -- the same check Rust makes
         const vrsdk::VersionInfo v = vrsdk::version_info();
         std::printf("vrobots_sdk %s\n", v.sdk_version.c_str());
         std::printf("  vrobots_msgs  %s (schema_version %u)\n", v.msgs_commit.c_str(),
@@ -63,8 +63,8 @@ int main() {
             first.raw.src_id, v.src_id);
         if (first.raw.schema_version != v.schema_version) {
             std::printf(
-                "  MISMATCH -- fields may decode as garbage. Rebuild the SDK against the sim's "
-                "vrobots_msgs commit.\n");
+                "  MISMATCH -- fields may decode as garbage. Install the SDK release that "
+                "matches the simulator build.\n");
         }
 
         // ===== how well it is arriving =====

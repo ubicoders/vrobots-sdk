@@ -77,9 +77,7 @@ robot.reset();
 print(f"-- {label} --")
 if retune:
     robot.configure_msd(spring_k=k, damping_c=c)
-# Home, at rest, with the force latch cleared -- otherwise the previous run's
-# step is still pushing.
-robot.set_msd_force(0.0)
+robot.set_msd_force(0.0)  # the force latches; clear it before resetting
 robot.reset()
 ```
 
@@ -113,6 +111,9 @@ period       2*pi*sqrt(m/k) seconds
 damping      c / (2*sqrt(k*m))   -- < 1 rings, ~1 slides home, > 1 crawls
 ```
 
+The Python script prints the same three predictions on one line at the end of each run,
+`predicted: settles at F/k=<metres> m, period 2*pi*sqrt(m/k)=<seconds> s, zeta=<ratio>`.
+
 The actuator block carries the plant's own arithmetic rather than an echo of your command:
 
 | Channel | Meaning | Units |
@@ -128,7 +129,7 @@ The actuator block carries the plant's own arithmetic rather than an echo of you
 ## The cart pole
 
 A cart pole is scene-authored rather than creatable, so it takes a `sys_id` argument: find
-the live one with `cargo run -p vrobots-sdk --bin vrobots -- topic list`. Ids are allocated
+the live one with `vrobots topic list`. Ids are allocated
 at scene load and keep incrementing, so no constant in an example could stay true.
 
 One actuator, a force on the cart, and two things to control with it. That is what
@@ -163,10 +164,8 @@ robot.set_cartpole_force(force);
 `examples/python/ex29_hello_cartpole.py`:
 
 ```python
-force = min(
-    max(-K_THETA * theta - K_THETA_DOT * theta_dot + K_X * x + K_V * v, -MAX_FORCE_N),
-    MAX_FORCE_N,
-)
+force = -K_THETA * theta - K_THETA_DOT * theta_dot + K_X * x + K_V * v
+force = min(max(force, -MAX_FORCE_N), MAX_FORCE_N)
 robot.set_cartpole_force(force)
 ```
 
@@ -183,6 +182,11 @@ a force it never applied. Each printed line reports both:
 ```text
 t=<seconds>s  theta=<degrees> deg  theta'=<rad/s> rad/s  rail=<metres> m (world x=<metres>)  x'=<m/s> m/s  F=<commanded N> N  applied=<clamped N> N
 ```
+
+The Python script prints a shorter line,
+`t=<seconds>s  theta=<degrees> deg  rail=<metres> m  x'=<m/s> m/s  F=<commanded N> N`,
+which carries the commanded force only; the applied force is `actuator.measured[0]` in the
+table below.
 
 The pole rides the actuator channels, which are exactly three:
 
@@ -227,10 +231,11 @@ robot.set_cartpole_force(0.0);
 `examples/python/ex29_hello_cartpole.py`:
 
 ```python
-# ===== hand it back =====
-# A command latches: without this the cart keeps pushing forever.
-robot.set_cartpole_force(0.0)
+robot.set_cartpole_force(0.0)  # the force latches; scene-authored robot, never deleted
 ```
+
+The script does not catch the `vrsdk.VrError` that `wait_new_state` raises on a stalled
+state stream, so a stall ends it before this line, with the last force still latched.
 
 {{#endtab }}
 {{#endtabs }}

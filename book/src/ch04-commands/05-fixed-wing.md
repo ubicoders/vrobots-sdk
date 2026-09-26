@@ -13,8 +13,7 @@ python examples/python/ex33_fw_est_source.py <sys_id>
 ```
 
 The Global Hawk is scene-authored and lives in the IMU scene, not the sandbox, so both
-examples take the live `sys_id` as an argument. Find it with `cargo run -p vrobots-sdk
---bin vrobots -- topic list`.
+examples take the live `sys_id` as an argument. Find it with `vrobots topic list`.
 
 ## Two modes, and what reset does to them
 
@@ -132,23 +131,15 @@ if (channels != PANELS + 1) {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex32_fw_rate_controller.py`:
-
-```python
-channels = len(robot.states.actuator.measured)
-if channels != PANELS + 1:
-    raise SystemExit(
-        f"this robot publishes {channels} actuator channels; this mixer is "
-        f"written for {PANELS} panels + an engine. Six channels means a "
-        f"simulator too old for the per-panel path."
-    )
-```
+The Python script, `examples/python/ex32_fw_rate_controller.py`, does not make this check
+and goes straight to flying. `robot.states.actuator.measured` is a plain list in Python, so
+the same guard is a comparison of its length against the panel count plus one.
 
 {{#endtab }}
 {{#endtabs }}
 
-The count comes off a length in Rust and Python and off `measured_count` in C++, which is
-the same number: the C struct carries a fixed-size array plus its used length.
+The count comes off a length in Rust and off `measured_count` in C++, which is the same
+number: the C struct carries a fixed-size array plus its used length.
 
 The check runs once, before the aircraft is touched, so an old simulator produces a named
 error at startup instead of a mixer that appears to do nothing.
@@ -189,10 +180,9 @@ std::printf("\nmode -> DIRECT_SURFACE, thrust -> %.0f N\n\n", CRUISE_N);
 `examples/python/ex31_globalhawk_direct.py`:
 
 ```python
-# so the thrust command has to come AFTER the mode, every time.
+# mode first, then thrust: entering direct mode inherits the autopilot's current thrust
 robot.set_fw_ctrl_mode(cmd.FW_DIRECT_SURFACE)
 robot.set_fw_thrust(CRUISE_N)
-print(f"\nmode -> DIRECT_SURFACE, thrust -> {CRUISE_N} N\n")
 ```
 
 {{#endtab }}
@@ -205,6 +195,9 @@ the argument is `FwCtrlMode::DirectSurface`; Rust and Python pass the integer co
 ```text
 mode -> DIRECT_SURFACE, thrust -> 3800 N
 ```
+
+The Python script prints no line at this point; its first output is the `-- neutral --`
+header of the first pose.
 
 Skip the thrust line and the engine keeps whatever the autopilot left, which is usually
 about 3.8 kN at trim. That is a plausible-looking number, which is what makes the omission
@@ -272,13 +265,13 @@ std::printf(
 `examples/python/ex33_fw_est_source.py`:
 
 ```python
-# ===== phase 2: observer, with nobody publishing an estimate =====
-robot.set_fw_est_source(cmd.FW_EST_OBSERVER)
-print(
-    "\nsource -> OBSERVER. Nothing publishes z/estimate here, so within 0.5 s "
-    "the estimate is stale and the loop is fed truth again -- the simulator "
-    "logs a warning saying exactly that."
-)
+if phase == "truth":
+    robot.set_fw_est_source(cmd.FW_EST_TRUTH)
+elif phase == "observer":
+    # nothing publishes z/estimate here, so after 0.5 s the loop falls back to truth
+    robot.set_fw_est_source(cmd.FW_EST_OBSERVER)
+else:
+    robot.reset()  # reverts the source to truth and clears the SET_ANGVEL latch
 ```
 
 {{#endtab }}
@@ -295,6 +288,10 @@ steady yaw-rate tracking, commanded 0.05 rad/s:
   observer (source 1), no publisher  mean r=<rad/s>  mean error=<rad/s>  |error|=<rad/s>
   after reset                        mean r=<rad/s>  mean error=<rad/s>  |error|=<rad/s>
 ```
+
+The Python script prints the same heading and a shorter row per phase,
+`<phase label> mean error=<rad/s> rad/s`, then one closing line,
+`the observer phase matching truth IS the fallback: no fresh estimate, so truth flew`.
 
 The example measures yaw-rate tracking error across those three phases, and phase 2
 matching phase 1 is the whole result: the loop asked for an estimate, found none fresh, and kept

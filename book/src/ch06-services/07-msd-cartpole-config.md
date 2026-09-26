@@ -76,9 +76,7 @@ robot.reset();
 ```python
 if retune:
     robot.configure_msd(spring_k=k, damping_c=c)
-# Home, at rest, with the force latch cleared -- otherwise the previous run's
-# step is still pushing.
-robot.set_msd_force(0.0)
+robot.set_msd_force(0.0)  # the force latches; clear it before resetting
 robot.reset()
 ```
 
@@ -91,8 +89,8 @@ flag on a struct from `vrsdk::msd_config()`. In C++ the flag is what separates "
 from "leave it alone", so a number assigned without its flag never reaches the simulator.
 
 The confirmation is arithmetic. A 20 N step settles at `F / k`, rings with period
-`2*pi*sqrt(m/k)`, and its damping ratio is `c / (2*sqrt(k*m))`. The example prints the measured
-value beside the predicted one for three plants:
+`2*pi*sqrt(m/k)`, and its damping ratio is `c / (2*sqrt(k*m))`. The Rust and C++ programs print
+the measured value beside the predicted one for three plants:
 
 ```text
 20 N step, 1 kg, three plants:
@@ -102,13 +100,19 @@ value beside the predicted one for three plants:
   k=80, c=16               <value>   <value>   <value>   <value> <value>
 ```
 
+The Python script prints no table. For each plant it prints a sample of time, position,
+velocity, displacement and net force about once a second while it pushes, a sample about every
+two seconds while it rings down, and then one `predicted:` line with `F/k`, the period and the
+damping ratio. You compare the samples against that line yourself.
+
 > **Gotcha.** A negative `k` or `c` is not an error in the simulator, it is committed as zero:
 > a spring that quietly vanished. `configure_msd` refuses negatives before they are sent, and
 > that is the only protection there is. For any value it does accept, the committed number may
 > still differ from the one you asked for, and the state stream is the only place that says
 > which.
 
-The last thing `ex28` does is ask for a spring that pulls the wrong way, and read the refusal:
+The last thing the Rust and C++ versions of `ex28` do is ask for a spring that pulls the wrong
+way, and read the refusal:
 
 
 {{#tabs global="lang" }}
@@ -141,22 +145,16 @@ try {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex28_hello_msd.py`:
-
-```python
-try:
-    robot.configure_msd(spring_k=-5.0)
-    print("\nUNEXPECTED: a negative spring constant was accepted")
-except vrsdk.VrError as e:
-    print(f"\nspring_k = -5.0 -> [{e.code} {e.kind}] {e.detail}")
-```
+`examples/python/ex28_hello_msd.py` ends after the third plant and does not make this call. In
+Python, `configure_msd(spring_k=-5.0)` raises `vrsdk.VrError` with
+`code == vrsdk.err.INVALID_ARGUMENT`.
 
 {{#endtab }}
 {{#endtabs }}
 
-The refusal is client-side on all three, so nothing reaches the wire. Rust returns it as a `Result`
-you match on, while C++ throws `vrsdk::Error` and Python raises `vrsdk.VrError`, which is why the
-two of them wrap the call in a `try` that the Rust version does not need.
+The refusal is client-side in all three languages, so nothing reaches the wire. Rust returns it
+as a `Result` you match on, while C++ throws `vrsdk::Error`, which is why the C++ version wraps
+the call in a `try` that the Rust version does not need.
 
 ```text
 spring_k = -5.0 -> [<code>] <message>
@@ -236,17 +234,22 @@ lengths and forces itself.
 `examples/python/ex29_hello_cartpole.py`:
 
 ```python
+# cart mass belongs to configure_cartpole; set_physical_params would be overwritten
 robot.configure_cartpole(
-    cart_mass=CART_MASS_KG,
+    cart_mass=1.0,
     travel_half_range=4.0,
-    pole_rod_mass=ROD_MASS_KG,
-    bob_mass=BOB_MASS_KG,
-    pole_length=POLE_LENGTH_M,
+    pole_rod_mass=0.1,
+    bob_mass=0.2,
+    pole_length=1.2,
     pole_angular_damping=0.01,
     max_force=MAX_FORCE_N,
-    initial_pole_angle_deg=SEED_DEG,
+    initial_pole_angle_deg=-3.0,  # DEGREES, and it re-seats the pole immediately
 )
 ```
+
+Python writes the numbers in place where Rust and C++ name them as constants (`CART_MASS_KG`,
+`ROD_MASS_KG`, `BOB_MASS_KG`, `POLE_LENGTH_M`, `SEED_DEG`). The values are the same, and the
+seed angle is the `-3.0` passed as `initial_pole_angle_deg`.
 
 {{#endtab }}
 {{#endtabs }}
@@ -261,6 +264,9 @@ exists for:
 ```text
 plant set; the pole is re-seated at -3 deg AT REST, immediately -- not at the next reset
 ```
+
+The Python script prints no line at this point. The comment on `initial_pole_angle_deg` in its
+call carries the same warning.
 
 ## The degrees and radians trap
 
@@ -323,16 +329,20 @@ const double rail_centre = robot.states().kin().lin_pos[0];
 `examples/python/ex29_hello_cartpole.py`:
 
 ```python
+# reset() returns the cart to the rail centre, which is NOT the world origin
 robot.reset()
-settle(robot)
+for _ in range(15):
+    robot.rate(25)
 rail_centre = robot.states.kin.lin_pos[0]
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-Only the path to the field differs. C++ reaches the kinematics block through the `kin()` accessor
-over the raw C state, and Python exposes `states` as a property rather than a call.
+Rust and C++ settle through a `settle` helper, while Python writes the same 15 `rate(25)` calls
+inline. After that only the path to the field differs: C++ reaches the kinematics block through
+the `kin()` accessor over the raw C state, and Python exposes `states` as a property rather than
+a call.
 
 Every position term after that is relative to a number you measured rather than one you
 assumed:
@@ -340,6 +350,9 @@ assumed:
 ```text
 rail centre measured at x = <metres> m (world). Every position term below is relative to THAT, not to 0.
 ```
+
+The Python script prints the shorter `rail centre at world x = <metres> m`, and its control loop
+subtracts `rail_centre` from `lin_pos[0]` in the same way.
 
 **Next:** [Skins](08-skins.md)
 

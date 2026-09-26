@@ -83,17 +83,12 @@ for (;;) {
 `examples/python/ex06_hello_throttle.py`:
 
 ```python
-# ===== loop =====
 while True:
-    # Published exactly like set_mr_pwm: one put on vrobots/<id>/z/cmd, no
-    # reply, latched until the next one arrives. Both call shapes work:
-    # set_mr_throttle(a, b, c, d) and set_mr_throttle([a, b, c, d]).
+    # On the wire but no robot type acts on it yet; the state echo is the only evidence.
     mr.set_mr_throttle(THROTTLE)
 
     s = mr.states
-    # The state frame is the robot's, not yours -- "frd" here, so lin_pos[2]
-    # is DOWN, and altitude above the start point is its negation.
-    down = s.kin.lin_pos[2]
+    down = s.kin.lin_pos[2]  # "frd" frame: lin_pos[2] is down, altitude is its negation
     norm = [round(v, 3) for v in s.actuator.normalized]
     meas = [round(v, 3) for v in s.actuator.measured]
     print(
@@ -101,7 +96,7 @@ while True:
         f"normalized={norm} measured={meas}"
     )
 
-    mr.rate(HZ)
+    mr.rate(25)
 ```
 
 {{#endtab }}
@@ -197,8 +192,7 @@ switch (step % 3) {
 `examples/python/ex07_body_wrench.py`:
 
 ```python
-# One verb per iteration, so each printed line names exactly what went
-# out on the wire. Each takes three scalars or one sequence.
+# One verb per iteration: force, torque, then both (set_body_ft).
 if step % 3 == 0:
     mr.set_body_force(GUST_N)
     sent = f"set_body_force({GUST_N})"
@@ -214,8 +208,9 @@ step += 1
 {{#endtab }}
 {{#endtabs }}
 
-The three verbs are one for one across the surfaces. C++ takes `std::array<double, 3>` and
-Python takes either three scalars or one sequence; both hide the same schema asymmetry, in
+The three verbs are one for one across the surfaces. C++ takes `std::array<double, 3>`.
+Python's `set_body_force` and `set_body_torque` take either three scalars or one sequence,
+and its `set_body_ft` takes two sequences. Both surfaces hide the same schema asymmetry, in
 which `set_body_ft` puts the force in `vec3` and the torque in `vec3_arr[0]`.
 
 The state block it prints afterwards is `state.wrench`, the total force and torque the

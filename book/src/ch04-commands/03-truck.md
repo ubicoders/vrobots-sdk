@@ -110,35 +110,32 @@ int main() {
 `examples/python/ex05_hello_car.py`:
 
 ```python
-SYS_ID = 0  # the truck in the test scene
-STEER_US = 1400.0  # left of centre
-THROTTLE_US = 1650.0  # light forward
-BRAKE_US = 1100.0  # released
-HZ = 50
+"""ex05 - drive the truck with set_car."""
 
+import math
 
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    car = VirtualRobot(RobotType.TRUCK, sys_id=SYS_ID)
-    car.connect()
+from vrsdk import RobotType, VirtualRobot
 
-    # ===== loop =====
-    while True:
-        s = car.states
-        x, y, z = s.kin.lin_pos
-        # lin_vel is a BODY-frame vector, so no single component is "the speed";
-        # its magnitude is.
-        speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
-        print(
-            f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
-            f"speed={speed:.2f} m/s echo={s.actuator.pwm}"
-        )
+STEER_US = 1400.0  # 1500 = centre
+THROTTLE_US = 1650.0  # 1500 = stop, 1900 = full forward
+BRAKE_US = 1100.0  # brake is bottom-anchored: 1100 = released, 1900 = full
 
-        # A gentle left arc: steering left of centre, light forward throttle.
-        car.set_car(STEER_US, THROTTLE_US, BRAKE_US)
+car = VirtualRobot(RobotType.TRUCK, sys_id=0)  # sys_id 0 = truck, 1 = multirotor
+car.connect()
 
-        car.rate(HZ)
+while True:
+    s = car.states
+    x, y, z = s.kin.lin_pos
+    # lin_vel is a body-frame vector; its magnitude is the speed.
+    speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
+    print(
+        f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
+        f"speed={speed:.2f} m/s echo={s.actuator.pwm}"
+    )
+
+    car.set_car(STEER_US, THROTTLE_US, BRAKE_US)
+
+    car.rate(50)
 ```
 
 {{#endtab }}
@@ -157,6 +154,8 @@ State t=<seconds> pos=(<x>,<y>,<z>) speed=<m/s> echo=[1400, 1650, 1100]
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/commands.rs`:
+
 ```rust
 pub fn set_car(&self, steer: f64, throttle: f64, brake: Option<f64>) -> VrResult<()>
 ```
@@ -164,7 +163,7 @@ pub fn set_car(&self, steer: f64, throttle: f64, brake: Option<f64>) -> VrResult
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 void set_car(double steer, double throttle, std::optional<double> brake = std::nullopt)
@@ -173,7 +172,7 @@ void set_car(double steer, double throttle, std::optional<double> brake = std::n
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def set_car(

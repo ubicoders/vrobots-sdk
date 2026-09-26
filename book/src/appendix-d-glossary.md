@@ -35,6 +35,6 @@ alphabetically, ignoring backticks and capitalisation.
 | upsert | The verb `mount_camera` uses: add the named camera or reconfigure it, leaving every other camera on the robot alone. | [Mount, open and unmount](ch05-cameras/01-mount-open-unmount.md) |
 | zenoh | The pub/sub and query transport carrying states, commands and services. Works across a network, and has no registry, so a topic appears in discovery only if it published during your window. | [Two transports, one simulator](ch02-concepts/01-transports.md) |
 
-**Next:** [The VRobots SDK Book](../README.md)
+**Next:** [Introduction](introduction.md)
 
 **See also:** [Appendix A: Topic reference](appendix-a-topics.md), [Five rules that explain everything](ch02-concepts/06-five-rules.md)

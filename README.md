@@ -39,14 +39,30 @@ simulator is publishing.
    beside your executable. [`examples/cpp`](examples/cpp) shows a complete
    CMake setup.
 
-### Rust (coming soon)
+### Rust
 
 ```sh
 cargo add vrobots-sdk
 ```
 
-The `vrobots-sdk` crate is not published yet. It is being developed in
-[`crates/`](crates) as a safe wrapper over the same C library.
+The [`vrobots-sdk`](crates/vrobots-sdk) crate is a safe wrapper over the same C
+library, for Rust 1.88 or later. It is not on crates.io until its first
+publication; until then, clone this repository and add the crate to your
+project as a path dependency:
+
+```sh
+git clone https://github.com/ubicoders/vrobots-sdk
+cd my_controller
+cargo add --path ../vrobots-sdk/crates/vrobots-sdk
+```
+
+Nothing of the SDK is compiled from source. At build time the crate downloads
+the C bundle of its own version from the
+[Releases page](https://github.com/ubicoders/vrobots-sdk/releases) and checks it
+against that Release's `SHA256SUMS`, so the version must have a Release. For
+offline builds, or for a version without one, set `VROBOTS_SDK_DIR` to an
+unpacked C bundle of the same version. The
+[crate README](crates/vrobots-sdk/README.md) describes both.
 
 ## Downloads
 
@@ -58,12 +74,13 @@ these assets:
 |---|---|---|
 | Python wheel, Windows x86_64 | `ubicoders_vrsdk-<version>-cp38-abi3-win_amd64.whl` | Python 3.8+ on Windows |
 | Python wheel, Linux x86_64 | `ubicoders_vrsdk-<version>-cp38-abi3-manylinux_*_x86_64.whl` | Python 3.8+ on Linux |
-| C bundle, Windows x86_64 | `vrobots_sdk-cpp-<version>-windows-x86_64.zip` | C and C++ on Windows (MSVC) |
-| C bundle, Linux x86_64 | `vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` | C and C++ on Linux (glibc 2.28 or newer) |
+| C bundle, Windows x86_64 | `vrobots_sdk-cpp-<version>-windows-x86_64.zip` | C, C++ and Rust on Windows (MSVC) |
+| C bundle, Linux x86_64 | `vrobots_sdk-cpp-<version>-linux-x86_64.tar.gz` | C, C++ and Rust on Linux (glibc 2.28 or newer) |
 | Checksums | `SHA256SUMS` | SHA-256 checksums of every asset above |
 
-`pip install ubicoders-vrsdk` fetches the matching wheel from PyPI, so the wheel
-downloads are only needed for offline installs. Verify a download with
+`pip install ubicoders-vrsdk` fetches the matching wheel from PyPI, and a Rust
+build fetches the matching C bundle on its own, so Python and Rust users need
+these downloads only for offline installs. Verify a download with
 `sha256sum -c SHA256SUMS --ignore-missing` on Linux.
 
 ## Book
@@ -78,8 +95,9 @@ services, with every code sample in Python, C++ and Rust:
   installed `ubicoders-vrsdk` package.
 - [`examples/cpp`](examples/cpp): the same programs in C++, built with CMake
   against the downloaded C bundle.
-- [`examples/rust`](examples/rust): the Rust examples arrive with the
-  `vrobots-sdk` crate.
+- [`examples/rust`](examples/rust): the same programs in Rust, against the
+  [`vrobots-sdk`](crates/vrobots-sdk) crate; run one from the repository root
+  with `cargo run -p vrobots-examples --bin ex01_hello_states`.
 
 Each example is a complete program: setup, then a plain loop. Start the
 simulator in Play mode before running one.

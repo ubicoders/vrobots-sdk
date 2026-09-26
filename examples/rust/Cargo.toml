@@ -1,0 +1,191 @@
+[package]
+name = "vrobots-examples"
+description = "The VRobots SDK example programs in Rust, one binary per example, against the vrobots-sdk crate"
+# Edition 2024 needs Rust 1.85, which the 1.88 minimum below already covers.
+# The wrapper crates are on 2021; each package of a workspace keeps its own.
+edition = "2024"
+# The minimum of the vrobots-sdk crate, whose -sys build script needs Rust 1.88.
+rust-version = "1.88"
+license = "CC-BY-NC-SA-4.0"
+repository = "https://github.com/ubicoders/vrobots-sdk"
+publish = false
+
+# Every example is a complete program with its own `fn main`, in the STM32
+# shape: main() does setup, then owns a plain loop. No command-line options
+# anywhere: a permutation worth showing is its own file, not a flag. Run one
+# from the repository root with:
+#     cargo run -p vrobots-examples --bin ex01_hello_states
+#
+# The one argument any example takes is a sys_id: required by ex29-ex33 and
+# ex35, whose robots are scene-authored rather than created (their ids are
+# handed out at scene load and keep incrementing, so no `const` in the file
+# could stay true), and optional for ex21, ex22 and ex27.
+#     cargo run -p vrobots-examples --bin ex31_globalhawk_direct -- 15
+
+[features]
+# Link the static C library instead of the shared one, so that the examples
+# need no shared library at run time. Forwarded to the vrobots-sdk crate.
+#     cargo run -p vrobots-examples --features static --bin ex01_hello_states
+static = ["vrobots-sdk/static"]
+# ex34 is the only example that needs a library outside the SDK. It is off by
+# default so that building the examples never needs OpenCV installed:
+# `required-features` below makes cargo skip that binary instead.
+#     cargo run -p vrobots-examples --features opencv --bin ex34_camera_view
+opencv = ["dep:opencv"]
+
+[dependencies]
+# A path dependency on the wrapper in this repository: the examples are always
+# built against the checkout they live in, so they carry no version of their own.
+vrobots-sdk = { path = "../../crates/vrobots-sdk" }
+# Binds to whatever OpenCV is installed on the machine; bump this minor to match
+# the binding release your system OpenCV needs.
+opencv = { version = "0.94", optional = true, default-features = false, features = [
+    "imgproc",
+    "highgui",
+] }
+
+[[bin]]
+name = "ex01_hello_states"
+path = "src/bin/ex01_hello_states.rs"
+
+[[bin]]
+name = "ex02_hello_control"
+path = "src/bin/ex02_hello_control.rs"
+
+[[bin]]
+name = "ex03_hello_image"
+path = "src/bin/ex03_hello_image.rs"
+
+[[bin]]
+name = "ex04_hello_service"
+path = "src/bin/ex04_hello_service.rs"
+
+[[bin]]
+name = "ex05_hello_car"
+path = "src/bin/ex05_hello_car.rs"
+
+[[bin]]
+name = "ex06_hello_throttle"
+path = "src/bin/ex06_hello_throttle.rs"
+
+[[bin]]
+name = "ex07_body_wrench"
+path = "src/bin/ex07_body_wrench.rs"
+
+[[bin]]
+name = "ex08_generic_cmd"
+path = "src/bin/ex08_generic_cmd.rs"
+
+[[bin]]
+name = "ex09_state_paced_loop"
+path = "src/bin/ex09_state_paced_loop.rs"
+
+[[bin]]
+name = "ex10_sensors_tour"
+path = "src/bin/ex10_sensors_tour.rs"
+
+[[bin]]
+name = "ex11_topic_discovery"
+path = "src/bin/ex11_topic_discovery.rs"
+
+[[bin]]
+name = "ex12_version_info"
+path = "src/bin/ex12_version_info.rs"
+
+[[bin]]
+name = "ex13_open_camera"
+path = "src/bin/ex13_open_camera.rs"
+
+[[bin]]
+name = "ex14_camera_save"
+path = "src/bin/ex14_camera_save.rs"
+
+[[bin]]
+name = "ex15_camera_formats"
+path = "src/bin/ex15_camera_formats.rs"
+
+[[bin]]
+name = "ex16_two_cameras"
+path = "src/bin/ex16_two_cameras.rs"
+
+[[bin]]
+name = "ex17_camera_pose"
+path = "src/bin/ex17_camera_pose.rs"
+
+[[bin]]
+name = "ex18_multi_robot"
+path = "src/bin/ex18_multi_robot.rs"
+
+[[bin]]
+name = "ex19_robust_loop"
+path = "src/bin/ex19_robust_loop.rs"
+
+[[bin]]
+name = "ex20_logging_tour"
+path = "src/bin/ex20_logging_tour.rs"
+
+[[bin]]
+name = "ex21_reset"
+path = "src/bin/ex21_reset.rs"
+
+[[bin]]
+name = "ex22_physical_params"
+path = "src/bin/ex22_physical_params.rs"
+
+[[bin]]
+name = "ex23_skins"
+path = "src/bin/ex23_skins.rs"
+
+[[bin]]
+name = "ex24_sensor_config"
+path = "src/bin/ex24_sensor_config.rs"
+
+[[bin]]
+name = "ex25_frames"
+path = "src/bin/ex25_frames.rs"
+
+[[bin]]
+name = "ex26_drive_config"
+path = "src/bin/ex26_drive_config.rs"
+
+[[bin]]
+name = "ex27_rotor_config"
+path = "src/bin/ex27_rotor_config.rs"
+
+[[bin]]
+name = "ex28_hello_msd"
+path = "src/bin/ex28_hello_msd.rs"
+
+[[bin]]
+name = "ex29_hello_cartpole"
+path = "src/bin/ex29_hello_cartpole.rs"
+
+[[bin]]
+name = "ex30_hello_halfdrone"
+path = "src/bin/ex30_hello_halfdrone.rs"
+
+[[bin]]
+name = "ex31_globalhawk_direct"
+path = "src/bin/ex31_globalhawk_direct.rs"
+
+[[bin]]
+name = "ex32_fw_rate_controller"
+path = "src/bin/ex32_fw_rate_controller.rs"
+
+[[bin]]
+name = "ex33_fw_est_source"
+path = "src/bin/ex33_fw_est_source.rs"
+
+# Needs a system OpenCV, so it is skipped unless --features opencv is passed.
+[[bin]]
+name = "ex34_camera_view"
+path = "src/bin/ex34_camera_view.rs"
+required-features = ["opencv"]
+
+[[bin]]
+name = "ex35_publish_estimate"
+path = "src/bin/ex35_publish_estimate.rs"
+
+[[bin]]
+name = "ex36_rotations"
+path = "src/bin/ex36_rotations.rs"

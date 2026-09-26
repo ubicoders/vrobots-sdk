@@ -20,7 +20,7 @@ nothing.
 | `air_density` | `f64` | kg/m³ | | `0.0` | |
 | `temperature` | `f64` | °C | | `0.0` | true air temperature |
 | `geo_point` | `GeoPoint` | deg, deg, m | | zeroed | the robot's true geodetic position |
-| `agl` | `f64` | m | | `0.0` | true height above ground, but see below |
+| `agl` | `f64` | m | | `0.0` | placeholder, published as 0; see below |
 
 `gravity` is a world-frame vector, not a scalar, so its sign tells you which way the
 frame's third axis points: positive where that axis counts downwards, negative where it
@@ -43,27 +43,20 @@ receiver run at their own rates, so compare their timestamps before differencing
 > `sensors`. If your model needs density, this is where it comes from, and a real
 > vehicle would have to estimate it.
 
-## The `agl` field, and what the sources say about it
+## The `agl` field
 
-`agl` is documented in the SDK as the true height above ground, to be compared with the
-barometer's pressure altitude. The examples say something incompatible with that.
+`agl` is a placeholder. Checked against a running simulator (v3.0.1, 2026-09-26): a
+multirotor hovering with `kin.lin_pos[2]` at -0.90 m reported `agl` as exactly `0.0` in
+every snapshot. The C header, the `vrobots-sdk-sys` bindings and the Rust crate's field
+documentation now all say the same thing: the simulator publishes 0 here, because the
+downward raycast that would fill it is not run.
 
-<!-- VERIFY: env.agl. `examples/rust/README.md` (v3.0.0) and the header of `ex10_sensors_tour.rs` both state that `env.agl` is a hard-coded 0 for every robot, because the downward raycast that would fill it is not run, and that the substitute is `kin.lin_pos[2]`, negated on a robot publishing `frd`. The doc comment on `Environment::agl` in `crates/vrobots-sdk/src/state.rs` makes no such claim and presents it as the truth counterpart to the barometer's pressure altitude. Resolve against a live simulator before asserting either. -->
-
-| Source | Claim |
-|---|---|
-| `crates/vrobots-sdk/src/state.rs` | `agl` is true height above ground in metres, to be compared with the barometer's pressure altitude |
-| `examples/rust/README.md`, simulator v3.0.0 | `agl` is a hard-coded zero for every robot, because filling it needs a downward raycast the simulator does not run; the substitute is `kin.lin_pos[2]`, negated on a robot publishing `frd` |
-
-The two are not reconcilable by reading the repository, so this book states both and
-resolves neither. The example header is explicit that the zero is a placeholder rather
-than a measurement, on the reasoning that `env` is the truth block and an invented
-height above ground would be worse than a visibly missing one.
-
-Until it is checked against a running simulator, write code that survives either
-version: if `agl` is exactly zero while the robot is demonstrably not on the ground,
-fall back to the vertical component of `kin.lin_pos` with the sign that the snapshot's
-`coord_frame_id` implies.
+Use the vertical component of `kin.lin_pos` instead, with the sign that the snapshot's
+`coord_frame_id` implies: on a robot publishing `frd` (NED), height above the origin
+plane is `-lin_pos[2]`. The examples treat the zero as a placeholder rather than a
+measurement, on the reasoning that `env` is the truth block and an invented height above
+ground would be worse than a visibly missing one. If a later simulator build starts
+filling `agl`, code that falls back only when `agl` is exactly zero keeps working.
 
 ## Reading the world block
 

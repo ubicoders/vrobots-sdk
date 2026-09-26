@@ -143,7 +143,7 @@ v3("torque", r.wrench.torque, "N.m", "");
 `examples/python/ex10_sensors_tour.py`:
 
 ```python
-# -- truth ----------------------------------------------------------
+# truth: simulator ground truth, absent on a real robot
 k = s.kin
 print("TRUTH  kinematics")
 print(f"  lin_pos   {v3(k.lin_pos)} m       (world)")

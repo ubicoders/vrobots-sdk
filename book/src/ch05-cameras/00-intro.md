@@ -42,8 +42,8 @@ Six steps, from the render to the `Frame` in your hand:
 5. It copies the pixel tail out, flipping rows as it copies, because the wire is bottom-up
    and `Frame::data` is top-down. Then it releases the sample: the pixels you are handed
    never alias shared memory.
-6. Your thread calls `fresh()` and gets an `Arc<Frame>`, an owned immutable snapshot that
-   stays valid for as long as you hold it.
+6. Your thread calls `fresh()` and gets a `Frame`, an owned immutable snapshot that stays
+   valid for as long as you hold it.
 
 The reader thread sleeps about 2 ms when a receive finds nothing, rather than spinning. At
 60 fps a frame period is about 16 ms, so the added latency is under 15% of one frame, and

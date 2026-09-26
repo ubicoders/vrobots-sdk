@@ -51,7 +51,7 @@ System ids are allocated at scene load and keep incrementing across loads, so no
 in an example is a contract. Read the live ids with `vrobots topic list`.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic list
+vrobots topic list
 ```
 
 ## What every live robot serves

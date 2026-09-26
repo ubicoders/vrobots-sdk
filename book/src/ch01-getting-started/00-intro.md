@@ -28,13 +28,16 @@ embedded system bound to one robot: construct, connect, then run a plain control
 
 ## One core, three languages
 
-The Rust crate is the single implementation. The C++ SDK is a header-only RAII wrapper
-over a C ABI, and the Python SDK is a PyO3 binding, both over that same Rust core. The
-bindings add sugar, not behaviour, so lifecycle, snapshots and timestamps behave
-identically by construction and the three surfaces cannot drift.
+One Rust core is the single implementation. The Python SDK is a PyO3 binding over it, the
+C++ SDK is a header-only RAII wrapper over its C ABI, and the `vrobots-sdk` Rust crate is a
+safe wrapper over the same C ABI. The bindings add sugar, not behaviour, so lifecycle,
+snapshots and timestamps behave identically by construction and the three surfaces cannot
+drift.
 
-This chapter is written in Rust. Every example under `examples/rust/src/bin/` is mirrored
-one for one in `examples/python/` and `examples/cpp/`, printing the same numbers.
+The prose of this chapter uses the Rust names, and every sample appears in all three
+languages. The programs in `examples/rust/`, `examples/cpp/` and `examples/python/` are the
+same programs under the same names. The Python ones are short, flat scripts with no `main()`
+function, and each page says where one prints less than its C++ twin.
 
 ## How your program reaches the robot
 
@@ -78,13 +81,15 @@ Working through the eight pages of this chapter, in order, leaves you with:
 - Proof, from the `vrobots` command line tool, that the simulator is publishing and under
   which system id.
 - A program that reads a multirotor's position at a rate you choose.
-- A multirotor climbing under pulse widths you sent.
+- A multirotor echoing the pulse widths you sent, and climbing once you raise them.
 - A truck driving a gentle left arc.
-- A camera mounted, frames read, and the camera unmounted again.
+- Frames read from the camera the robot already carries, with nothing mounted and nothing
+  to clean up.
 - A robot created from code and deleted from code.
 
-Each of those is one of the first five example programs, run unmodified. Nothing in this
-chapter asks you to write a program from scratch.
+Each of those is one of the first five example programs, run unmodified apart from the one
+pulse width [Hello control](04-hello-control.md) asks you to raise. Nothing in this chapter
+asks you to write a program from scratch.
 
 **Next:** [Installing the SDK and the simulator](01-install.md)
 

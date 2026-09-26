@@ -3,14 +3,13 @@
 Simulator-side defects and licensing behaviour that change what the SDK can do.
 
 Everything on this page is a property of the simulator, not of the SDK, so none of it can be
-fixed by upgrading the crate. Each entry says how to detect the symptom, because in a system
+fixed by upgrading the SDK. Each entry says how to detect the symptom, because in a system
 where an acknowledgement is a receipt rather than a result, most of these present as nothing
 happening.
 
 ## Created multirotors do not integrate physics
 
-**Status: open, simulator side, v3.0.0.** Tracked in
-`issues/created-multirotor-frozen-dynamics.md`.
+**Status: open, simulator side, v3.0.0.**
 
 A multirotor created through `vrobots/manager/z/srv/create` comes up publishing and serving
 normally, and its actuator echo is live, but its rigidbody never integrates. The command
@@ -31,8 +30,10 @@ spring dampers show real oscillation physics, so only the multirotor spawn path 
 and scene-authored multirotors are fine.
 
 **The workaround shipped in the examples** is an optional `sys_id` argument on `ex21_reset`,
-`ex22_physical_params` and `ex27_rotor_config`: pass one and the example attaches to the
-scene multirotor instead of creating a robot.
+`ex22_physical_params` and `ex27_rotor_config`, in Python, C++ and Rust alike: pass one and
+the example attaches to the scene multirotor, and never deletes it, instead of creating a
+robot. Without it, each example creates a multirotor and deletes it at the end, and nothing
+the example commands moves that robot.
 
 ```sh
 cargo run -p vrobots-examples --bin ex22_physical_params -- 1
@@ -94,23 +95,21 @@ because index 6 is the engine in newtons.
 
 ## Service coverage is closed
 
-`issues/service-coverage.md` was closed on **2026-08-05**. Every service and every robot type
-in the roster now has a Rust core implementation, a C API, C++ and Python bindings, and a
+The service coverage audit closed on **2026-08-05**. Every service and every robot type in
+the roster now has a Rust core implementation, a C API, C++ and Python bindings, and a
 live-verified example, ex21 through ex33. The one piece of unfinished business moved to the
 frozen-dynamics issue at the top of this page.
 
-The issue is kept rather than deleted because its method is the reference for the next drift
-check between the simulator and the SDK: probe every `vrobots/{sys_id}/z/srv/{segment}` key
-with a payload-less Zenoh GET, since an acknowledgement means the service is registered and a
-timeout means it is not.
+The audit's method is the reference for the next drift check between the simulator and the
+SDK: probe every `vrobots/{sys_id}/z/srv/{segment}` key with a payload-less Zenoh GET, since
+an acknowledgement means the service is registered and a timeout means it is not.
 
 > **Gotcha.** That probe is safe on every key except `srv/reset`, where a bare GET performs
 > an actual reset rather than testing for a responder.
 
-One related issue also closed on 2026-08-05: `issues/srv-cameras-add-remove.md`. Mounting or
-unmounting a single camera is confirmed live not to disturb the scene default `front_left`
-and `front_right` streams, so the older warning that mounting a camera wipes the robot's
-defaults no longer applies.
+One related question also closed on 2026-08-05: mounting or unmounting a single camera is
+confirmed live not to disturb the scene default `front_left` and `front_right` streams, so
+the older warning that mounting a camera wipes the robot's defaults no longer applies.
 
 **Next:** [Tooling and diagnostics](../ch08-tooling/00-intro.md)
 

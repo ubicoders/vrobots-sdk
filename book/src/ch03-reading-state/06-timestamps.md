@@ -37,11 +37,8 @@ fixed at *your handle's* first sample, not at the simulator's start. And it does
 reset when the simulator restarts: it keeps counting through the outage and comes back
 having jumped forward by however long the simulator was away. The robust-loop example
 measures exactly that, freezing at 5.84 s for the duration of an outage and resuming at
-21.77 s on the first sample of the new run.
-
-> **Note.** `State::decode(bytes, epoch_ns)` exposes the same arithmetic for offline
-> use. `epoch_ns` only affects `elapsed`; pass `0` when decoding a standalone recorded
-> frame, and the frame's `elapsed` then equals its absolute unix time in seconds.
+21.77 s on the first sample of the new run. The Python version of that example has no stall
+handling and ends at the first timeout, so it never shows the jump.
 
 ## Sequence numbers
 
@@ -92,10 +89,9 @@ last_t_ns = s.t_ns;
 `examples/python/ex09_state_paced_loop.py`:
 
 ```python
-# Exactly one new sample is waiting -- read it and do the work.
 s = mr.states
 dt_ms = float("nan") if last_t_ns == 0 else (s.t_ns - last_t_ns) / 1e6
-skipped = max(0, s.seq - (last_seq + 1))
+skipped = max(0, s.seq - (last_seq + 1))  # seq jumps reveal dropped samples
 last_seq, last_t_ns = s.seq, s.t_ns
 ```
 

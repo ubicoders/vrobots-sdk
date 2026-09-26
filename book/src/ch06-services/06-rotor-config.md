@@ -11,11 +11,12 @@ cargo run -p vrobots-examples --bin ex27_rotor_config
 python examples/python/ex27_rotor_config.py
 ```
 
-`ex27_rotor_config` takes an **optional** `sys_id`. With it, the example attaches to the
-scene's own multirotor; without it, the example creates one and every climb run reads 0.00 m/s,
-because a client-created multirotor does not integrate physics in simulator v3.0.0
-([known issue](../ch07-robots/07-known-issues.md)). Prefer the argument, and read the warning
-about attaching below before you do.
+`ex27_rotor_config` takes an **optional** `sys_id` in all three languages. With it, the
+example attaches to the scene's own multirotor and leaves it running on the rebuilt rotor list
+until the scene reloads. Without it, the example creates a multirotor and deletes it at the
+end, and every climb run reads 0.00 m/s, because a client-created multirotor does not integrate
+physics in simulator v3.0.0 ([known issue](../ch07-robots/07-known-issues.md)). Prefer the
+argument, and read the warning about attaching below before you do.
 
 ## Multirotor only
 
@@ -117,20 +118,14 @@ std::vector<vrsdk_rotor_spec_t> ring(std::size_t n) {
 `examples/python/ex27_rotor_config.py`:
 
 ```python
-def ring(n: int) -> list[RotorSpec]:
-    """``n`` reference rotors laid out on a flat ring of radius ``ARM_M``.
-
-    In the default ``"unity"`` header frame the horizontal plane is x-z and +y is
-    up, so the ring sits at y = 0. ``spin_dir`` is left at 0 so the simulator
-    alternates clockwise/counter-clockwise by index, which is what keeps the yaw
-    torques cancelling.
-    """
+def ring(n):
+    # Flat ring in the default "unity" header frame: x-z plane, +y up. Positions
+    # are measured from the robot origin, not the centre of mass. spin_dir 0
+    # lets the simulator alternate the yaw torque sign by index.
     out = []
     for i in range(n):
-        angle = math.pi / 4.0 + i * math.tau / max(n, 1)
-        out.append(
-            RotorSpec(position=(ARM_M * math.sin(angle), 0.0, ARM_M * math.cos(angle)))
-        )
+        angle = math.pi / 4.0 + i * math.tau / n
+        out.append(RotorSpec(position=(ARM_M * math.sin(angle), 0.0, ARM_M * math.cos(angle))))
     return out
 ```
 
@@ -192,23 +187,17 @@ robot.configure_rotors(shortlist);
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex27_rotor_config.py`:
-
-```python
-short = [
-    RotorSpec(position=r.position, thrust_a=0.0, thrust_b=0.0, thrust_c=0.02)
-    for r in ring(max(rotors - 1, 0))
-]
-print(f"configure_rotors with {len(short)} entries for {rotors} rotors ...")
-robot.configure_rotors(short)
-```
+`examples/python/ex27_rotor_config.py` leaves this run out and goes from the spawned airframe
+straight to the 70% curve below. The comment above that call states the same rule: the list is
+replaced, not merged, and a wrong-length list is dropped whole inside the simulator and still
+acked `ok`.
 
 {{#endtab }}
 {{#endtabs }}
 
-Rust sets all three coefficients through one `with_thrust_curve` call, C++ assigns them on each
-struct in place, and Python rebuilds each entry around the position the ring produced. The wire
-result is identical, and so is the outcome: a list one entry short is dropped whole.
+Rust sets all three coefficients through one `with_thrust_curve` call, and C++ assigns them on
+each struct in place. The wire result is identical, and so is the outcome: a list one entry
+short is dropped whole.
 
 The aircraft climbs exactly as it did before, which is the proof that nothing was applied:
 
@@ -223,7 +212,8 @@ The one length the SDK does refuse is zero, which returns `VrError::InvalidArgum
 
 `actuator.measured` is rotor speed in rad/s, computed from `ang_vel_slope` and
 `ang_vel_intercept` and the commanded pulse width, and nothing else. It is a reported line, not
-a measurement. Run 3 of `ex27` cuts the thrust curve to 70% and leaves that line alone:
+a measurement. The last run of `ex27`, run 3 in Rust and C++ and run 2 in Python, cuts the
+thrust curve to 70% and leaves that line alone:
 
 
 {{#tabs global="lang" }}
@@ -266,7 +256,9 @@ robot.configure_rotors(weak);
 `examples/python/ex27_rotor_config.py`:
 
 ```python
-reference = RotorSpec()
+# The list is REPLACED, not merged, and must describe every rotor in index order.
+# A wrong-length list is dropped whole inside the sim and still acked ok.
+reference = RotorSpec()  # the simulator's own reference rotor is the base to build on
 weak = [
     RotorSpec(
         position=r.position,
@@ -283,8 +275,9 @@ robot.configure_rotors(weak)
 {{#endtabs }}
 
 All three read the reference coefficients back off a fresh default rotor rather than repeating the
-numbers from the table above, so 70% stays 70% of whatever the SDK's reference rotor is. The list
-is full length here, so this one applies.
+numbers from the table above, so 70% stays 70% of whatever the SDK's reference rotor is. Python
+rebuilds each entry around the position the ring produced. The list is full length here, so this
+one applies.
 
 The aircraft stops climbing while the rotor-speed echo does not move a digit:
 
@@ -294,6 +287,10 @@ The aircraft stops climbing while the rotor-speed echo does not move a digit:
   after the short list     climb=<rate> m/s   rotor speed echo=[...]
   70% thrust curve         climb=<rate> m/s   rotor speed echo=[...]
 ```
+
+That summary is the Rust and C++ output. Python prints one line per run as it goes, for
+`as spawned` and `70% thrust curve`, with the same two figures: the climb rate and the rotor
+speed echo.
 
 Height is the evidence about thrust. The echo is not.
 

@@ -86,6 +86,8 @@ cares about.
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/commands.rs`, with its doc comments left out:
+
 ```rust
 #[non_exhaustive]
 pub struct CmdArgs {
@@ -94,7 +96,7 @@ pub struct CmdArgs {
     pub int_arr: Vec<i32>,
     pub float_arr: Vec<f64>,
     pub vec3: Option<[f64; 3]>,
-    pub vec4: Option<[f64; 4]>,   // [x, y, z, w]
+    pub vec4: Option<[f64; 4]>,
     pub vec3_arr: Vec<[f64; 3]>,
     pub vec4_arr: Vec<[f64; 4]>,
 }
@@ -103,7 +105,7 @@ pub struct CmdArgs {
 {{#endtab }}
 {{#tab name="C++" }}
 
-`crates/vrobots-sdk-capi/include/vrobots_sdk.h`:
+`include/vrobots_sdk.h`:
 
 ```c
 typedef struct vrsdk_cmd_args_t {
@@ -125,26 +127,27 @@ typedef struct vrsdk_cmd_args_t {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
-int_val: int = 0
-float_val: float = 0.0
-int_arr: Optional[Sequence[int]] = None
-float_arr: Optional[Sequence[float]] = None
-vec3: Optional[Sequence[float]] = None
-vec4: Optional[Sequence[float]] = None
-vec3_arr: Optional[Sequence[Sequence[float]]] = None
-vec4_arr: Optional[Sequence[Sequence[float]]] = None
+int_val: int = 0,
+float_val: float = 0.0,
+int_arr: Optional[Sequence[int]] = None,
+float_arr: Optional[Sequence[float]] = None,
+vec3: Optional[Sequence[float]] = None,
+vec4: Optional[Sequence[float]] = None,
+vec3_arr: Optional[Sequence[Sequence[float]]] = None,
+vec4_arr: Optional[Sequence[Sequence[float]]] = None,
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-The same eight fields carry the same meanings in all three. C++ uses the C struct directly, so
-every array is a pointer with an explicit `_len`, and `vec3_arr` and `vec4_arr` are flat
-`double` arrays whose length counts vectors rather than doubles. Python has no argument type at
-all: the eight are keyword arguments of `send_cmd`.
+The same eight fields carry the same meanings in all three, and `vec4` is ordered
+`[x, y, z, w]`. C++ uses the C struct directly, so every array is a pointer with an explicit
+`_len`, and `vec3_arr` and `vec4_arr` are flat `double` arrays whose length counts vectors
+rather than doubles. Python has no argument type at all: the eight are keyword arguments of
+`send_cmd`.
 
 The struct is `#[non_exhaustive]`, so it cannot be built with a struct literal. Build it from
 `CmdArgs::default()` plus chained setters, or from a shorthand.

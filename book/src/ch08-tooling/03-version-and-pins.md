@@ -3,7 +3,7 @@
 You print what this build speaks, compare it with what the simulator speaks, and learn why an exact pin is not pedantry.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- --version
+vrobots --version
 cargo run -p vrobots-examples --bin ex12_version_info
 ./target/cpp-build/ex12_version_info
 python examples/python/ex12_version_info.py
@@ -19,7 +19,7 @@ error, so nothing will tell you about it unless you ask.
 `version_info()` returns to a program:
 
 ```text
-vrobots-sdk 0.1.4
+vrobots-sdk 0.1.11
   vrobots_msgs  v2.0.2-31-gac335c0 (schema_version 3)
   flatbuffers   25.12.19
   zenoh         1.9.0
@@ -29,28 +29,39 @@ vrobots-sdk 0.1.4
 
 | Field | Type | Notes |
 |---|---|---|
-| `sdk_version` | `&'static str` | This crate's version. |
-| `msgs_commit` | `&'static str` | `git describe --tags --always --dirty` of the `vrobots_msgs` submodule the generated FlatBuffers code was compiled from, or `"unknown"` when built without git, from a source tarball for instance. |
+| `sdk_version` | `String` | The SDK release. |
+| `msgs_commit` | `String` | The revision of the `vrobots_msgs` message schemas the FlatBuffers code was generated from, in `git describe` form, or `"unknown"` when the release build could not record it. |
 | `schema_version` | `u32` | The `schema_version` this SDK stamps on outbound headers. |
-| `flatbuffers` | `&'static str` | The flatbuffers pin, from `ipc_versions.json` at build time. |
-| `zenoh` | `&'static str` | The zenoh pin. |
-| `iceoryx2` | `&'static str` | The iceoryx2 pin. |
+| `flatbuffers` | `String` | The flatbuffers pin the release was built with. |
+| `zenoh` | `String` | The zenoh pin. |
+| `iceoryx2` | `String` | The iceoryx2 pin. |
 | `src_id` | `u32` | The `src_id` this build stamps by default. |
 
-These strings are stamped into the binary by `build.rs`, not read from a file at run
-time. A binary you copied to another machine reports what it was actually built
-against rather than what happens to be checked out beside it.
+These strings are stamped into the library when a release is built, not read from a file
+at run time. A wheel or a C bundle copied to another machine reports what it was actually
+built against rather than anything installed beside it.
 
 ## What the simulator says
 
 The other half of the comparison rides on every state snapshot. From
-`examples/rust/src/bin/ex12_version_info.rs`:
+`examples/rust/src/bin/ex12_version_info.rs`, where the program first checks and prints its
+own side:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
 ```rust
+    // ===== what this build is =====
+    vrobots_sdk::check_version()?; // crate and linked library: one release
+    let v = version_info();
+    println!("{v}"); // the same block `vrobots --version` prints
+    println!(
+        "  crate         {} (must equal the library above)",
+        vrobots_sdk::VERSION
+    );
+
+    // ===== what the other end is =====
     let robot = VirtualRobot::connect(RobotType::Multirotor, Some(SYS_ID))?;
     let first = robot.states();
     println!(
@@ -65,8 +76,8 @@ The other half of the comparison rides on every state snapshot. From
     );
     if first.schema_version != v.schema_version {
         println!(
-            "  MISMATCH -- fields may decode as garbage. Rebuild the SDK against \
-             the sim's vrobots_msgs commit."
+            "  MISMATCH -- fields may decode as garbage. Install the SDK release \
+             that matches the simulator build."
         );
     }
 ```
@@ -87,8 +98,8 @@ The other half of the comparison rides on every state snapshot. From
             first.raw.src_id, v.src_id);
         if (first.raw.schema_version != v.schema_version) {
             std::printf(
-                "  MISMATCH -- fields may decode as garbage. Rebuild the SDK against the sim's "
-                "vrobots_msgs commit.\n");
+                "  MISMATCH -- fields may decode as garbage. Install the SDK release that "
+                "matches the simulator build.\n");
         }
 ```
 
@@ -98,33 +109,42 @@ The other half of the comparison rides on every state snapshot. From
 `examples/python/ex12_version_info.py`:
 
 ```python
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
-    first = mr.states
-    print(
-        f"\nsim says: schema_version={first.schema_version} (ours {v['schema_version']}), "
-        f"frame={first.coord_frame_id!r} axes={first.axis_convention_name!r}, "
-        f"its header src_id={first.src_id} (ours {v['src_id']})"
-    )
-    if first.schema_version != v["schema_version"]:
-        print(
-            "  MISMATCH -- fields may decode as garbage. Reinstall the wheel built "
-            "against the sim's vrobots_msgs commit."
-        )
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor, 0 = truck
+mr.connect()
+first = mr.states
+print(
+    f"\nsim says: schema_version={first.schema_version} (ours {v['schema_version']}), "
+    f"frame={first.coord_frame_id!r} axes={first.axis_convention_name!r}, "
+    f"its header src_id={first.src_id} (ours {v['src_id']})"
+)
+if first.schema_version != v["schema_version"]:
+    print("  MISMATCH -- fields may decode as garbage; reinstall the matching wheel")
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
 `version_info()` returns a struct in Rust and C++ (`v.schema_version`) but a dict in
-Python (`v['schema_version']`). C++ reaches the header fields through `first.raw`, and it
-has one check the other two do not: `check_version()` asserts that this header and the
-linked library are the same release, because the snapshot structs are shared between them
-by layout.
+Python (`v['schema_version']`), and C++ reaches the header fields through `first.raw`.
+Rust and C++ make one check that Python has no reason to make: `check_version()` fails
+unless the linked library is the release that the Rust crate or the C++ header was built
+for, because the snapshot structs are shared between them by layout. Both programs make that
+check first, then print their own version under the `version_info()` block, as a `crate`
+line in Rust and a `header` line in C++, so a mismatched pair shows even without the check. The mismatch warning names the same remedy in two wordings: Rust and C++ tell you to
+install the SDK release that matches the simulator build, and Python tells you to reinstall
+the matching wheel.
+
+The Rust program prints the block shown at the top of this page, then:
 
 ```text
+  crate         <version> (must equal the library above)
+
 sim says: schema_version=3 (ours 3), frame="frd" axes="frd", its header src_id=0 (ours 122)
 ```
+
+`<version>` is the crate's own release, which `check_version()` has already found equal to
+the library's. C++ prints the same `sim says` fields without `axes`, and Python quotes the
+two strings with single quotes, as in `frame='frd' axes='frd'`.
 
 <!-- VERIFY: the frame and axes strings in the block above are the multirotor's reported values and need a live-simulator capture to confirm. -->
 
@@ -140,8 +160,8 @@ plausible-looking wrong numbers rather than an error.
 
 ## Why the pins are exact
 
-`ipc_versions.json` at the repository root is the source of truth, and the workspace
-`Cargo.toml` mirrors it as `=X.Y.Z` rather than `^X.Y.Z`.
+Every release depends on each of the three packages at one exact version, `=X.Y.Z`, rather
+than a caret range such as `^X.Y.Z`.
 
 | Package | Pin |
 |---|---|
@@ -159,17 +179,12 @@ are wrong.
 
 ## What enforces them
 
-Three independent mechanisms, so the drift is caught before it ships.
-
-| Mechanism | When it fires | What it checks |
-|---|---|---|
-| `crates/vrobots-sdk/build.rs` | every compile | The workspace `Cargo.toml` pins each package as exactly `="X.Y.Z"` from `ipc_versions.json`, and panics with the offending line when it does not. |
-| `scripts/check_versions.ps1` | CI | The same pin rule without needing a toolchain, plus the one SDK version mirrored across the workspace manifest, the member crates, the wheel metadata, the C++ header and the README. |
-| The release workflow | a pushed tag | Runs `check_versions.ps1 -Tag <tag>` as a guard job and refuses to build anything when the tag, the manifests and `ipc_versions.json` disagree. |
-
-`build.rs` also fails when the `vrobots_msgs` submodule is missing, with the
-`git submodule update --init --recursive` fix in the message rather than 45
-`include!` errors.
+The pins are enforced before anything ships. Every compile of the SDK's core checks them,
+and a release build refuses to start when the release version, the package manifests and
+the pinned versions disagree. For you, that means a wheel and a C bundle of the same release
+carry the same three versions, and `vrobots --version` or `version_info()` reads them from
+the library itself. An IPC pin mismatch you meet is therefore between an SDK release and a
+simulator build.
 
 ## The order to check things in
 

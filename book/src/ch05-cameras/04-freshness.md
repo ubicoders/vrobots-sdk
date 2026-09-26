@@ -12,8 +12,8 @@ python examples/python/ex13_open_camera.py
 
 | Method | Returns | Blocks | Consumes freshness |
 |---|---|---|---|
-| `fresh()` | `Option<Arc<Frame>>`, `Some` only if a frame arrived since the last call | no | yes |
-| `latest()` | `Option<Arc<Frame>>`, the current frame whether or not it is new | no | no |
+| `fresh()` | `Option<Frame>`, `Some` only if a frame arrived since the last call | no | yes |
+| `latest()` | `Option<Frame>`, the current frame whether or not it is new | no | no |
 | `wait_new_frame(timeout)` | `VrResult<()>`, `Ok` when a newer frame has landed | yes, up to `timeout` | no; call `fresh()` after it |
 
 This is deliberately not how `states()` behaves. A control loop wants the current state
@@ -50,9 +50,9 @@ if (auto frame = cam.fresh()) {
 `examples/python/ex03_hello_image.py`:
 
 ```python
-if cam.fresh:
+if cam.fresh:  # True only when a frame arrived since the last read
     frame = cam.frame  # metadata for the image we are about to read
-    img = cam.image  # numpy (h, w, c) uint8, top-down, RGB(A)
+    img = cam.image  # numpy (h, w, 4) uint8, top-down, RGBA
     seen += 1
 ```
 
@@ -64,7 +64,9 @@ property that asks, and `cam.image` or `cam.read()` is what consumes the freshne
 that tests `cam.fresh` and then never reads keeps seeing the same frame as new.
 
 That fragment prints nothing on its own: it is the guard deciding whether the image half of
-the loop runs at all, and `ex03_hello_image` prints a state line from the `else` arm instead.
+the loop runs at all. The Rust and C++ `ex03_hello_image` print a state line from the `else`
+arm instead; the Python script has no `else` arm and prints nothing on a pass without a fresh
+frame.
 
 Each frame is handed out once even when two threads race on the same stream: the claim is a
 compare-and-exchange, so exactly one caller gets a given frame and the other gets `None`.
@@ -123,29 +125,29 @@ while (seen < FRAMES) {
 `examples/python/ex13_open_camera.py`:
 
 ```python
+# frame-paced: wait_new_frame blocks until the next rendered frame
 seen = 0
 while seen < FRAMES:
-    try:
-        cam.wait_new_frame(TIMEOUT)
-    except vrsdk.VrError as e:
-        if e.code != vrsdk.err.TIMEOUT:
-            raise
-        print(f"no frame in {TIMEOUT}s -- the camera stopped, or the sim is paused")
-        continue
-
+    cam.wait_new_frame(TIMEOUT)
     frame = cam.read()  # consumes freshness; None if someone else got it
     if frame is None:
         continue
     seen += 1
 ```
 
+The Python script does not catch the timeout. If no frame arrives within `TIMEOUT` (0.5 s),
+`wait_new_frame` raises `vrsdk.VrError` with `code == vrsdk.err.TIMEOUT` and the
+script ends there. Catch that code and continue, as the Rust and C++ loops do, when a paused
+simulator should not end the run.
+
 {{#endtab }}
 {{#endtabs }}
 
 `wait_new_frame` takes seconds as a `double` in C++ and Python where Rust takes a `Duration`,
-and the timeout is the same status rather than a failure in all three. Note the second
-guard: `wait_new_frame` returning does not guarantee the read succeeds, because another
-thread may have taken the frame in between, so the empty case is still handled.
+and the timeout carries the same code in all three: `VrError::Timeout` in Rust,
+`VRSDK_ERR_TIMEOUT` in C++ and `vrsdk.err.TIMEOUT` in Python. Note the second guard:
+`wait_new_frame` returning does not guarantee the read succeeds, because another thread may
+have taken the frame in between, so the empty case is still handled.
 
 While frames are arriving, nothing is printed by the timeout arm:
 
@@ -163,10 +165,13 @@ message names the service and the deadline:
 timeout: no camera frame on vrobots/1/i/cam/front_left/720p_rgba8 within 500ms
 ```
 
+The Python exception carries the same text, with the deadline written as `500.000ms`.
+`ex13_open_camera.py` does not catch it, so that text closes the traceback that ends the run.
+
 > **Gotcha.** A timeout here never means the stream is broken, and it is also how a stopped
 > camera presents: a paused simulator, a camera someone else unmounted, and a genuinely
 > slow render are the same event. Treat it as a condition to handle, not an error to
-> propagate, which is why the example loop continues rather than returning.
+> propagate, which is why the Rust and C++ loops continue rather than return.
 
 ## The counters
 

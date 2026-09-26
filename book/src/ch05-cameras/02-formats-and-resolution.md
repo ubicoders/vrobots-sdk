@@ -77,10 +77,18 @@ constexpr const char* FORMAT = "rgba8";       // mono8 | rgb8 | rgba8 -- per cam
 `examples/python/ex15_camera_formats.py`:
 
 ```python
-CAMERA = "front_left"  # every vrobot ships front_left and front_right
-RESOLUTION = "720p"  # 360p | 720p | 1080p -- robot-wide
-FORMAT = "rgba8"  # mono8 | rgb8 | rgba8 -- per camera
+FORMAT = "rgba8"  # rgba8: 4 channels, not rgb8; per camera (resolution is robot-wide)
 ```
+
+Further down, `examples/python/ex15_camera_formats.py`:
+
+```python
+# the iceoryx2 service name IS <camera>/<resolution>_<format>
+cam = mr.open_camera("front_left", "720p", FORMAT)
+```
+
+The Python script keeps only the format as a constant and passes the camera name and the
+resolution as literals.
 
 {{#endtab }}
 {{#endtabs }}
@@ -97,6 +105,9 @@ frame 1280x720 = 921600 px, rgba8 at 4 B/px, step=5120 B/row, 3686400 B/frame
    rgb8:   2764800 B/frame
   rgba8:   3686400 B/frame  <- this stream
 ```
+
+The Python script appends the numpy shape to the frame line, `numpy (720, 1280, 4)`, which is
+the `(h, w, 4)` array that `frame.image` returns for `rgba8`.
 
 **Getting the cheap end means creating a camera**, since the pair the robot ships is rgba8
 and nothing reconfigures a camera you do not own. That is `mount_camera`, covered on

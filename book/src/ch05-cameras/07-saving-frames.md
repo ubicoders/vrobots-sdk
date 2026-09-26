@@ -1,6 +1,6 @@
 # Saving a frame
 
-Write one image to disk and stop, without pulling in an image library.
+Write one image to disk and stop: a PPM with no image library in Rust and C++, a PNG through OpenCV in Python.
 
 ```sh
 cargo run -p vrobots-examples --bin ex14_camera_save
@@ -55,10 +55,7 @@ if (!frame) {
 `examples/python/ex14_camera_save.py`:
 
 ```python
-# ===== the one frame =====
-# open_camera already waited for the stream to exist, but the next frame
-# still has to be rendered. Block for it rather than polling.
-cam.wait_new_frame(TIMEOUT)
+cam.wait_new_frame(2.0)
 frame = cam.read()
 assert frame is not None, "wait_new_frame returned, so one is waiting"
 ```
@@ -69,8 +66,11 @@ assert frame is not None, "wait_new_frame returned, so one is waiting"
 Each surface asserts the same invariant in its own idiom. None of them has any unwinding to
 do: nothing was created, so an early return leaves the simulator exactly as it found it.
 
-`TIMEOUT` is 2 s here, and the `?` propagates a `VrError::Timeout` rather than swallowing
-it: for a one-shot program, no frame is a failure and not a condition to retry through.
+The wait is 2 s in all three (`TIMEOUT` in Rust, `TIMEOUT_S` in C++, the literal `2.0` in
+Python), and a timeout ends the program rather than being swallowed: the Rust `?` propagates
+`VrError::Timeout`, the C++ `catch` prints the error and returns 1, and Python stops with the
+`VrError` traceback. For a one-shot program, no frame is a failure and not a condition to
+retry through.
 
 The two lines it prints are the geometry and the lens the frame was rendered through:
 
@@ -81,13 +81,19 @@ intrinsics fx=600.0 fy=600.0 cx=640.0 cy=360.0 fov_y=61.9 deg  clip 0.50..1000 m
 
 <!-- VERIFY: seq and t above are illustrative; fx and fy are the requested defaults and the live read-back can differ slightly, since the simulator round-trips them through the Unity field of view. -->
 
+That is the Rust and Python output. C++ prints the same two lines without the `rgba8` word,
+and Python adds a third, `numpy (720, 1280, 4) uint8`, the shape of the array it is about to
+write.
+
 `step` is `width * 4` exactly for rgba8, and `data.len()` is `height * step` exactly.
 Nothing on this path is padded or compressed.
 
 ## Writing it out
 
-A binary PPM (P6) is a short text header followed by the raw RGB bytes, and that is the
-entire format. It needs no image library, and every viewer reads it.
+Rust and C++ write a binary PPM (P6): a short text header followed by the raw RGB bytes,
+which is the entire format. It needs no image library, and every viewer reads it. Python
+writes a PNG through OpenCV instead, because in Python that dependency is normally already
+there.
 
 
 {{#tabs global="lang" }}
@@ -151,32 +157,23 @@ static bool write_ppm(const vrsdk::Frame& frame, const std::string& path) {
 `examples/python/ex14_camera_save.py`:
 
 ```python
-def save(img: np.ndarray, path: str) -> str:
-    """Write the frame to disk, with or without OpenCV. Returns the path used."""
-    if cv2 is not None:
-        code = cv2.COLOR_RGBA2BGR if img.shape[2] == 4 else cv2.COLOR_RGB2BGR
-        cv2.imwrite(path, img if img.shape[2] == 1 else cv2.cvtColor(img, code))
-        return path
-    # No OpenCV: a binary PPM needs no image library at all and every viewer
-    # reads it. Mono8 is expanded to grey RGB; rgba8 drops alpha.
-    path = path.rsplit(".", 1)[0] + ".ppm"
-    rgb = img[:, :, :3] if img.shape[2] >= 3 else np.repeat(img, 3, axis=2)
-    with open(path, "wb") as f:
-        f.write(f"P6\n{rgb.shape[1]} {rgb.shape[0]}\n255\n".encode())
-        f.write(rgb.tobytes())
-    return path
+img = frame.image  # numpy (h, w, 4) uint8, top-down, RGBA
+print(f"numpy {img.shape} {img.dtype}")
+cv2.imwrite("frame.png", cv2.cvtColor(img, cv2.COLOR_RGBA2BGR))  # OpenCV wants BGR
+print("wrote frame.png")
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-Python writes a PNG through OpenCV when it is installed and falls back to the same PPM when
-it is not, which is why its `OUTPUT` is `frame.png` where the other two are `frame.ppm`. The
-PPM path is identical in all three, and it needs no image library because the frame is
-already row-major, top-down and tightly packed. What Python must do and the others must not
-is the RGB to BGR conversion: OpenCV wants BGR and the SDK never swaps channels.
+The Python script writes `frame.png` where the other two write `frame.ppm`. `frame.image` is
+already a top-down `(height, width, 4)` array, so the only thing Python must do that the others
+must not is the RGBA to BGR conversion: OpenCV wants BGR, and the SDK never swaps channels.
+The script imports `cv2` at the top, so without OpenCV it stops at that import; the
+`[examples]` extra of [Installing the SDK and the simulator](../ch01-getting-started/01-install.md)
+brings it in.
 
-It prints nothing: the caller reports either the path it wrote or the `io::Error` it got
+`write_ppm` prints nothing: the caller reports either the path it wrote or the error it got
 back. Three properties of `Frame` are doing the work here, and all three are why the loop is a
 single straight walk over `data` with no row arithmetic:
 
@@ -195,18 +192,20 @@ attached to vrobots/1/i/cam/front_left/720p_rgba8
 wrote frame.ppm
 ```
 
+Those are the first and last lines of the Rust and C++ runs; the Python run ends with
+`wrote frame.png`.
+
 Ctrl-C during the two-second wait is equally safe here, which it would not be in a program
 that had mounted a camera of its own.
 
 ## When one file is not enough
 
 Writing images from a loop makes this the slow part of your program: a 720p rgba8 frame is
-3.69 MB, and 60 of those per second is more than most disks want. For capture rather than
-inspection, record the raw slices instead and decode them later with `Frame::decode`, which
-is what `vrobots record --camera` and the fixture workflow are for. That path is covered in
+3.69 MB, and 60 of those per second is more than most disks want. `vrobots record --camera`
+writes raw slices to disk with no conversion at all, but no public call decodes them again,
+so it serves test fixtures and bug reports rather than image capture. That path is covered in
 [Recording and testing without the simulator](../ch08-tooling/07-recording-and-testing.md),
-along with why those recordings are the thing that keeps `cargo test` meaningful with the
-simulator closed.
+along with how the SDK's own tests decode such recordings with the simulator closed.
 
 **Next:** [Showing frames in a window](08-showing-frames.md)
 

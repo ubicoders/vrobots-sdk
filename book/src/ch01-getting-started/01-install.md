@@ -11,8 +11,8 @@ pip install ubicoders-vrsdk
 That command is the whole SDK install: the wheel carries the compiled Rust core, so no Rust
 toolchain, no `flatc`, no `protoc` and no repository clone is involved. It puts two things on
 your machine: `vrsdk`, the package every Python example in this book imports, and `vrobots`,
-the command line tool of [The vrobots command](../ch08-tooling/01-cli.md), which is the same
-program as the Rust build's rather than a second implementation.
+the command line tool of [The vrobots command](../ch08-tooling/01-cli.md), which runs the Rust
+core's own command line code rather than a second implementation.
 
 | Requirement | Version | Notes |
 |---|---|---|
@@ -21,16 +21,17 @@ program as the Rust build's rather than a second implementation.
 | The Unity simulator | in Play mode | required by anything that talks to a robot |
 
 `numpy` arrives with the wheel, because `frame.image` hands back an ndarray. `opencv-python`
-does not, and it is what the camera examples want in order to open a window:
+does not, and three of the Python camera examples need it:
 
 ```sh
 pip install "ubicoders-vrsdk[examples]"
 ```
 
-Without it, [Hello image](06-hello-image.md) prints metadata instead of opening a window and
-[Saving a frame](../ch05-cameras/07-saving-frames.md) writes a PPM instead of a PNG. The one
-page that needs OpenCV outright is [Showing frames in a window](../ch05-cameras/08-showing-frames.md),
-in every language.
+The Python programs of [Hello image](06-hello-image.md),
+[Saving a frame](../ch05-cameras/07-saving-frames.md) and
+[Showing frames in a window](../ch05-cameras/08-showing-frames.md) import `cv2` at the top,
+so without OpenCV they stop at that import. Among the C++ programs only the window one,
+`ex34_camera_view`, needs OpenCV, and the C++ build skips it when OpenCV is not installed.
 
 > **Gotcha.** No source distribution is published, deliberately: the core is built and
 > released as prebuilt wheels only. On a platform with no wheel, pip therefore stops
@@ -53,12 +54,26 @@ of it runs just as well on its own.
 ## The C++ and Rust surfaces
 
 Skip this section unless you are working in C++ or Rust. C++ needs no build of the SDK:
-download the C bundle for your OS from <https://github.com/ubicoders/vrobots-sdk/releases>,
-unpack it into a folder of its own, and follow
-[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md)
-in your clone. The bundle holds the C header, the header-only C++ wrapper and the
-`vrobots_sdk_capi` library. CMake picks up a bundle unpacked beside the repository on its
-own, or takes its location from `-DVROBOTS_SDK_DIR`:
+download the C bundle for your OS from <https://github.com/ubicoders/vrobots-sdk/releases>
+and unpack it into a folder of its own. The archive has no top-level folder, and it holds
+everything a C++ program compiles and links against:
+
+| Path | What it is |
+|---|---|
+| `include/vrobots_sdk.h` | The C API. |
+| `include/vrobots_sdk.hpp` | The header-only C++17 wrapper. It includes `vrobots_sdk.h`, so keep the two in one folder. |
+| `lib/` | The prebuilt `vrobots_sdk_capi` library: `libvrobots_sdk_capi.so` on Linux, `vrobots_sdk_capi.dll` and its import library `vrobots_sdk_capi.dll.lib` on Windows. The Linux library needs glibc 2.28 or newer. |
+| `examples/` | The C++ example programs, which also build inside the unpacked bundle. |
+| `bindings.rs` | The same C API declared for Rust, used when the Rust crate builds. C++ ignores it. |
+| `LICENSE` | The licence the SDK is released under. |
+
+The Releases page also carries `SHA256SUMS`, the checksums of every asset, so on Linux
+`sha256sum -c SHA256SUMS --ignore-missing` verifies a download.
+
+To build the examples from your clone of this repository, follow
+[`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
+CMake picks up a bundle unpacked beside the repository on its own, or takes its location
+from `-DVROBOTS_SDK_DIR`:
 
 ```sh
 cmake -S examples/cpp -B target/cpp-build -DCMAKE_BUILD_TYPE=Release
@@ -70,8 +85,26 @@ on each page names. On Windows the binaries land in `target\cpp-build\Release\` 
 `.exe` suffix and the DLL copied beside each one; on Linux the build rpath points at the
 bundle's `lib/`, so no `LD_LIBRARY_PATH` is needed.
 
-For Rust, the `vrobots-sdk` crate on crates.io is coming but not published yet. Until it is,
-the Rust tabs in this book show the shape of the API, and there is nothing to install.
+Rust needs no build of the SDK either. The `vrobots-sdk` crate is a safe wrapper over the same
+`vrobots_sdk_capi` library, and its build downloads the C bundle of the crate's own version
+from the Releases page, checks it against `SHA256SUMS` and links it, so `cargo run` finds the
+library on its own. The Rust examples are the package `vrobots-examples` of this repository's
+workspace, and they run from the root of your clone:
+
+```sh
+cargo run -p vrobots-examples --bin ex01_hello_states
+```
+
+The crate is not on crates.io until its first publication. Once it is,
+`cargo add vrobots-sdk` adds it to a project of your own; until then, add the crate in your
+clone as a path dependency, with `cargo add --path <clone>/crates/vrobots-sdk`. The download
+needs a Release of the crate's version. For an offline build, or for a version that has no
+Release yet, unpack the C bundle into a folder of its own, set `VROBOTS_SDK_DIR` to the
+absolute path of that folder (the one holding `bindings.rs`, `include/` and `lib/`), and put
+its `lib/` folder on `LD_LIBRARY_PATH` on Linux or `PATH` on Windows before running.
+[`examples/rust/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/rust/README.md)
+covers both routes, and the `static` feature, which links the static library so that a
+program needs no shared library at run time. The crate needs Rust 1.88 or newer.
 
 ## Getting the simulator
 
@@ -168,7 +201,7 @@ vrobots --version
 ```
 
 ```text
-vrobots-sdk 0.1.4
+vrobots-sdk 0.1.11
   vrobots_msgs  v2.0.2-31-gac335c0 (schema_version 3)
   flatbuffers   25.12.19
   zenoh         1.9.0
@@ -176,12 +209,12 @@ vrobots-sdk 0.1.4
   src_id        122
 ```
 
-The first line is the SDK release. The second is a `git describe` of the `vrobots_msgs`
-submodule the FlatBuffers code was generated from, so it moves when the schema does. The
-three pins are exact rather than caret ranges: iceoryx2 compares major, minor and patch on
-every shared-memory open, and a version one patch off does not error, it silently delivers
-nothing. That is the first thing to compare against the simulator build when fields look
-like garbage or a camera stream never appears.
+The first line is the SDK release. The second names the revision of the `vrobots_msgs`
+message schemas the FlatBuffers code was generated from, with the schema version beside it,
+so it moves when the schema does. The three pins are exact rather than caret ranges:
+iceoryx2 compares major, minor and patch on every shared-memory open, and a version one
+patch off does not error, it silently delivers nothing. That is the first thing to compare
+against the simulator build when fields look like garbage or a camera stream never appears.
 
 **Next:** [First contact: is anything publishing?](02-first-contact.md)
 

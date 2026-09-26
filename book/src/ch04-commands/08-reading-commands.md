@@ -81,14 +81,9 @@ std::printf(
 ```python
 own_src_id = robot.options["src_id"]
 
-# Subscribe BEFORE taking the aircraft: a stick input during the handover
-# would otherwise be missed, and the loop would start from "no setpoint".
+# z/cmd is a bus: the IMU panel's SET_ANGVEL setpoints are readable by subscribing
 setpoints = robot.subscribe_setpoint()
-print(
-    f"attached to sys_id={robot.sys_id} ({robot.robot_type!r}); watching "
-    f"{setpoints.key} for {cmd.name(setpoints.cmd_id)} (id {setpoints.cmd_id}), "
-    f"ignoring src_id={own_src_id}"
-)
+print(f"watching {setpoints.key}; fly with the sim's IMU panel")
 ```
 
 {{#endtab }}
@@ -102,6 +97,9 @@ example sets `src_id` explicitly in the connect options and keeps its own consta
 ```text
 attached to sys_id=<id> (GlobalHawk); watching vrobots/<id>/z/cmd for SET_ANGVEL (id 51), ignoring src_id=122
 ```
+
+The Python script prints a shorter line,
+`watching vrobots/<id>/z/cmd; fly with the sim's IMU panel`.
 
 Dropping the stream undeclares the subscription and nothing else. It does not stop anyone
 publishing, and the robot never learns that you were listening.
@@ -167,12 +165,10 @@ if (setpoint && setpoint->src_id() != OWN_SRC_ID) {
 `examples/python/ex32_fw_rate_controller.py`:
 
 ```python
-# --- the setpoint: latched, so read the current one every iteration ---
+# a setpoint latches, so read the CURRENT one every cycle, and skip our own traffic
 setpoint = setpoints.latest
 if setpoint is None or setpoint.src_id == own_src_id:
-    # Nobody has ever published one, or it is our own traffic coming back
-    # on this bus. "Hold zero rates" is a decision.
-    demand = (0.0, 0.0, 0.0)
+    demand = (0.0, 0.0, 0.0)  # no setpoint yet: hold zero rates
 else:
     demand = setpoint.value
 ```

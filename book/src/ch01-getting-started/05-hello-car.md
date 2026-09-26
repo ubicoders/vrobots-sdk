@@ -11,7 +11,8 @@ python examples/python/ex05_hello_car.py
 ## The whole program
 
 The same loop shape as [Hello control](04-hello-control.md), a different actuator, and a
-different robot: `SYS_ID` is 0 because the truck is the other vehicle in the test scene.
+different robot: the id is 0, `SYS_ID` in Rust and C++ and `sys_id=0` in the Python call,
+because the truck is the other vehicle in the test scene.
 
 
 {{#tabs global="lang" }}
@@ -111,35 +112,32 @@ int main() {
 `examples/python/ex05_hello_car.py`:
 
 ```python
-SYS_ID = 0  # the truck in the test scene
-STEER_US = 1400.0  # left of centre
-THROTTLE_US = 1650.0  # light forward
-BRAKE_US = 1100.0  # released
-HZ = 50
+"""ex05 - drive the truck with set_car."""
 
+import math
 
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    car = VirtualRobot(RobotType.TRUCK, sys_id=SYS_ID)
-    car.connect()
+from vrsdk import RobotType, VirtualRobot
 
-    # ===== loop =====
-    while True:
-        s = car.states
-        x, y, z = s.kin.lin_pos
-        # lin_vel is a BODY-frame vector, so no single component is "the speed";
-        # its magnitude is.
-        speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
-        print(
-            f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
-            f"speed={speed:.2f} m/s echo={s.actuator.pwm}"
-        )
+STEER_US = 1400.0  # 1500 = centre
+THROTTLE_US = 1650.0  # 1500 = stop, 1900 = full forward
+BRAKE_US = 1100.0  # brake is bottom-anchored: 1100 = released, 1900 = full
 
-        # A gentle left arc: steering left of centre, light forward throttle.
-        car.set_car(STEER_US, THROTTLE_US, BRAKE_US)
+car = VirtualRobot(RobotType.TRUCK, sys_id=0)  # sys_id 0 = truck, 1 = multirotor
+car.connect()
 
-        car.rate(HZ)
+while True:
+    s = car.states
+    x, y, z = s.kin.lin_pos
+    # lin_vel is a body-frame vector; its magnitude is the speed.
+    speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
+    print(
+        f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
+        f"speed={speed:.2f} m/s echo={s.actuator.pwm}"
+    )
+
+    car.set_car(STEER_US, THROTTLE_US, BRAKE_US)
+
+    car.rate(50)
 ```
 
 {{#endtab }}
@@ -191,8 +189,9 @@ common reason a truck that should be accelerating crawls instead.
 ## Speed is a magnitude, not a component
 
 `kin.lin_vel` is a **body-frame** vector, so no single component of it is "the speed". The
-example takes the magnitude, which is why the arithmetic is spelled out rather than reading
-`vy` and calling it done.
+example takes the magnitude instead of reading `vy` and calling it done: Rust and C++ spell
+the arithmetic out, and Python measures the vector's distance from the origin with
+`math.dist`.
 
 `kin.lin_pos`, by contrast, is a **world-frame** position. That split (pose in world,
 twist and acceleration in body) is physics rather than configuration, and it holds for

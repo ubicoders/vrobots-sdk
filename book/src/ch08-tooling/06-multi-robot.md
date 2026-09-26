@@ -55,14 +55,15 @@ snapshot, and each blocks until its own robot's first sample arrives. From
 `examples/python/ex18_multi_robot.py`:
 
 ```python
-    truck = VirtualRobot(RobotType.TRUCK, sys_id=TRUCK_ID)
-    truck.connect()
-    drone = VirtualRobot(RobotType.MULTIROTOR, sys_id=DRONE_ID)
-    drone.connect()
-    print(
-        f"truck sys_id={truck.sys_id} ({truck.robot_type.key}), "
-        f"drone sys_id={drone.sys_id} ({drone.robot_type.key})"
-    )
+# sys_id 0 = truck, 1 = multirotor; each connect blocks for its own first snapshot
+truck = VirtualRobot(RobotType.TRUCK, sys_id=0)
+truck.connect()
+drone = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)
+drone.connect()
+print(
+    f"truck sys_id={truck.sys_id} ({truck.robot_type.key}), "
+    f"drone sys_id={drone.sys_id} ({drone.robot_type.key})"
+)
 ```
 
 {{#endtab }}
@@ -132,13 +133,9 @@ each is whatever its own subscriber last received.
 `examples/python/ex18_multi_robot.py`:
 
 ```python
-        # One robot commanded ...
-        truck.set_car(STEER_US, THROTTLE_US, 1100.0)
-        t = truck.states
-
-        # ... the other only observed. Nothing pairs the two snapshots: they are
-        # whatever each subscriber last received.
-        d = drone.states
+    truck.set_car(STEER_US, THROTTLE_US, 1100.0)
+    t = truck.states
+    d = drone.states
 ```
 
 {{#endtab }}
@@ -175,8 +172,7 @@ Pacing happens once, at the bottom, on one handle:
 `examples/python/ex18_multi_robot.py`:
 
 ```python
-        # Paced once, on one handle.
-        truck.rate(HZ)
+    truck.rate(HZ)  # pace on ONE handle only; rate() on both would sleep twice
 ```
 
 {{#endtab }}
@@ -238,16 +234,18 @@ will report.
 `examples/python/ex18_multi_robot.py`:
 
 ```python
-        # Each snapshot names its own frame, and here they differ: the truck is
-        # "fru" (third component UP) and the drone is "frd" (third component
-        # DOWN). Print the tag beside every position rather than assuming one.
-        print(
-            f"truck[{t.sys_id}] pos=({tx:.2f},{ty:.2f},{tz:.2f}) "
-            f"[{t.coord_frame_id!r}] echo={t.actuator.pwm}  |  "
-            f"drone[{d.sys_id}] pos=({dx:.2f},{dy:.2f},{dz:.2f}) "
-            f"[{d.coord_frame_id!r}] alt={-dz:.2f} m"
-        )
+    # the frames differ: truck "fru" (third component UP), drone "frd" (DOWN)
+    print(
+        f"truck[{t.sys_id}] pos=({tx:.2f},{ty:.2f},{tz:.2f}) "
+        f"[{t.coord_frame_id!r}] echo={t.actuator.pwm}  |  "
+        f"drone[{d.sys_id}] pos=({dx:.2f},{dy:.2f},{dz:.2f}) "
+        f"[{d.coord_frame_id!r}] alt={-dz:.2f} m"
+    )
 ```
+
+A few lines earlier the script computes `separation` with
+`math.dist(t.kin.lin_pos, d.kin.lin_pos)`, straight across the two frames, and that is the
+number the next print labels `WRONG`.
 
 {{#endtab }}
 {{#endtabs }}
@@ -295,7 +293,7 @@ catches it is one comparison:
 `examples/python/ex18_multi_robot.py`:
 
 ```python
-        warn = "" if t.coord_frame_id == d.coord_frame_id else " (WRONG: mixed frames, convert first)"
+    warn = "" if t.coord_frame_id == d.coord_frame_id else " (WRONG: mixed frames, convert first)"
 ```
 
 {{#endtab }}

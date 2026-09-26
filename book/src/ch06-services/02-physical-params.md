@@ -11,10 +11,11 @@ cargo run -p vrobots-examples --bin ex22_physical_params
 python examples/python/ex22_physical_params.py
 ```
 
-`ex22_physical_params` takes an **optional** `sys_id`. With it, the example attaches to the
-scene's own multirotor; without it, the example creates one and both climb runs read 0.00 m/s,
-because a client-created multirotor does not integrate physics in simulator v3.0.0
-([known issue](../ch07-robots/07-known-issues.md)). Prefer the argument.
+`ex22_physical_params` takes an **optional** `sys_id` in all three languages. With it, the
+example attaches to the scene's own multirotor and leaves it running at the heavier mass until
+the scene reloads. Without it, the example creates a multirotor and deletes it at the end, and
+both climb runs read 0.00 m/s, because a client-created multirotor does not integrate physics
+in simulator v3.0.0 ([known issue](../ch07-robots/07-known-issues.md)). Prefer the argument.
 
 ## The request
 
@@ -92,13 +93,12 @@ const double heavy = climb_run(robot, HEAVY_KG);
 `examples/python/ex22_physical_params.py`:
 
 ```python
-# ===== run 1: light =====
-robot.set_physical_params(mass=LIGHT_KG, moi=MOI)
-light = climb_run(robot, LIGHT_KG)
+# Mass and inertia are not in the state message: the changed climb rate IS the receipt.
+robot.set_physical_params(mass=1.0, moi=(0.02, 0.02, 0.04))
+light = climb_run()
 
-# ===== run 2: heavy, same command =====
-robot.set_physical_params(mass=HEAVY_KG)
-heavy = climb_run(robot, HEAVY_KG)
+robot.set_physical_params(mass=2.0)
+heavy = climb_run()
 ```
 
 {{#endtab }}
@@ -119,6 +119,10 @@ the two numbers is the entire receipt.
   2 kg -> <rate> m/s
 The difference IS the receipt -- there is no mass field in the state message to read back.
 ```
+
+The Python script prints the same comparison in a shorter form, a `1800.0 us on every rotor,
+twice:` line followed by `1.0 kg` and `2.0 kg` rates, and keeps the explanation as the comment
+above the first call.
 
 Each run starts with `reset()`, so the two are comparable. That does not undo the mass:
 configuration survives a state reset.
@@ -182,24 +186,17 @@ show_refusal("nothing set at all",
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex22_physical_params.py`:
-
-```python
-show_refusal("mass = 0.0", lambda: robot.set_physical_params(mass=0.0))
-show_refusal(
-    "moi = [0.02, 0.0, 0.04] (one axis left at zero)",
-    lambda: robot.set_physical_params(moi=(0.02, 0.0, 0.04)),
-)
-show_refusal("nothing set at all", lambda: robot.set_physical_params())
-```
+`examples/python/ex22_physical_params.py` stops after the two climb runs and does not make
+these calls. In Python each of the three cases, `set_physical_params(mass=0.0)`,
+`set_physical_params(moi=(0.02, 0.0, 0.04))` and a call with no arguments, raises
+`vrsdk.VrError` with `code == vrsdk.err.INVALID_ARGUMENT`.
 
 {{#endtab }}
 {{#endtabs }}
 
-The helper takes a callable in C++ and Python because the refusal arrives as a thrown
-exception, where Rust's takes the returned `Result` directly. The third case reads
-differently for the same reason the first two do: an empty request is a bare
-`vrsdk::physical_params()` in C++ and a no-argument call in Python.
+The C++ helper takes a callable because the refusal arrives as a thrown exception, where
+Rust's takes the returned `Result` directly. The third case reads differently for the same
+reason the first two do: an empty request is a bare `vrsdk::physical_params()` in C++.
 
 Each prints the error code and the SDK's explanation instead of a receipt:
 

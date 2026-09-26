@@ -124,8 +124,9 @@ Two smaller ones:
 
 ## Example
 
-ex28 tunes the plant three ways and prints the measured settling point, period and damping
-ratio beside the closed-form predictions:
+ex28 tunes the plant three ways. The Rust and C++ programs print the measured settling point,
+period and damping ratio beside the closed-form predictions; the Python script prints samples
+of the response and the predictions for you to compare:
 
 ```sh
 cargo run -p vrobots-examples --bin ex28_hello_msd

@@ -37,8 +37,8 @@ single place in this API surface where a service says no.
 | `chartreuse` (in no catalog) | `ok` | nothing, logged inside the simulator |
 
 **Do not retry a `VrError::Service` from this service.** It is tier-gated rather than
-transient, so the answer will not change. `ex23` treats it as final and stops walking the list
-rather than asking four more times.
+transient, so the answer will not change. The Rust and C++ versions of `ex23` treat it as final
+and stop walking the list rather than asking four more times.
 
 
 {{#tabs global="lang" }}
@@ -81,27 +81,17 @@ try {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex23_skins.py`:
-
-```python
-try:
-    robot.set_skin(skin)
-    print(f"set_skin({skin!r}) -> ok")
-except vrsdk.VrError as e:
-    # The sim's own words. This is the ONLY service that ever gets here, and
-    # only for a tier refusal -- anything else is a real failure.
-    if e.code != vrsdk.err.SERVICE:
-        raise
-    print(f"set_skin({skin!r}) -> REFUSED by the sim: {e.detail}")
-    return False
-```
+`examples/python/ex23_skins.py` has no counterpart to `wear`: it calls `robot.set_skin(skin)`
+for each key without a `try`. A tier refusal therefore raises `vrsdk.VrError` with
+`code == vrsdk.err.SERVICE` and the simulator's message in `e.detail`, and ends the script
+before it reaches `robot.delete()`, so the truck it created stays in the scene.
 
 {{#endtab }}
 {{#endtabs }}
 
 Rust matches the `VrError::Service` variant and hands every other variant back to the caller. C++
-and Python have one error type each, so they catch it, compare the code against `VRSDK_ERR_SERVICE`
-or `vrsdk.err.SERVICE`, and rethrow anything that is not a tier refusal.
+has one error type, so it catches it, compares the code against `VRSDK_ERR_SERVICE`, and rethrows
+anything that is not a tier refusal.
 
 A permitted key prints one line and the truck changes colour. A refused one prints the
 simulator's own explanation and the run stops:
@@ -113,14 +103,17 @@ set_skin("blue") -> REFUSED by the sim: <the simulator's message>
 Stopping: the tier gate does not open on a retry.
 ```
 
+The Python script prints `set_skin('black')` with no verdict, followed by two samples of the
+hold. A refusal appears as the traceback of the uncaught `vrsdk.VrError` instead of a line.
+
 > **Note.** Every other refusal in this chapter is silent. This one is the exception, and it is
 > worth knowing precisely because of what the rest do instead.
 
 ## A typo looks like success
 
 An unknown key on a robot that has a catalog is acked `ok` and dropped with a log line no
-client can see. So is a key from another robot's catalog. `ex23` demonstrates both, after
-walking the five real truck keys:
+client can see. So is a key from another robot's catalog. The Rust and C++ versions of `ex23`
+demonstrate both, after walking the five real truck keys:
 
 
 {{#tabs global="lang" }}
@@ -149,17 +142,19 @@ wear(robot, UNKNOWN_SKIN);     // no catalog has it
 `examples/python/ex23_skins.py`:
 
 ```python
-print("\n-- keys that are acked `ok` and dropped inside the simulator --")
-wear(robot, WRONG_TYPE_SKIN)  # a multirotor key, on a truck
-wear(robot, UNKNOWN_SKIN)  # no catalog has it
+# A key outside this type's catalog is acked ok and silently dropped by the sim.
+robot.set_skin("gold")
 ```
+
+The Python script sends only the multirotor key `gold`, once, after the walk. It does not send
+an unknown key.
 
 {{#endtab }}
 {{#endtabs }}
 
 Rust's `wear` returns a `Result`, so these two calls still carry `?` to propagate a genuine error
-even though the bool is dropped. The C++ and Python helpers return a plain bool and let an
-unexpected error unwind on its own. Neither key raises anything here: both come back `ok`.
+even though the bool is dropped. The C++ helper returns a plain bool and lets an unexpected error
+unwind on its own. Neither key raises anything here: both come back `ok`.
 
 Both return `Ok(())`, and the truck is still wearing the last key that worked:
 
@@ -169,6 +164,8 @@ set_skin("gold") -> ok
 set_skin("chartreuse") -> ok
 Both returned Ok. The truck is still wearing "red" -- the ack was a receipt for a request the robot then refused with a log line no client can see.
 ```
+
+That is the Rust and C++ output. The Python script prints nothing for its `gold` request.
 
 The confirmation is the robot in front of you. There is no read-back and no state field
 carrying the current skin.
@@ -235,22 +232,23 @@ for (int i = 0; i < HOLD_SAMPLES; ++i) {
 `examples/python/ex23_skins.py`:
 
 ```python
-for i in range(HOLD_SAMPLES):
-    robot.set_car(STEER_US, THROTTLE_US, BRAKE_US)
-    if i % 15 == 0:
-        s = robot.states
-        speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
-        m = s.actuator.measured
-        # 0..3 are FL, FR, RL, RR in rad/s; they must keep turning across
-        # the swap, because the colliders were just rebound.
-        wheels = [round(v, 3) for v in m[:4]]
-        servo = [round(v, 3) for v in m[4:5]]
-        print(
-            f"    t={s.elapsed:6.2f}s speed={speed:5.2f} m/s "
-            f"wheels={wheels} steer_servo={servo}"
-        )
-    robot.rate(HZ)
+for skin in TRUCK_SKINS:
+    robot.set_skin(skin)
+    print(f"set_skin({skin!r})")
+    for i in range(30):
+        robot.set_car(STEER_US, THROTTLE_US, BRAKE_US)
+        if i % 15 == 0:
+            s = robot.states
+            speed = math.dist(s.kin.lin_vel, (0.0, 0.0, 0.0))
+            # measured[0:4] = wheel speeds FL, FR, RL, RR (rad/s); a skin swap
+            # rebinds the wheel colliders, so they must keep turning
+            wheels = [round(v, 3) for v in s.actuator.measured[:4]]
+            print(f"  t={s.elapsed:6.2f}s speed={speed:5.2f} m/s wheels={wheels}")
+        robot.rate(HZ)
 ```
+
+Python holds inside the walk itself, right after each `set_skin` call, where Rust and C++ hold
+inside `wear`.
 
 {{#endtab }}
 {{#endtabs }}
@@ -267,6 +265,9 @@ that did not take:
 set_skin("camouflage") -> ok
     t=<seconds>s speed=<m/s> wheels=[<w0>, <w1>, <w2>, <w3>] steer_servo=Some(<value>)
 ```
+
+The Python script prints `set_skin('camouflage')` and then samples without the servo:
+`t=<seconds>s speed=<m/s> wheels=[<w0>, <w1>, <w2>, <w3>]`.
 
 That is also why a skin swap is worth doing while the truck is stationary if you care about
 repeatability: it is a change to the physics rig, not a texture swap.
@@ -303,15 +304,8 @@ try {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex23_skins.py`:
-
-```python
-try:
-    robot.set_skin("   ")
-    print("\nUNEXPECTED: an empty key was accepted")
-except vrsdk.VrError as e:
-    print(f"\nempty key -> [{e.code} {e.kind}] {e.detail}")
-```
+`examples/python/ex23_skins.py` does not make this call. In Python, `robot.set_skin("   ")`
+raises `vrsdk.VrError` with `code == vrsdk.err.INVALID_ARGUMENT`.
 
 {{#endtab }}
 {{#endtabs }}

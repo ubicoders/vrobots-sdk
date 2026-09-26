@@ -10,8 +10,8 @@ python examples/python/ex02_hello_control.py
 
 ## The whole program
 
-The same loop as [Hello states](03-hello-states.md), with two lines added: one that
-computes a command and one that sends it.
+The same loop as [Hello states](03-hello-states.md), with a command added. Rust and C++
+compute it into a variable and then send it, and Python sends `[PWM_US] * 4` in one line.
 
 
 {{#tabs global="lang" }}
@@ -102,41 +102,35 @@ int main() {
 `examples/python/ex02_hello_control.py`:
 
 ```python
-SYS_ID = 1  # the multirotor in the test scene
-PWM_US = 1501.0  # microseconds per rotor, on the 1100-2000 band
-HZ = 100
+"""ex02 - send raw per-rotor PWM; the echo in the state is the receipt."""
 
+from vrsdk import RobotType, VirtualRobot
 
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
+PWM_US = 1501.0  # 1100-2000 band; barely off idle, edit to 1700 to climb
 
-    # ===== loop =====
-    while True:
-        s = mr.states
-        x, y, z = s.kin.lin_pos
-        print(
-            f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
-            f"echo={s.actuator.pwm}"
-        )
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor
+mr.connect()
 
-        # Do some COOL control here and publish -- PID/EKF is user code, NOT the
-        # SDK. `set_mr_pwm(a, b, c, d)` and `set_mr_pwm([a, b, c, d])` are the
-        # same call.
-        cool_control_result = [PWM_US] * 4
-        mr.set_mr_pwm(cool_control_result)
+while True:
+    s = mr.states
+    x, y, z = s.kin.lin_pos
+    print(
+        f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
+        f"echo={s.actuator.pwm}"
+    )
 
-        mr.rate(HZ)
+    # Compute your control here and publish; commands latch until the next one.
+    mr.set_mr_pwm([PWM_US] * 4)
+
+    mr.rate(100)
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-Python accepts the four values loose or as one sequence; C++ takes a `std::vector<double>`
-and reads the echo through `s.pwm()`, which is the same `actuator.pwm` array the other two
-print directly.
+Python accepts the four values loose, as in `set_mr_pwm(a, b, c, d)`, or as one sequence, as
+here; C++ takes a `std::vector<double>` and reads the echo through `s.pwm()`, which is the
+same `actuator.pwm` array the other two print directly.
 
 ```text
 State t=0.000 pos=(0.000,1.05,0.00) echo=[1501, 1501, 1501, 1501]
@@ -172,7 +166,7 @@ mixer. Four equal pulse widths produce four equal thrusts, and any imbalance in 
 inertia tips the vehicle over with nothing to catch it.
 
 That is deliberate. The point of the simulator is that the stabilisation is your code. A
-PID loop, an EKF, an LQR: all of it lives in your `main`, and the SDK contributes nothing
+PID loop, an EKF, an LQR: all of it lives in your loop, and the SDK contributes nothing
 to it.
 
 ## The actuator echo is the only receipt

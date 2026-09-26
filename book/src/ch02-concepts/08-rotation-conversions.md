@@ -122,13 +122,17 @@ const vrsdk::rotations::AxisBasis basis = vrsdk::rotations::AxisBasis::from_fram
 `examples/python/ex36_rotations.py`:
 
 ```python
-    basis = rotations.AxisBasis.from_frame_def(fdef)
-    if basis is None:
-        raise SystemExit(
-            f"frame {fdef.id!r} names no euler order and its axis convention has no "
-            "built-in default, so there is no order to report angles in"
-        )
+basis = rotations.AxisBasis.from_frame_def(fdef)
+print(
+    f"det(R)={basis.det:+.0f} right_handed={basis.is_right_handed}  "
+    f"north={basis.north} east={basis.east} down={basis.down}"
+)
 ```
+
+The Python script uses the basis without testing it, because the call succeeds for the
+truck. `from_frame_def` returns `None` when neither the definition nor its axis convention
+names an Euler order, so a program that reads other robots' frames tests for `None` before
+using the result.
 
 {{#endtab }}
 {{#endtabs }}
@@ -140,6 +144,9 @@ with a guessed order extracts angles that look plausible and mean nothing. For t
 ```text
   det(R)=+1, right-handed=false
 ```
+
+The Python script prints the same two values as `det(R)=+1 right_handed=False`, followed on
+the same line by the north, east and down anchors.
 
 > **Gotcha.** `det(R) = -1` means **right-handed**, not left: the determinant is of the map
 > out of left-handed Unity, so a right-handed frame is the one that flips the sign.
@@ -192,11 +199,15 @@ const vrsdk::Vec3 gyro_wrong = t.apply_vec3(gyro);
 `examples/python/ex36_rotations.py`:
 
 ```python
-    # axial: the gyro, and the mistake beside it
-    gyro = state.sensors.gyroscope.angular_velocity
-    gyro_frd = t.apply_axial_vec3(gyro)
-    gyro_wrong = t.apply_vec3(gyro)
+position_frd = t.apply_vec3(state.kin.lin_pos)  # polar: M * v
+gyro = state.sensors.gyroscope.angular_velocity
+gyro_frd = t.apply_axial_vec3(gyro)  # axial: det(M) * M * v -- differs across a handedness flip
+quat_frd = t.apply_quat(state.kin.quat)  # orientation: M * C * M^T
+print(f"position polar  {state.kin.lin_pos} -> {position_frd}")
+print(f"gyro     axial  {gyro} -> {gyro_frd}  (polar rule would give {t.apply_vec3(gyro)})")
 ```
+
+The polar answer is computed inline in the last `print`, beside the axial one.
 
 {{#endtab }}
 {{#endtabs }}
@@ -232,6 +243,9 @@ with the pitch exactly at the pole, and asks for the angles back through the sam
   in    roll=  +0.00 deg  pitch= +90.00 deg  yaw= +40.00 deg
   out   roll= -40.00 deg  pitch= +90.00 deg  yaw=  +0.00 deg
 ```
+
+The Python script builds the same attitude from the literal `(0.0, 90.0, 40.0)` and prints
+both triples on one line, as `in (0, 90, 40) deg -> out [<roll>, <pitch>, <yaw>] deg`.
 
 Different numbers, same rotation: the example rebuilds the matrix from the extracted triple
 and checks it element by element. A naive `atan2` pair returns neither answer, because both

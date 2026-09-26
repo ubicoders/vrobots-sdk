@@ -4,12 +4,13 @@ The four steps behind a create, why only one of them is sent once, and every opt
 
 ## One call, two paths
 
-There is one entry point, and a second that takes options. The two signatures, from
-`crates/vrobots-sdk/src/robot.rs`:
+There is one entry point, and a second that takes options. The two signatures:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/robot.rs`:
 
 ```rust
 pub fn connect(robot_type: RobotType, sys_id: Option<u32>) -> VrResult<VirtualRobot>
@@ -24,7 +25,7 @@ pub fn connect_with(
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 explicit VirtualRobot(RobotType type, std::uint32_t sys_id,
@@ -39,7 +40,7 @@ void connect()
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 class VirtualRobot:
@@ -166,17 +167,18 @@ documented defaults. It is `#[non_exhaustive]`, so build it with
 | `coord_frame_id` | `String` | n/a | `"unity"` (`DEFAULT_COORD_FRAME_ID`) | the frame *your* outgoing vectors are in; the robot converts before acting |
 | `axis_convention` | `Axes` | n/a | `Axes::UNITY` | the enum tag beside `coord_frame_id`; the string wins if they disagree |
 
-The three most commonly changed, chained. From the doctest on `ConnectOptions` in
-`crates/vrobots-sdk/src/options.rs`:
+The three most commonly changed, chained:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+The doctest on `ConnectOptions` in `crates/vrobots-sdk/src/options.rs`:
+
 ```rust
 let opts = ConnectOptions::default()
-    .with_router("tcp/192.168.1.10:7447")   // sim on another machine
-    .with_src_id(200)                       // second client in the session
+    .with_router("tcp/192.168.1.10:7447") // sim on another machine
+    .with_src_id(200) // second client in the session
     .with_probe_timeout(Duration::from_secs(20));
 ```
 

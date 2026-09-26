@@ -130,13 +130,11 @@ static void stamp(bool valid, double timestamp) {
 `examples/python/ex10_sensors_tour.py`:
 
 ```python
-def v3(v: Sequence[float]) -> str:
-    """A 3-vector, aligned so a column of them reads as a column."""
+def v3(v):
     return "(" + ",".join(f"{c:+8.3f}" for c in v) + ")"
 
 
-def stamp(valid: bool, timestamp: float) -> str:
-    """A sensor's own validity and clock -- the two fields that reveal its rate."""
+def stamp(valid, timestamp):
     return f"[{'valid' if valid else 'INVALID'} t={timestamp:.3f}]"
 ```
 

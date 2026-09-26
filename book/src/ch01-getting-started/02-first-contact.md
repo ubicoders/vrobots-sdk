@@ -3,7 +3,7 @@
 Use the vrobots command to prove the simulator is talking before you write any code.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic list
+vrobots topic list
 ```
 
 ## What a healthy scene looks like
@@ -34,7 +34,8 @@ The dashes are the load-bearing detail. zenoh has no registry, so a `[z]` row me
 topic **actually published while you were listening** and its numbers are real
 measurements. iceoryx2 does have a registry, so an `[i]` row means the service is defined;
 it may be streaming or it may be a leftover, and a row marked `(stale: no process
-attached)` is one whose owning process is gone.
+attached)` is one whose owning process is gone. The footer under such a listing says how to
+clear it, and [The vrobots command](../ch08-tooling/01-cli.md) explains the step.
 
 > **Note.** The system id is the second path segment: `vrobots/1/z/state` is robot 1.
 > This is how you find out which ids the scene really has, which matters because ids are
@@ -84,7 +85,7 @@ Once a topic is listed, watch that one key. The argument is an exact key express
 are no wildcards.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic hz vrobots/1/z/state
+vrobots topic hz vrobots/1/z/state
 ```
 
 ```text

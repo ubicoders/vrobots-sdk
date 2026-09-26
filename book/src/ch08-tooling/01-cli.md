@@ -3,11 +3,13 @@
 Every subcommand and flag, and how to read the output column by column.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic list
+vrobots topic list
 ```
 
-The SDK builds a binary called `vrobots`. It needs no dev tooling, no configuration
-and no robot handle, and it is the first thing to run when a program is silent.
+`pip install ubicoders-vrsdk` installs a command called `vrobots`, and it is the same
+command whichever language you write your programs in; the C bundle does not carry it. It
+needs no dev tooling, no configuration and no robot handle, and it is the first thing to
+run when a program is silent.
 
 ## Global flags
 
@@ -40,6 +42,8 @@ wire       Hz     bytes  topic
 4 topic(s); zenoh observed over 1.5s
 [z] zenoh, measured by listening.  [i] iceoryx2, read from the registry:
     it exists, but Hz/bytes were not measured -- same host only.
+
+1 stale iceoryx2 record(s): the process that created them is gone. Once nothing is running, delete the leftover *.service files under the iceoryx2 root (/tmp/iceoryx2/) and they disappear.
 ```
 
 Column by column:
@@ -60,6 +64,12 @@ fast: three samples over 1.5 s of wall clock reads high because the window inclu
 zenoh's discovery latency at one end and a partial period at the other. And
 `(stale: no process attached)` marks an iceoryx2 service record whose owning process
 is gone. The stream is dead rather than idle, and the footer counts them separately.
+
+The footer also names the remedy and the directory it applies to. A stale record is a file
+the SDK never deletes itself, so remove it by hand: once the simulator and every client have
+stopped, delete the leftover `*.service` files under the iceoryx2 root the footer prints. That
+root is `/tmp/iceoryx2/` on Linux and `C:\Temp\iceoryx2\` on Windows by default, and the next
+`topic list` no longer shows the row.
 
 > **Gotcha.** An empty list exits 0, because "nothing is publishing" is a legitimate
 > answer to "what is publishing". Only `topic hz` treats silence as a failure.
@@ -83,7 +93,7 @@ single rate across several interleaved topics is not a rate, and the SDK refuses
 with `InvalidArgument` before opening a session.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic hz vrobots/1/z/state -w 5
+vrobots topic hz vrobots/1/z/state -w 5
 ```
 
 | Argument | Default | Notes |
@@ -141,7 +151,7 @@ the workflow; the flags are here.
 | `--mount` | off | Mount the camera first and unmount it afterwards. Requires `--camera`. **Mutates the simulator.** |
 | `-n`, `--count <USIZE>` | `5` | Frames to capture. |
 | `-t`, `--timeout <SECS>` | `10.0` | Give up after this long. |
-| `-o`, `--out <PATH>` | `crates/vrobots-sdk/tests/fixtures` | Where `<prefix>_NNN.bin` is written. |
+| `-o`, `--out <PATH>` | `captures` | Where `<prefix>_NNN.bin` is written, created if missing. A relative path, the default included, is taken from the current directory. |
 | `--prefix <STR>` | `state` | File name prefix. |
 | `--router <ENDPOINT>` | | zenoh only. Camera slices are shared memory, so a router does not apply. |
 
@@ -153,8 +163,8 @@ the workflow; the flags are here.
 | 1 | The command ran and failed. `topic hz` with no samples lands here, as does running `vrobots` with no subcommand. |
 | 2 | The arguments did not parse. |
 
-`cli::run(args)` returns that code rather than calling `process::exit`, so an
-embedder such as the Python wheel's console script keeps control of the process.
+The command returns that code rather than calling `process::exit`, so an embedder such as
+the Python wheel's console script keeps control of the process.
 
 **Next:** [Discovery from code](02-discovery-from-code.md)
 

@@ -21,11 +21,13 @@ is never a control problem and it is occasionally an equality-comparison problem
 
 ## Axes is an integer, deliberately
 
-The declaration is the argument. From `crates/vrobots-sdk/src/state.rs`:
+The declaration is the argument:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/state.rs`:
 
 ```rust
 #[repr(transparent)]
@@ -36,7 +38,7 @@ pub struct Axes(pub i32);
 {{#endtab }}
 {{#tab name="C++" }}
 
-`crates/vrobots-sdk-capi/include/vrobots_sdk.h`:
+`include/vrobots_sdk.h`:
 
 ```c
 /**
@@ -49,7 +51,7 @@ typedef int32_t vrsdk_axes_t;
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 class State:

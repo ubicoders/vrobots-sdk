@@ -3,7 +3,7 @@
 You watch one topic for a window and get its whole arrival distribution, which is the part an average hides.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic hz vrobots/1/z/state -w 5
+vrobots topic hz vrobots/1/z/state -w 5
 ```
 
 When a control loop stutters, the mean rate is almost always fine. The two numbers
@@ -13,11 +13,16 @@ reading them.
 ## The calls
 
 Both take one exact key and one window, and both block for the whole window before
-returning. From `crates/vrobots-sdk/src/hz.rs`:
+returning. From `crates/vrobots-sdk/src/discovery.rs`:
 
 ```rust
 pub fn measure_rate(key: &str, window: Duration) -> VrResult<RateReport>
-pub fn measure_rate_with(key: &str, window: Duration, options: &ConnectOptions) -> VrResult<RateReport>
+
+pub fn measure_rate_with(
+    key: &str,
+    window: Duration,
+    options: &ConnectOptions,
+) -> VrResult<RateReport>
 ```
 
 All three surfaces carry it: Python as `vrsdk.measure_rate(key, window=5.0)` returning a

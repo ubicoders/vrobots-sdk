@@ -10,8 +10,8 @@ python examples/python/ex09_state_paced_loop.py
 
 ## Your clock or the data's clock
 
-`main` owns the loop, so something in the body has to decide when the next iteration
-starts. The SDK offers two answers and they are not interchangeable.
+Your program owns the loop, so something in the body has to decide when the next
+iteration starts. The SDK offers two answers and they are not interchangeable.
 
 `rate(hz)` sleeps until your next tick, with drift compensation, and then returns. Your
 clock drives the loop. `states()` hands back whatever the latest snapshot is at that
@@ -39,22 +39,24 @@ flowchart TB
   end
 ```
 
-Both signatures come from the same handle.
-
-From `crates/vrobots-sdk/src/robot.rs`:
+Both signatures come from the same handle:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/robot.rs`:
+
 ```rust
-pub fn wait_new_state(&self, timeout: Duration) -> VrResult<()> {
+pub fn wait_new_state(&self, timeout: Duration) -> VrResult<()>
+
+pub fn rate(&self, hz: f64)
 ```
 
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 void wait_new_state(double timeout_s = 0.2)
@@ -65,7 +67,7 @@ void rate(double hz)
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def wait_new_state(self, timeout: float = 0.2) -> None: ...
@@ -183,29 +185,19 @@ for (;;) {
 {{#endtab }}
 {{#tab name="Python" }}
 
+The Python example leaves this demonstration out: `ex09_state_paced_loop.py` calls
+`mr.wait_new_state(TIMEOUT)` with no `try`, so a timeout raises `vrsdk.VrError`, whose `code`
+is `vrsdk.err.TIMEOUT`, and ends the script.
+
 `examples/python/ex09_state_paced_loop.py`:
 
 ```python
 while True:
-    try:
-        mr.wait_new_state(TIMEOUT)
-    except vrsdk.VrError as e:
-        if e.code != vrsdk.err.TIMEOUT:
-            raise  # a real failure
-        # Not a broken session: no sample arrived in time. The sim is
-        # paused, stopped, or the machine is very busy. `states` still
-        # returns the last snapshot it had.
-        s = mr.states
-        print(
-            f"no new state in {TIMEOUT}s ({e.detail}); "
-            f"still holding seq={s.seq} at t={s.elapsed:.3f}"
-        )
-        continue
+    mr.wait_new_state(TIMEOUT)  # blocks until a snapshot newer than the current one
 
-    # Exactly one new sample is waiting -- read it and do the work.
     s = mr.states
     dt_ms = float("nan") if last_t_ns == 0 else (s.t_ns - last_t_ns) / 1e6
-    skipped = max(0, s.seq - (last_seq + 1))
+    skipped = max(0, s.seq - (last_seq + 1))  # seq jumps reveal dropped samples
     last_seq, last_t_ns = s.seq, s.t_ns
 
     x, y, z = s.kin.lin_pos
@@ -216,10 +208,10 @@ while True:
 {{#endtab }}
 {{#endtabs }}
 
-Rust's `match` puts the two outcomes side by side; C++ and Python invert it, catching the
-timeout, re-raising everything else, and falling through to the work. The `continue` in the
-timeout arm is what keeps the shape equivalent: a caught timeout must not run the read
-below it.
+Rust's `match` puts the two outcomes side by side; C++ inverts it, catching the timeout,
+rethrowing everything else, and falling through to the work. The `continue` in the timeout
+arm is what keeps the shape equivalent: a caught timeout must not run the read below it.
+The Python example has no timeout arm, so its loop is the success path alone.
 
 Pausing the simulator while this runs switches the output from one line per sample to
 one line per timeout, and unpausing it switches back without a reconnect:
@@ -232,6 +224,13 @@ seq=311 dt=  40.1 ms pos=(0.031,0.85,-1.20)
 no new state in 200ms (no new state within 200ms (sys_id 1)); still holding seq=311 at t=12.440
 no new state in 200ms (no new state within 200ms (sys_id 1)); still holding seq=311 at t=12.440
 seq=312 dt=1240.3 ms pos=(0.031,0.85,-1.20)
+```
+
+The Python example prints no timeout lines, because the first timeout ends it. The
+traceback it prints instead ends with this line:
+
+```text
+vrsdk.VrError: timeout: no new state for sys_id 1 within 200.000ms
 ```
 
 The example sets `TIMEOUT` to 200 ms, five times the 25 Hz period. That is the useful

@@ -1,9 +1,44 @@
 [package]
 name = "vrobots-sdk-sys"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
+# zip 8.6 needs Rust 1.88; everything else here builds on 1.85 (checked).
+rust-version = "1.88"
 description = "Raw FFI bindings to the VRobots SDK C library (vrobots_sdk_capi)"
 repository = "https://github.com/ubicoders/vrobots-sdk"
 links = "vrobots_sdk_capi"
 build = "build.rs"
 license = "CC-BY-NC-SA-4.0"
+readme = "README.md"
+categories = ["external-ffi-bindings"]
+keywords = ["robotics", "simulator", "ffi", "sys"]
+
+[features]
+# Link the static library `vrobots_sdk_capi` instead of the shared one, so the
+# program needs no shared library at run time.
+static = []
+
+# The build script downloads the C bundle of the matching release, verifies it
+# against the release's SHA256SUMS and unpacks it. HTTPS goes through rustls
+# with ring and the bundled Mozilla roots, never OpenSSL.
+[build-dependencies]
+ureq = { version = "3.4", default-features = false, features = ["rustls"] }
+sha2 = { version = "0.11", default-features = false }
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+tar = { version = "0.4.46", default-features = false }
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2"] }
+
+# The tests include build/support.rs and build/unpack.rs, so they need the same
+# crates, with the same features, as the build script.
+[dev-dependencies]
+sha2 = { version = "0.11", default-features = false }
+flate2 = { version = "1.1", default-features = false, features = ["rust_backend"] }
+tar = { version = "0.4.46", default-features = false }
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2"] }
+
+# docs.rs builds without network access and sets DOCS_RS. The build script then
+# compiles the copy of the bindings in bindings/ and links nothing (see the
+# crate documentation, "Documentation builds"). The API is the same on every
+# supported target, so one target is documented.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

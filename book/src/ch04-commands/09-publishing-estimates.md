@@ -29,11 +29,13 @@ The loop is therefore: read `sensors`, run your filter, publish the result, repe
 
 ## The two entry points
 
-Both build the same wire message. From `crates/vrobots-sdk/src/robot.rs`:
+Both build the same wire message. The quaternion form:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/commands.rs`:
 
 ```rust
     pub fn publish_estimate(
@@ -47,7 +49,7 @@ Both build the same wire message. From `crates/vrobots-sdk/src/robot.rs`:
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
     void publish_estimate(const Quat& quat, std::optional<Vec3> angular_rates = std::nullopt,
@@ -57,7 +59,7 @@ Both build the same wire message. From `crates/vrobots-sdk/src/robot.rs`:
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def publish_estimate(
@@ -88,8 +90,8 @@ the simulator's `_Est` cockpit gauges moving.
 
 ## Publishing one
 
-ex35 wraps the call in a helper so all four phases publish identically. From
-`examples/rust/src/bin/ex35_publish_estimate.rs`:
+The Rust and C++ versions of ex35 wrap the call in a helper so all four phases publish
+identically. From `examples/rust/src/bin/ex35_publish_estimate.rs`:
 
 
 {{#tabs global="lang" }}
@@ -120,11 +122,18 @@ return quat;
 `examples/python/ex35_publish_estimate.py`:
 
 ```python
-    # valid=True throughout. The gyro rates go along for the ride; nothing reads
-    # them yet.
+if estimator == "copy":
+    robot.publish_estimate(s.kin.quat, s.sensors.gyroscope.angular_velocity, True)
+elif estimator == "bias":
+    # post-multiply: the bias is applied about the BODY pitch axis
+    quat = rotations.quat_multiply(s.kin.quat, bias)
     robot.publish_estimate(quat, s.sensors.gyroscope.angular_velocity, True)
-    return quat
+# "silent": nothing on the wire; after 0.5 s the loop falls back to truth
 ```
+
+The Python script has no helper. It calls `publish_estimate` inline in each phase's loop,
+with the gyro rates and `True` for `valid` every time, and publishes nothing in the silent
+phase.
 
 {{#endtab }}
 {{#endtabs }}
@@ -169,16 +178,31 @@ for (int i = 0; i < SETTLE_SAMPLES; ++i) {
 `examples/python/ex35_publish_estimate.py`:
 
 ```python
-    for _ in range(SETTLE_SAMPLES):
-        publish(robot, robot.states, estimator)
-        robot.rate(HZ)
+for i in range(SETTLE_SAMPLES + MEASURE_SAMPLES):
+    s = robot.states
+    if estimator == "copy":
+        robot.publish_estimate(s.kin.quat, s.sensors.gyroscope.angular_velocity, True)
+    elif estimator == "bias":
+        # post-multiply: the bias is applied about the BODY pitch axis
+        quat = rotations.quat_multiply(s.kin.quat, bias)
+        robot.publish_estimate(quat, s.sensors.gyroscope.angular_velocity, True)
+    # "silent": nothing on the wire; after 0.5 s the loop falls back to truth
+    if i >= SETTLE_SAMPLES:
+        pitch_sum += math.degrees(rotations.quat_to_euler(s.kin.quat, ORDER)[1])
+        altitude = -s.kin.lin_pos[2]  # frd: the third component is down
+    robot.rate(HZ)
 ```
+
+The Python script runs the settle and measurement windows as one loop of
+`SETTLE_SAMPLES + MEASURE_SAMPLES` iterations and prints nothing inside it; it only
+accumulates the true pitch over the last `MEASURE_SAMPLES` of them.
 
 {{#endtab }}
 {{#endtabs }}
 
-The example runs at 25 Hz, inside the window, and the settle loop prints nothing; the
-tracking window after it prints one progress line every two seconds.
+The example runs at 25 Hz, inside the window. In the Rust and C++ programs the settle loop
+prints nothing, and the tracking window after it prints one progress line every two
+seconds.
 
 > **Gotcha.** `valid = false` is a gate, not a status flag. The simulator drops the message
 > before it reads the quaternion **and does not reset the age counter**, so a stream of
@@ -193,10 +217,11 @@ The SDK leaves the estimate's own frame pair unset, so it inherits the header's:
 therefore be expressed in the frame you connected with, not in the robot's, and the two
 agree only if you make them. ex35 connects with
 `ConnectOptions::default().with_frame("frd", Axes::FRD)` precisely so `s.kin.quat` can go
-straight back out without conversion, and it checks `states().coord_frame_id` against the
-frame it stamped rather than assuming. Where they differ, convert first: [Rotation
-conversions](../ch02-concepts/08-rotation-conversions.md) is the arithmetic, and an
-attitude is the `M * C * M^T` case.
+straight back out without conversion (the Python script passes the same pair as
+`coord_frame_id="frd", axis_convention=2`), and the Rust and C++ programs check
+`states().coord_frame_id` against the frame they stamped rather than assuming. Where they
+differ, convert first: [Rotation conversions](../ch02-concepts/08-rotation-conversions.md)
+is the arithmetic, and an attitude is the `M * C * M^T` case.
 
 ## Selecting it, and the four phases
 
@@ -227,6 +252,11 @@ what each phase flew on, and what the airframe did about it:
   3 observer source, +5.0 deg pitch lie  pitch=<deg>  roll=<deg>  r=<rad/s>  alt=<m> (<m> over 6.0 s)
   4 observer source, nothing published   pitch=<deg>  roll=<deg>  r=<rad/s>  alt=<m> (<m> over 6.0 s)
 ```
+
+The Python script prints a shorter table under `what each phase flew on:`, one row per
+phase with the mean true pitch and the final altitude,
+`<phase label> true pitch=<deg> deg  alt=<m> m`, and closes with
+`phase 3 pitches down by about the lie; phases 1, 2 and 4 match`.
 
 The onboard loop reads roll and pitch out of the believed attitude for two assists, a
 wings-leveller and an altitude hold that biases the pitch demand. Tell it the nose is five

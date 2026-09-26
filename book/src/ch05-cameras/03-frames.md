@@ -4,7 +4,7 @@ Row order, stride, channel order and the metadata that rides with every image.
 
 A `Frame` is an owned, immutable snapshot. The reader thread copies the pixels out of the
 shared-memory sample and releases the sample immediately, so a `Frame` you hold stays valid
-for as long as you keep the `Arc`, however long that is.
+for as long as you keep it, however long that is.
 
 ## Every field
 
@@ -17,7 +17,7 @@ for as long as you keep the `Arc`, however long that is.
 | `height` | `u32` | px | |
 | `format` | `PixelFormat` | | `Mono8`, `Rgb8` or `Rgba8` |
 | `step` | `u32` | bytes | bytes per row, always `width * bytes_per_pixel()`; wire padding has been removed |
-| `data` | `Vec<u8>` | | `height * step` bytes, row-major, top-down, tightly packed |
+| `data` | `FramePixels` | | `height * step` bytes, row-major, top-down, tightly packed; dereferences to `&[u8]` |
 | `sys_id` | `u32` | | the robot this camera is on |
 | `camera_name` | `String` | | the camera's name on the robot |
 | `camera_id` | `u32` | | the camera's numeric id on the robot |
@@ -34,8 +34,7 @@ by timestamp. Page [Lens and mount pose](05-lens-and-pose.md) covers both.
 | Method | Returns |
 |---|---|
 | `bytes_per_pixel()` | `u32`, 1, 3 or 4 |
-| `row(n)` | `Option<&[u8]>`, one row top-down; `None` when `n >= height` |
-| `Frame::decode(payload, epoch_ns)` | `VrResult<Frame>`, one recorded slice turned back into a frame with no simulator involved |
+| `row(y)` | `Option<&[u8]>`, one row top-down; `None` when `y >= height` |
 
 ## Three facts about the pixels
 
@@ -51,8 +50,9 @@ cases.
 
 **Channels are never swapped.** `rgb8` is R, G, B and `rgba8` is R, G, B, A, exactly as the
 renderer produced them. Converting for the consumers that want BGR would tax the ones that
-do not, so the conversion happens at the call site that needs it: OpenCV users want
-`cvtColor(..., COLOR_RGB2BGR)` once, in their own code.
+do not, so the conversion happens at the call site that needs it. OpenCV users convert once,
+in their own code: `cvtColor(..., COLOR_RGBA2BGR)` for the default `rgba8` streams and
+`COLOR_RGB2BGR` for `rgb8`.
 
 > **Gotcha.** Brightness is the wrong way to check orientation outdoors. Measured on the
 > test scene, the sky rows run `B - R = +98` and the pale desert floor runs `-25`, so the
@@ -118,17 +118,13 @@ static double blueness(const vrsdk::Frame& frame, std::uint32_t row) {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex03_hello_image.py`:
+The Python `ex03_hello_image.py` does not measure a row; it shows the frame in an OpenCV
+window instead. The same measure is the `sky_ness` helper of the mount example,
+`examples/python/ex17_camera_pose.py`:
 
 ```python
-def sky_ness(img: np.ndarray, row: int) -> float:
-    """Mean ``blue - red`` across one row.
-
-    Strongly positive for sky, negative for most ground. The way to recognise
-    sky is that it is *blue*, not that it is bright: in this scene the desert
-    floor is the brighter of the two, so a brightness test reports the picture
-    upside down. Returns 0.0 for mono8, which has no channels to compare.
-    """
+def sky_ness(img, row):
+    # mean blue - red across one row: positive for sky, negative for ground
     if img.shape[2] < 3:
         return 0.0
     line = img[row].astype(np.int16)
@@ -139,9 +135,10 @@ def sky_ness(img: np.ndarray, row: int) -> float:
 {{#endtabs }}
 
 Rust and C++ walk the raw bytes: `frame.row(y)` hands back one row and `bytes_per_pixel`
-gives the stride within it. Python does not walk bytes at all, because `cam.image` is a
-numpy `(h, w, c)` uint8 array, so the same subtraction is one slice. All three index channel
-2 minus channel 0, which is blue minus red in the renderer's own RGB order.
+gives the stride within it. Python does not walk bytes at all, because `cam.image` and
+`frame.image` are numpy `(h, w, c)` uint8 arrays, so the same subtraction is one slice. All
+three index channel 2 minus channel 0, which is blue minus red in the renderer's own RGB
+order.
 
 Called on row 0 and row `height - 1` of a forward-facing camera, it separates sky from
 ground and therefore confirms both facts at once:
@@ -153,20 +150,23 @@ Image front_left t=3.214 size=(1280x720) seq=42 lag_vs_state=8.4 ms
 
 <!-- VERIFY: t, seq and lag_vs_state above are one run's values and have not been re-measured against a live simulator. -->
 
+That is the Rust and C++ output. The Python `ex03_hello_image.py` prints only the `Image`
+line, and `ex17_camera_pose.py` calls `sky_ness` once, on its last frame, to check a camera it
+has rolled upside down.
+
 `mono8` has one byte per pixel, so there is no channel order and no RGB against BGR
 question at all: `data[y * step + x]` is the intensity. Getting one means mounting a camera
 of your own, since the pair every vrobot ships is `rgba8`; `ex15_camera_formats` prices
 that trade, and `ex17_camera_pose` is the example that mounts.
 
-## Decoding a frame with no simulator
+## A recorded slice is not a frame
 
-`Frame::decode(payload, epoch_ns)` does exactly what the reader thread does, on a slice you
-supply. That is the offline half of record and replay: `vrobots record --camera` writes
-those slices byte for byte, and this turns one back into a `Frame`. Pass a robot's first
-state timestamp as `epoch_ns` to line `elapsed` up with its states, or `0` to get `elapsed`
-as raw unix seconds. It fails with `VrError::Decode` if the slice is shorter than the
-5760-byte prefix, declares more pixel bytes than it carries, or describes a shape that is
-not 1, 3 or 4 bytes per pixel.
+`vrobots record --camera` writes what the reader thread receives, not what it hands you:
+each file is one raw shared-memory slice, the 5760-byte prefix followed by the pixels, byte
+for byte. The decoding that turns such a slice into a `Frame` is internal to the SDK. Its own
+test suite runs it on recorded slices with the simulator closed, but no surface exposes it,
+in Rust, C++ or Python. To keep frames for later, save the pixels you already hold, as
+[Saving a frame](07-saving-frames.md) does.
 
 **Next:** [Freshness](04-freshness.md)
 

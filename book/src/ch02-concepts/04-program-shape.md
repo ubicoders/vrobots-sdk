@@ -1,6 +1,6 @@
 # The shape of a program
 
-The SDK never calls your code: main does setup and owns the loop.
+The SDK never calls your code: your program does its setup and then owns the loop.
 
 ## Two shapes, and this SDK is the second one
 
@@ -38,27 +38,31 @@ call your `main` makes.
 ## The canonical program
 
 This is the whole shape, and every example in the book is a variation on it, quoted
-from the SDK's own crate documentation:
+from each surface's own documentation:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+The crate documentation in `crates/vrobots-sdk/src/lib.rs`:
 
 ```rust
 use vrobots_sdk::{RobotType, VirtualRobot, VrError};
 
 fn main() -> Result<(), VrError> {
     // ===== setup =====
+    vrobots_sdk::init_logging("info");
+    // `Some(sys_id)` attaches to a robot; `None` creates a new one.
     let robot = VirtualRobot::connect(RobotType::Multirotor, Some(1))?;
 
     // ===== loop =====
     loop {
-        let s = robot.states();               // latest snapshot, never torn, never blocks
+        let s = robot.states(); // latest snapshot, never torn
         let [x, y, z] = s.kin.lin_pos;
-        println!("State t={:.3} pos=({x:.3},{y:.2},{z:.2})", s.elapsed);
+        println!("t={:.3} pos=({x:.2},{y:.2},{z:.2})", s.elapsed);
 
-        robot.set_mr_pwm([1501.0; 4])?;       // your controller's output
-        robot.rate(100.0);                    // drift-compensated pacing, Hz
+        robot.set_mr_pwm([1501.0; 4])?; // your controller's output
+        robot.rate(100.0); // drift-compensated pacing, Hz
     }
 }
 ```
@@ -66,7 +70,7 @@ fn main() -> Result<(), VrError> {
 {{#endtab }}
 {{#tab name="C++" }}
 
-The header comment on `cpp/include/vrobots_sdk.hpp`:
+The header comment on `include/vrobots_sdk.hpp`:
 
 ```cpp
 #include <vrobots_sdk.hpp>
@@ -86,26 +90,22 @@ int main() {
 {{#endtab }}
 {{#tab name="Python" }}
 
-The module docstring on `crates/vrobots-sdk-py/python/vrsdk/__init__.py`:
+The module docstring on `vrsdk/__init__.py`:
 
 ```python
 from vrsdk import VirtualRobot, RobotType
 
-def main():
-    # ===== setup =====
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)
-    mr.connect()
+# ===== setup =====
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)
+mr.connect()
 
-    # ===== loop =====
-    while True:
-        s = mr.states
-        x, y, z = s.kin.lin_pos
-        print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
-        mr.set_mr_pwm(1501, 1501, 1501, 1501)
-        mr.rate(100)
-
-if __name__ == "__main__":
-    main()
+# ===== loop =====
+while True:
+    s = mr.states
+    x, y, z = s.kin.lin_pos
+    print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
+    mr.set_mr_pwm([1501.0] * 4)
+    mr.rate(100)
 ```
 
 {{#endtab }}
@@ -115,6 +115,11 @@ Each surface documents this same shape as its own opening example, which is the 
 evidence that the shape is the API rather than a Rust convention. The one structural
 difference is that C++ and Python split construction from connection into two statements,
 where Rust's `connect` is a constructor that does both.
+
+The docstring's program is a flat script, and so is every Python example: the top level of
+the file does the setup and then runs the loop, so the script itself plays the part of `main`
+and nothing else about the shape changes. `examples/python/ex01_hello_states.py` is the
+docstring's program at 50 Hz and without the PWM command.
 
 There is no expected output to quote: the loop never terminates, printing one line
 per iteration until you stop it with Ctrl-C. `examples/rust/src/bin/ex01_hello_states.rs`
@@ -159,15 +164,15 @@ you like.
 
 ## Dropping the handle does not stop the robot
 
-Because `main` owns the program, it is tempting to read the end of `main` as the end
-of everything. It is not. Dropping a `VirtualRobot` closes the zenoh session,
-unsubscribes, and stops the SDK's own threads. **It leaves the robot running**, still
-latched on the last command it received, until something explicitly deletes it or the
-scene is reloaded.
+Because `main` owns the program, it is tempting to read the end of `main`, or the end of
+a Python script, as the end of everything. It is not. Dropping a `VirtualRobot` closes the
+zenoh session, unsubscribes, and stops the SDK's own threads. **It leaves the robot
+running**, still latched on the last command it received, until something explicitly
+deletes it or the scene is reloaded.
 
 That is the intended behaviour rather than an oversight, and it is
 [rule four](06-five-rules.md). If your program should leave nothing behind, call
-`delete()` before returning, which is what the examples that create a robot do.
+`delete()` before it ends, which is what the examples that create a robot do.
 
 **Next:** [What connect actually does](05-connect.md)
 

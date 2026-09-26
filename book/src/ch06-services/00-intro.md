@@ -54,9 +54,9 @@ are on your own.
 
 ## The state stream is the confirmation
 
-Because of that, the examples in this chapter measure rather than assert. `ex27` makes the
-point deliberately by sending a rotor list one entry short, with a thrust curve that would
-drop the aircraft out of the sky.
+Because of that, the examples in this chapter measure rather than assert. The Rust and C++
+`ex27` make the point deliberately by sending a rotor list one entry short, with a thrust curve
+that would drop the aircraft out of the sky.
 
 
 {{#tabs global="lang" }}
@@ -85,20 +85,16 @@ const Run dropped = climb(robot, "after the short list", collective);
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex27_rotor_config.py`:
-
-```python
-robot.configure_rotors(short)
-print("... returned without raising. That is a receipt, and the request was dropped:")
-dropped = climb(robot, "after the short list", collective)
-```
+`examples/python/ex27_rotor_config.py` leaves the short list out and sends only full-length
+lists. A short list passed to `configure_rotors` from Python returns just as quietly, because
+the call goes through the same SDK core and the same wire.
 
 {{#endtab }}
 {{#endtabs }}
 
-Each surface reports failure differently, and that is exactly what makes the point here: the
-Rust `?`, the C++ `catch` and the Python `except` all stay quiet, because a dropped request
-is acked `ok` on the wire and none of them has anything to raise.
+Rust and C++ report failure differently, and that is exactly what makes the point here: the
+Rust `?` and the C++ `catch` both stay quiet, because a dropped request is acked `ok` on the
+wire and neither has anything to raise.
 
 The `?` never fires, and the aircraft climbs exactly as it did before, which is the proof that
 nothing was applied:
@@ -158,8 +154,9 @@ A robot registers a queryable only for its own type's service, so `configure_dri
 multirotor is a query nobody answers. After `ConnectOptions::service_timeout` (8 seconds by
 default) it returns [`VrError::NoResponder`](../appendix-c-errors.md).
 
-That is not a failure mode to defend against, it is a capability probe: it is how
-`ex30_hello_halfdrone` establishes that a HalfDrone serves the common seven and nothing more.
+That is not a failure mode to defend against, it is a capability probe: it is how the Rust
+and C++ versions of `ex30_hello_halfdrone` establish that a HalfDrone serves the common seven
+and nothing more.
 It is also indistinguishable from a simulator that is not running, so confirm with
 `vrobots topic list` before drawing a conclusion.
 

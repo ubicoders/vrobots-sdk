@@ -14,9 +14,10 @@ cargo run -p vrobots-examples --bin ex21_reset
 python examples/python/ex21_reset.py
 ```
 
-`ex21_reset` takes an **optional** `sys_id`. With it, the example attaches to the scene's own
-multirotor; without it, the example creates one. Prefer the argument: a client-created
-multirotor does not integrate physics in simulator v3.0.0, which is
+`ex21_reset` takes an **optional** `sys_id` in all three languages. With it, the example
+attaches to the scene's own multirotor and leaves it running; without it, the example creates
+one and deletes it at the end. Prefer the argument: a client-created multirotor does not
+integrate physics in simulator v3.0.0, which is
 [a known issue](../ch07-robots/07-known-issues.md).
 
 ## Five verbs, five different confirmations
@@ -74,9 +75,8 @@ std::printf("created sys_id = %u\n", sys_id);
 `examples/python/ex04_hello_service.py`:
 
 ```python
-# Create a NEW robot in the sim (no sys_id -> manager create; the reply
-# carries the assigned id).
-robot = VirtualRobot(ROBOT_TYPE)
+# No sys_id: the manager creates a robot and assigns one.
+robot = VirtualRobot(RobotType.MULTIROTOR)
 robot.connect()
 sys_id = robot.sys_id
 print(f"created sys_id = {sys_id}")
@@ -136,8 +136,7 @@ std::printf("deleted sys_id = %u (removed=%s)\n", sys_id,
 `examples/python/ex04_hello_service.py`:
 
 ```python
-# Deletion is explicit and never implicit. delete() waits for the state topic
-# to fall silent: the manager's ack is only a receipt, absence is the proof.
+# Robots outlive the process; only delete() removes one from the scene.
 robot.delete()
 print(f"deleted sys_id = {sys_id} (is_deleted={robot.is_deleted})")
 ```
@@ -154,6 +153,8 @@ missing samples:
 ```text
 deleted sys_id = <id> (is_deleted=true)
 ```
+
+C++ prints `(removed=true)` and Python `(is_deleted=True)`. The Python script ends here.
 
 > **Note.** `delete()` is the one service the SDK deliberately does not retry. A re-send after
 > a delete the manager already applied comes back as `ok = false` for an unknown `sys_id`,
@@ -190,22 +191,14 @@ try {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`examples/python/ex04_hello_service.py`:
-
-```python
-try:
-    robot.set_mr_pwm(1500, 1500, 1500, 1500)
-    print("unexpected: a deleted robot accepted a command")
-except vrsdk.VrError as e:
-    print(f"the handle is spent, as expected: [{e.code} {e.kind}] {e.detail}")
-```
+`examples/python/ex04_hello_service.py` stops at the delete and does not make this call. The
+same call on a spent handle raises `vrsdk.VrError` with `code == vrsdk.err.DELETED`.
 
 {{#endtab }}
 {{#endtabs }}
 
-Rust returns the refusal as a `Result` you match on, while C++ throws `vrsdk::Error` and
-Python raises `vrsdk.VrError`, so both need the call inside a `try`. Python also accepts the
-four pulse widths as separate arguments rather than one array.
+Rust returns the refusal as a `Result` you match on, while C++ throws `vrsdk::Error`, so the
+C++ call sits inside a `try`.
 
 ```text
 the handle is spent, as expected: [<code>] <message>
@@ -254,12 +247,10 @@ std::printf(
 
 ```python
 before = robot.states
-print("\n-- reset() (a bare GET) --")
-robot.reset()
-print(
-    "acked. That is a RECEIPT: the teleport lands in phase 0 of the next "
-    "physics step, and the state stream is the proof."
-)
+robot.reset()  # a bare GET; the teleport lands in phase 0 of the next physics step
+for _ in range(50):
+    robot.rate(HZ)
+after = robot.states
 ```
 
 {{#endtab }}
@@ -267,7 +258,8 @@ print(
 
 `reset()` takes no arguments and returns nothing in any of the three, so the only difference
 is the snapshot beside it: `robot.states` is a property in Python where Rust and C++ call
-`states()`.
+`states()`. Rust and C++ print the receipt as a line of output; the Python script keeps it as
+the comment on the call and goes straight to the 50 settling samples.
 
 The example stops commanding across the reset, so the effect is visible: with nothing sent,
 the actuator echo falls from the climb pulse back to the robot's initial 1100 us idle, and the
@@ -277,6 +269,16 @@ distance from home collapses to roughly zero.
 -- reset() (a bare GET) --
 acked. That is a RECEIPT: the teleport lands in phase 0 of the next physics step, and the state stream is the proof.
 home? seq=<n> t=<seconds>s pos=(...) [frd] alt=<metres> |v|=<speed> echo=[...]  d(home)=<metres> m
+```
+
+The Python script prints no per-sample lines. It ends with the same three before-and-after
+comparisons the Rust and C++ runs end with, in a shorter form, followed by
+`deleted sys_id=<id>` when it created the robot:
+
+```text
+position:  <metres> m from home before, <metres> m after
+actuators: echo [...] -> [...]
+time:      seq <n> -> <n>, elapsed <seconds>s -> <seconds>s
 ```
 
 A live publisher wins one step later. A control loop that keeps sending 1700 us climbs
@@ -302,8 +304,10 @@ Nothing reads the home pose out, so the only honest way to learn it is to go the
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`examples/rust/src/bin/ex21_reset.rs`:
+
 ```rust
-fn learn_home(robot: &VirtualRobot, created: bool) -> Result<Arc<State>, VrError> {
+fn learn_home(robot: &VirtualRobot, created: bool) -> Result<State, VrError> {
     if created {
         return Ok(robot.states());
     }
@@ -342,27 +346,24 @@ vrsdk::State learn_home(vrsdk::VirtualRobot& robot, bool created) {
 `examples/python/ex21_reset.py`:
 
 ```python
-def learn_home(robot: VirtualRobot, created: bool):
-    if created:
-        return robot.states
-
-    print("attached: resetting once to find out where home actually is")
-    robot.reset()
-    for _ in range(SETTLE_SAMPLES):
-        robot.rate(HZ)
-    return robot.states
+# Home is the pose captured at the robot's first physics step, not where you found
+# it: reset once, settle, and read it off the state stream.
+robot.reset()
+for _ in range(50):
+    robot.rate(HZ)
+home = robot.states
+print(f"home pos={home.kin.lin_pos}")
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-The snapshot each one hands back differs in ownership, not in content: Rust returns an
-`Arc<State>`, C++ returns a `vrsdk::State` by value, and Python returns whatever the property
-yields.
-
-On the create path this is unnecessary, because nothing has happened to the robot yet and the
-first sample already is home. The same trick finds a cart pole's rail centre, which is the one
-number that plant needs and does not publish.
+Rust and C++ wrap the step in a `learn_home` function that skips it on the create path,
+because nothing has happened to a new robot yet and its first sample already is home. Both
+hand the snapshot back by value, an owned `State` in Rust and a `vrsdk::State` in C++. The
+Python script runs the same three steps inline on both paths, which costs nothing on a
+created robot, since twice home is still home. The same trick finds a cart pole's rail
+centre, which is the one number that plant needs and does not publish.
 
 ## What survives a reset
 

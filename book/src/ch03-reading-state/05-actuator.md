@@ -90,15 +90,15 @@ if (samples % REPORT_EVERY == 0) {
 `examples/python/ex19_robust_loop.py`:
 
 ```python
-s = mr.states
-if samples % REPORT_EVERY == 0:
-    x, y, z = s.kin.lin_pos
+if samples % 25 == 0:  # one status line a second at 25 Hz
+    s = mr.states
     st = mr.stats
+    x, y, z = s.kin.lin_pos
     print(
-        f"ok  seq={s.seq} t={s.elapsed:.2f}s pos=({x:.2f},{y:.2f},{z:.2f}) "
-        f"echo={s.actuator.pwm} received={st.received} gaps={st.seq_gaps} "
-        f"decode_errors={st.decode_errors}"
+        f"seq={s.seq} t={s.elapsed:.2f}s pos=({x:.2f},{y:.2f},{z:.2f}) "
+        f"echo={s.actuator.pwm} received={st.received} gaps={st.seq_gaps}"
     )
+mr.set_mr_pwm([1501.0] * 4)
 ```
 
 {{#endtab }}
@@ -116,6 +116,13 @@ all four rotors reports it back:
 
 ```text
 ok  seq=125 t=5.00s pos=(0.03,0.85,-1.20) echo=[1501, 1501, 1501, 1501] received=125 gaps=0 decode_errors=0
+```
+
+The Python example prints the same status line without the `ok` prefix and without the
+`decode_errors` count:
+
+```text
+seq=<n> t=<seconds>s pos=(<x>,<y>,<z>) echo=[1501, 1501, 1501, 1501] received=<n> gaps=<n>
 ```
 
 An echo that does not match what you sent is informative in itself. Values that stay at

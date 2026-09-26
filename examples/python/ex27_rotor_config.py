@@ -1,16 +1,23 @@
 """ex27 - rebuild the multirotor's rotor list with configure_rotors."""
 
 import math
+import sys
 
 from vrsdk import RobotType, RotorSpec, VirtualRobot
+
+# optional: attach to the scene multirotor by id (`vrobots topic list`); it KEEPS the mass and
+# rotors set below until the scene reloads. With none, one is created and deleted, but a created
+# multirotor does not fly in sim v3.0.0 (every climb reads 0.00 m/s), so prefer the id.
+sys_id = int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 ARM_M = 0.25  # hub distance from the robot origin
 COLLECTIVE_US = 1800.0
 THRUST_SCALE = 0.70
 HZ = 25
 
-robot = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = the scene's multirotor
+robot = VirtualRobot(RobotType.MULTIROTOR, sys_id=sys_id)  # None: the manager creates one
 robot.connect()
+print(f"{'created' if sys_id is None else 'attached to'} sys_id={robot.sys_id}")
 robot.set_physical_params(mass=1.0)  # pinned, so the runs are comparable
 
 # The rotor count is fixed at spawn; read it, do not assume four.
@@ -63,3 +70,7 @@ weak = [
 robot.configure_rotors(weak)
 # The rotor speed echo comes from the ang_vel line, not thrust: it will not change.
 climb("70% thrust curve")
+
+if sys_id is None:  # created above, so deleted here; a scene robot keeps the weak rotors
+    robot.delete()
+    print(f"deleted sys_id={robot.sys_id}")

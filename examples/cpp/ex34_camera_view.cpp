@@ -4,7 +4,7 @@
 //
 // The one example that needs a library outside the SDK, which is why CMake only
 // builds it when `find_package(OpenCV)` succeeds: nobody has to install OpenCV
-// to build the other thirty-three.
+// to build the other thirty-five.
 //
 // Like every camera example here it uses a camera the robot already has:
 // **every vrobot ships with `front_left` and `front_right` mounted at 720p

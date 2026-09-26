@@ -8,20 +8,22 @@ cargo run -p vrobots-examples --features opencv --bin ex34_camera_view
 python examples/python/ex34_camera_view.py
 ```
 
-## The one example with an outside dependency
+## The OpenCV dependency
 
-Every other example in this book needs nothing but the SDK. This one needs OpenCV, so all
-three languages keep it opt-in rather than making everyone install it:
+In Rust and C++, every other example in this book needs nothing but the SDK. This one needs
+OpenCV, so all three languages keep it opt-in rather than making everyone install it. In
+Python, `ex03_hello_image.py` and `ex14_camera_save.py` import `cv2` as well, so one
+`opencv-python` install serves all three scripts:
 
 | Language | How it is opted into | Without OpenCV installed |
 |---|---|---|
-| Rust | the `opencv` cargo feature, off by default | `cargo build --workspace` skips the binary |
+| Rust | the `opencv` cargo feature, off by default | a build without the feature skips the binary |
 | C++ | `find_package(OpenCV)` in `examples/cpp/CMakeLists.txt` | CMake prints `skipping ex34_camera_view` and builds the rest |
-| Python | `pip install opencv-python` | the program exits with that line as its message |
+| Python | `pip install opencv-python` | `import cv2` raises `ModuleNotFoundError` and the script stops there |
 
 That is why the Rust command above carries `--features opencv` and no other command in this
 book does. [Hello image](../ch01-getting-started/06-hello-image.md) is the version with no
-dependency at all.
+dependency in Rust and C++; its Python script shows the frames in an OpenCV window too.
 
 ## The loop
 
@@ -128,45 +130,27 @@ Nothing is mounted, so nothing has to be torn down. The loop is where the two le
 `examples/python/ex34_camera_view.py`:
 
 ```python
-    # ===== loop =====
-    # Frame-paced: wait_new_frame blocks until the next render, so imshow runs
-    # once per frame rather than redrawing one it has already shown.
-    seen = 0
-    while True:
-        try:
-            cam.wait_new_frame(TIMEOUT)
-        except vrsdk.VrError as e:
-            if e.code != vrsdk.err.TIMEOUT:
-                raise
-            # A status, not a failure: the sim is paused, or the camera stopped.
-            # Still pump the GUI so the window stays responsive.
-            if quit_requested():
-                break
-            continue
-
-        frame = cam.read()  # consumes freshness; None if someone else got it
-        if frame is None:
-            continue
-        seen += 1
-
-        # frame.image is (h, w, 4) uint8, top-down, RGBA. The SDK never converts
-        # colour for you: RGBA is what Unity rendered, BGR is what OpenCV shows.
-        bgr = cv2.cvtColor(frame.image, cv2.COLOR_RGBA2BGR)
-
-        cv2.imshow(WINDOW, bgr)
-        if quit_requested():
-            break
+while True:
+    frame = cam.read()
+    if frame is not None:
+        cv2.imshow("vrobots camera", cv2.cvtColor(frame.image, cv2.COLOR_RGBA2BGR))
+    if (cv2.waitKey(1) & 0xFF) in (ord("q"), 27):
+        break
 ```
+
+The Python script is shorter. It polls `cam.read()` instead of blocking on
+`wait_new_frame`, so it has no timeout to handle, and it creates no window up front:
+`cv2.imshow` opens one on its first call.
 
 {{#endtab }}
 {{#endtabs }}
 
 Two differences worth naming. Rust matches on `VrError::Timeout` where C++ compares
-`e.code()` against `VRSDK_ERR_TIMEOUT` and Python compares `e.code` against
-`vrsdk.err.TIMEOUT`, which is the same distinction the whole book draws between a timeout
-and a failure. And the three reach the pixels differently: C++ wraps a `cv::Mat` header
-around the frame's own bytes and copies nothing, Rust copies into an owned `Mat`, and
-Python passes the numpy view as it stands. The C++ header is valid only while that `Frame`
+`e.code()` against `VRSDK_ERR_TIMEOUT`, which is the same distinction the whole book draws
+between a timeout and a failure; the Python script never waits, so it never meets the
+timeout. And the three reach the pixels differently: C++ wraps a `cv::Mat` header around the
+frame's own bytes and copies nothing, Rust copies into an owned `Mat`, and Python passes the
+numpy array from `frame.image` as it stands. The C++ header is valid only while that `Frame`
 is alive, which is why it is built inside the loop body and never stored.
 
 ## RGBA in, BGR out
@@ -196,10 +180,14 @@ error, exactly as in [Freshness](04-freshness.md), and the one thing that must s
 on that path is the GUI pump: a window that never gets `wait_key` stops repainting and the
 desktop reports the program as not responding.
 
-That pump is also how the keypress is read, which is why `quit_requested` in all three
-files does both in one call. `imshow` on its own queues an image and paints nothing, and
-the 1 ms argument is a maximum rather than a delay: the call returns as soon as the window
-has been serviced.
+The Python script reaches one `imshow` per frame by polling instead: `cam.read()` returns
+`None` until a new frame has arrived, and `cv2.waitKey(1)` runs on every pass, so the window
+is serviced whether or not a frame was fresh.
+
+That pump is also how the keypress is read, which is why `quit_requested` in the Rust and C++
+files does both in one call, and why the Python script tests the key that `cv2.waitKey(1)`
+returns. `imshow` on its own queues an image and paints nothing, and the 1 ms argument is a
+maximum rather than a delay: the call returns as soon as the window has been serviced.
 
 ## Quitting
 
@@ -212,6 +200,9 @@ showed 412 frame(s), received=412 decode_errors=0 seq_gaps=0
 
 <!-- VERIFY: the frame counts above are illustrative; they depend on how long the window is left open. -->
 
+That is the Rust and C++ output. The Python script prints nothing: it opens the window, and
+pressing `q` or Esc closes it.
+
 Pressing `q` or Esc breaks the loop, and the only thing left to close is the window:
 
 ```rust
@@ -221,7 +212,9 @@ Pressing `q` or Esc breaks the loop, and the only thing left to close is the win
     highgui::destroy_all_windows()?;
 ```
 
-Ctrl-C is just as safe: this example never mounted anything, so there is no camera left
+The Python script does the same with `cv2.destroyAllWindows()` after its loop.
+
+Ctrl-C is equally safe: this example never mounted anything, so there is no camera left
 behind on a robot that outlives the process. An example that mounts one -- `ex17_camera_pose`
 is the only one here -- does have that deadline, and page
 [Mount, open and unmount](01-mount-open-unmount.md) spells it out.

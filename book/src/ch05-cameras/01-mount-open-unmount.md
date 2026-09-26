@@ -32,24 +32,46 @@ and none of that is worth paying for a picture the robot is already publishing.
 | `open_camera` | no, subscribe only | yes, exactly this name, resolution and format | nothing to undo |
 | `unmount_camera` | yes, `srv/cameras` | it must be one this handle mounted | it is the undo |
 
-The signatures, from `crates/vrobots-sdk/src/robot.rs`:
+The signatures:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/camera.rs`:
+
 ```rust
-fn mount_camera(&self, name: &str, resolution: &str, format: &str) -> VrResult<CameraStream>
-fn mount_camera_with(&self, name: &str, resolution: &str, format: &str, options: &CameraOptions) -> VrResult<CameraStream>
-fn open_camera(&self, name: &str, resolution: &str, format: &str) -> VrResult<CameraStream>
-fn unmount_camera(&self, name: &str) -> VrResult<()>
-fn mounted_cameras(&self) -> Vec<CameraSpec>
+pub fn mount_camera(
+    &self,
+    name: &str,
+    resolution: &str,
+    format: &str,
+) -> VrResult<CameraStream>
+
+pub fn mount_camera_with(
+    &self,
+    name: &str,
+    resolution: &str,
+    format: &str,
+    options: &CameraOptions,
+) -> VrResult<CameraStream>
+
+pub fn open_camera(
+    &self,
+    name: &str,
+    resolution: &str,
+    format: &str,
+) -> VrResult<CameraStream>
+
+pub fn unmount_camera(&self, name: &str) -> VrResult<()>
+
+pub fn mounted_cameras(&self) -> Vec<CameraSpec>
 ```
 
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 [[nodiscard]] CameraStream mount_camera(const std::string& name,
@@ -66,7 +88,7 @@ void unmount_camera(const std::string& name)
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def mount_camera(
@@ -92,11 +114,12 @@ def mounted_cameras(self) -> list[CameraSpec]: ...
 {{#endtab }}
 {{#endtabs }}
 
-Four verbs in Rust, three in the bindings: `mount_camera_with` has no counterpart, because
+Four verbs in Rust, three in C++ and Python: `mount_camera_with` has no counterpart, because
 C++ takes the options as an optional fourth argument and Python takes them as keyword-only
 arguments. C++ also has no `CameraSpec` type, so `mounted_cameras` gives back
-`{name, resolution, format}` as a three-element array of strings. Everything else, including
-the defaults of `"720p"` and `"rgb8"`, matches across the three.
+`{name, resolution, format}` as a three-element array of strings. C++ and Python default the
+resolution and format to `"720p"` and `"rgb8"`, where Rust, which has no default arguments,
+takes all three strings on every call. Everything else matches across the three.
 
 The two `mount_*` calls and `unmount_camera` reach the robot's `srv/cameras`; `open_camera`
 opens a subscriber, and `mounted_cameras` never leaves the process.
@@ -151,9 +174,8 @@ let options = CameraOptions::default()
     .with_mount_euler_deg(MOUNT_EULER_DEG)
     .with_focal_length(FOCAL_PX)
     .with_clip(0.2, 500.0);
+println!("requested: {options:?}");
 
-// mount_camera_with CREATES the camera on the robot (srv/cameras) and
-// subscribes to its iox2 stream in one call.
 let cam = robot.mount_camera_with(CAMERA, RESOLUTION, FORMAT, &options)?;
 println!("camera stream: {}", cam.service_name());
 ```
@@ -177,13 +199,18 @@ std::printf("camera stream: %s\n", cam.service_name().c_str());
 `examples/python/ex17_camera_pose.py`:
 
 ```python
-mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor, 0 = truck
 mr.connect()
 
+# the ONE example that mounts its own camera; all others open front_left/front_right
+print(
+    f"requested: position={MOUNT_POSITION} m, euler={MOUNT_EULER_DEG} deg, "
+    f"fx=fy={FOCAL_PX} px"
+)
 cam = mr.mount_camera(
-    CAMERA,
-    RESOLUTION,
-    FORMAT,
+    "tilt",
+    "720p",
+    "rgb8",
     mount_position=MOUNT_POSITION,
     mount_euler_deg=MOUNT_EULER_DEG,
     fx=FOCAL_PX,
@@ -193,6 +220,10 @@ cam = mr.mount_camera(
 )
 print(f"camera stream: {cam.service_name}")
 ```
+
+The Python script passes the robot id, the camera name, the resolution and the format as
+literals where Rust and C++ use constants; all three print the requested pose and lens
+before they mount.
 
 {{#endtab }}
 {{#endtabs }}
@@ -220,9 +251,9 @@ exactly**: on iceoryx2 those three strings are the stream identity, and there is
 negotiation behind them.
 
 Every vrobot ships `front_left` and `front_right` at 720p **rgba8**, which is Unity's
-native readback and not `rgb8` -- a detail worth getting right, since `rgb8` is the
-signature default and asking for it here is one of the two ways to earn the timeout below.
-Those are the cameras every camera example reads.
+native readback and not `rgb8` -- a detail worth getting right, since `rgb8` is the default
+in the C++ and Python signatures and asking for it here is one of the two ways to earn the
+timeout below. Those are the cameras every camera example reads.
 
 From `examples/rust/src/bin/ex13_open_camera.rs`, opening with the failure spelled out:
 
@@ -239,8 +270,9 @@ let cam = match robot.open_camera(CAMERA, RESOLUTION, FORMAT) {
         // of the three strings is wrong.
         eprintln!("no publisher for {CAMERA}/{RESOLUTION}_{FORMAT}: {detail}");
         eprintln!(
-            "run `vrobots topic list` -- the [i] lines are the streams that \
-             do exist. A camera another process mounted then unmounted is gone."
+            "run `cargo run -p vrobots-examples --bin ex11_topic_discovery`: its \
+             [i] lines are the streams that do exist. A camera another process \
+             mounted then unmounted is gone."
         );
         return Ok(());
     }
@@ -278,28 +310,25 @@ try {
 `examples/python/ex13_open_camera.py`:
 
 ```python
-try:
-    cam = mr.open_camera(CAMERA, RESOLUTION, FORMAT)
-except vrsdk.VrError as e:
-    if e.code != vrsdk.err.TIMEOUT:
-        raise
-    # The whole point of the example: nothing is mounted under that exact
-    # identity, and there is no way for the SDK to tell you which of the
-    # three strings is wrong.
-    print(f"no publisher for {CAMERA}/{RESOLUTION}_{FORMAT}: {e.detail}")
-    print(
-        "run `vrobots topic list` -- the [i] lines are the streams that do "
-        "exist. A camera another process mounted then unmounted is gone."
-    )
-    return
+# rgba8: 4 channels, not rgb8; name/resolution/format are the stream identity
+cam = mr.open_camera("front_left", "720p", "rgba8")
+print(f"attached to {cam.service_name} (nothing in the sim changed)")
+spec = cam.spec
+print(f"spec: name={spec.name} resolution={spec.resolution} format={spec.format}")
 ```
+
+The Python script does not catch the failure. When nothing publishes that exact name,
+resolution and format, `open_camera` raises `vrsdk.VrError` with
+`code == vrsdk.err.TIMEOUT` once `camera_timeout` (five seconds by default) has passed, and
+the script ends with that traceback. To handle it as the Rust and C++ programs do, catch
+`vrsdk.VrError`, compare `e.code` against `vrsdk.err.TIMEOUT`, and re-raise any other code.
 
 {{#endtab }}
 {{#endtabs }}
 
-The missing publisher is a timeout in every surface, so it is caught the same way it is on
-`wait_new_state`: branch on the code, re-raise anything else. C++ pays one extra line for
-it, because `CameraStream` has to be declared outside the `try` to outlive it.
+The missing publisher is a timeout in every surface. Rust and C++ catch it the same way they
+catch one on `wait_new_state`: branch on the code, re-raise anything else. C++ pays one extra
+line for it, because `CameraStream` has to be declared outside the `try` to outlive it.
 
 On a running simulator it attaches and reports the stream it found:
 
@@ -308,17 +337,24 @@ attached to vrobots/1/i/cam/front_left/720p_rgba8 (nothing in the sim changed)
 spec: name=front_left resolution=720p format=rgba8 (3686400 bytes/frame)
 ```
 
+The Python script prints the same two lines without the `(3686400 bytes/frame)` suffix,
+because its `CameraSpec` carries only the name, the resolution and the format.
+
 ## Unmounting removes what you mounted
 
 `unmount_camera` removes exactly the name it is given and stops that stream's reader
 thread. Every other camera on the robot keeps streaming. It refuses a name this handle did
 not mount, locally, with `VrError::InvalidArgument`, and the message lists what this handle
-did mount. That is what the end of `ex13_open_camera` demonstrates against the scene's own
-`front_left`:
+did mount. That is what the end of the Rust and C++ `ex13_open_camera` demonstrates against
+the scene's own `front_left`:
 
 ```text
 unmount_camera refused, correctly: [2] invalid_argument: camera "front_left" was not mounted by this handle (mounted: []). unmount_camera only removes what mount_camera added -- a camera attached with open_camera belongs to whoever created it
 ```
+
+In Python the same refusal raises `vrsdk.VrError` with
+`code == vrsdk.err.INVALID_ARGUMENT` and the same message. The Python `ex13_open_camera.py` does not
+call `unmount_camera`; it ends after printing its counters.
 
 `mounted_cameras()` returns the specs **this handle asked for**, in mount order. It is not
 a read-back: `srv/cameras` has no get verb, and the robot may well carry cameras this

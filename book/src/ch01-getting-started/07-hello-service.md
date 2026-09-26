@@ -115,36 +115,24 @@ int main() {
 `examples/python/ex04_hello_service.py`:
 
 ```python
-ROBOT_TYPE = RobotType.MULTIROTOR  # or RobotType.TRUCK / RobotType.from_key("truck")
+"""ex04 - create a new robot in the sim, then delete it."""
 
+import vrsdk
+from vrsdk import RobotType, VirtualRobot
 
-def main() -> None:
-    vrsdk.init_logging("info")
+# No sys_id: the manager creates a robot and assigns one.
+robot = VirtualRobot(RobotType.MULTIROTOR)
+robot.connect()
+sys_id = robot.sys_id
+print(f"created sys_id = {sys_id}")
 
-    # Create a NEW robot in the sim (no sys_id -> manager create; the reply
-    # carries the assigned id).
-    robot = VirtualRobot(ROBOT_TYPE)
-    robot.connect()
-    sys_id = robot.sys_id
-    print(f"created sys_id = {sys_id}")
+s = robot.states
+print(f"first state: t={s.elapsed:.3f} seq={s.seq} name={s.name!r}")
+print(f"its state topic: {vrsdk.topics(sys_id)['state']}")
 
-    # The create reply is a receipt; the robot *exists* once its state topic
-    # publishes, which connect() already waited for -- so this is real data.
-    s = robot.states
-    print(f"first state: t={s.elapsed:.3f} seq={s.seq} name={s.name!r}")
-    print(f"its state topic: {vrsdk.topics(sys_id)['state']}")
-
-    # Deletion is explicit and never implicit. delete() waits for the state topic
-    # to fall silent: the manager's ack is only a receipt, absence is the proof.
-    robot.delete()
-    print(f"deleted sys_id = {sys_id} (is_deleted={robot.is_deleted})")
-
-    # The handle is spent. Commands do not silently do nothing -- they say why.
-    try:
-        robot.set_mr_pwm(1500, 1500, 1500, 1500)
-        print("unexpected: a deleted robot accepted a command")
-    except vrsdk.VrError as e:
-        print(f"the handle is spent, as expected: [{e.code} {e.kind}] {e.detail}")
+# Robots outlive the process; only delete() removes one from the scene.
+robot.delete()
+print(f"deleted sys_id = {sys_id} (is_deleted={robot.is_deleted})")
 ```
 
 {{#endtab }}
@@ -155,6 +143,9 @@ one-argument constructor, because a literal `0` would be ambiguous between "atta
 0" and a null options pointer. C++ spells deletion `remove()`, because `delete` is a keyword.
 And C++ has no topic-name builder, so it composes `vrobots/<id>/z/state` inline where Rust
 calls `topics::state` and Python calls `vrsdk.topics`.
+
+The Python script is shorter in one respect: it stops after the delete, where Rust and C++
+go on to send one command on the spent handle.
 
 The run takes a second or two, most of it spent waiting for the new robot's state topic to
 start and then to stop:
@@ -169,6 +160,10 @@ the handle is spent, as expected: [8] deleted: sys_id 7 was deleted from the sim
 
 <!-- VERIFY: the created robot's `name` field and the id it is allocated both come from the simulator; `"multirotor"` and `7` above are illustrative. -->
 
+That is the Rust run. C++ prints `removed=true` where Rust prints `is_deleted=true`, and the
+Python script prints the first four lines in Python's own spelling, `name='multirotor'` and
+`is_deleted=True`.
+
 ## Create versus attach
 
 The second argument to `connect` decides which of two quite different things happens.
@@ -178,8 +173,9 @@ The second argument to `connect` decides which of two quite different things hap
 | `Some(id)` | attaches to a robot the scene already contains | no |
 | `None` | asks the manager to spawn a new one; the reply carries the id | yes |
 
-Every example so far passed `Some(SYS_ID)`. This one passes `None`, so the manager
-allocates the id and `robot.sys_id()` is the only way to learn it.
+Every example so far attached by id, which is `Some(SYS_ID)` in Rust. This one passes
+`None`, which in Python means leaving `sys_id` out, so the manager allocates the id and
+`robot.sys_id()` is the only way to learn it.
 
 Creating is limited by the scene's catalog, not the SDK's. The sandbox scene registers
 `multirotor`, `truck` and `msd`; any other key is refused with a message naming the ones it
@@ -218,7 +214,8 @@ and the state stream is the confirmation. It is rule two of
 [Five rules that explain everything](../ch02-concepts/06-five-rules.md).
 
 After `delete()` the handle is spent, and it says so rather than failing quietly. Every
-command on it returns `VrError::Deleted`, error code 8, with a message naming the id.
+command on it returns `VrError::Deleted`, error code 8, with a message naming the id; the
+last line of the Rust and C++ runs shows it.
 
 **Next:** [When nothing happens](08-troubleshooting.md)
 

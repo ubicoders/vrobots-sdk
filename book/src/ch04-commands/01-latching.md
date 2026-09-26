@@ -56,12 +56,16 @@ to do nothing at all:
 `examples/python/ex29_hello_cartpole.py`:
 
 ```python
-except vrsdk.VrError as e:
-    if e.code != vrsdk.err.TIMEOUT:
-        raise
-    print("no new state -- holding the last force (it latches)")
-    continue
+for i in range(750):  # ~30 s at the 25 Hz state rate
+    robot.wait_new_state(0.5)
+    s = robot.states
 ```
+
+The Python script does not catch the timeout. `wait_new_state` raises `vrsdk.VrError` with
+`code == vrsdk.err.TIMEOUT` when no newer state arrives in time, so a stalled state stream
+ends the script with a traceback, and the last force it sent stays latched. To hold instead,
+catch `vrsdk.VrError` and `continue` when `e.code == vrsdk.err.TIMEOUT`, which is what the
+Rust and C++ programs do.
 
 {{#endtab }}
 {{#endtabs }}
@@ -104,9 +108,8 @@ for (int i = 0; i < RELEASE_SAMPLES; ++i) {
 `examples/python/ex28_hello_msd.py`:
 
 ```python
-# Release. The force LATCHES, so this zero is not optional.
-print("   release (set_msd_force(0.0)) -- watch it ring back to equilibrium")
-for i in range(RELEASE_SAMPLES):
+print("   release (set_msd_force(0.0)) -- ring back to equilibrium")
+for i in range(125):  # ~5 s ringing down
     robot.set_msd_force(0.0)
 ```
 
@@ -187,15 +190,12 @@ std::printf("  unchanged. A command is a setpoint; there is no failsafe behind i
 `examples/python/ex31_globalhawk_direct.py`:
 
 ```python
-# ===== latching, and no watchdog =====
+# commands latch with no watchdog: nothing sent for ~2 s, the deflections hold
 latched = [DEFLECT_RAD, -DEFLECT_RAD, DEFLECT_RAD, -DEFLECT_RAD, 0.0, 0.0]
-print("\n-- nothing sent for ~2 s --")
 robot.set_fw_surfaces(latched)
-for i in range(HOLD_SAMPLES):
-    if i % 25 == 0:
-        print_echo(robot, "  latched")
+for _ in range(50):
     robot.rate(HZ)
-print("  unchanged. A command is a setpoint; there is no failsafe behind it.")
+print(f"latched: panels={[round(v, 3) for v in robot.states.actuator.measured[:PANELS]]}")
 ```
 
 {{#endtab }}
@@ -207,6 +207,10 @@ numbers in successive lines are identical while nothing is being published:
 ```text
   latched t=<seconds>s panels=[<six deflections, radians>] engine=<newtons> N  rates=(<p>,<q>,<r>) deg/s
 ```
+
+The Python script prints one shorter line, `latched: panels=[<six deflections, radians>]`,
+after the hold, and it makes the same point: the six panels still hold the pose sent before
+the silence.
 
 ## What reset does to a latch
 

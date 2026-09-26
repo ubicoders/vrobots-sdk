@@ -128,7 +128,7 @@ print(
     f"sim clock advanced {last.elapsed - first.elapsed:.2f} s"
 )
 
-# Counted, not raised. This is where a decode failure went.
+# decode errors are counted, not raised; last_error is where they went
 err = mr.last_error
 if err is None:
     print("  last_error: none -- every payload decoded")
@@ -238,35 +238,24 @@ if (timed_out) {
 {{#endtab }}
 {{#tab name="Python" }}
 
+The Python example leaves this demonstration out: `ex19_robust_loop.py` is a plain state and
+command loop that calls `mr.wait_new_state(0.5)` with no `try`, so the first timeout raises
+`vrsdk.VrError` and ends the script.
+
 `examples/python/ex19_robust_loop.py`:
 
 ```python
-if healthy:
-    print(f"\nSTALLED: no new state in {TIMEOUT}s. Not an error -- holding.")
-    healthy = False
-    down_since = time.perf_counter()
-# `states` still answers, with the LAST snapshot. Note that
-# `elapsed` is frozen: that, not an exception, is how a dead sim
-# looks from a data read.
-s = mr.states
-down = time.perf_counter() - down_since
-print(
-    f"    down {down:5.1f}s -- stale snapshot still readable: "
-    f"seq={s.seq} t={s.elapsed:.2f}s (frozen)"
-)
-# Publishing into an empty topic is not an error in zenoh, so this
-# keeps succeeding. A command has no reply; only the echo in the
-# state stream ever proves anything landed.
-mr.set_mr_pwm([PWM_US] * 4)
-continue
+while True:
+    mr.wait_new_state(0.5)
+    samples += 1
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-Each surface measures the outage with its own monotonic clock: `Instant`, `steady_clock` and
-`time.perf_counter`. The SDK does not supply one, because `elapsed` is the simulator's clock
-and it is exactly the thing that has stopped.
+Rust and C++ measure the outage with their own monotonic clocks, `Instant` and
+`steady_clock`; the Python example does not measure it. The SDK does not supply such a clock,
+because `elapsed` is the simulator's clock and it is exactly the thing that has stopped.
 
 Close the simulator while that runs and the output changes character without the program
 exiting, with `t` frozen at whatever it reached:
@@ -277,6 +266,13 @@ exiting, with `t` frozen at whatever it reached:
 STALLED: no new state in 500ms. Not an error -- holding.
     down   0.5s -- stale snapshot still readable: seq=146 t=5.84s (frozen)
     down   1.0s -- stale snapshot still readable: seq=146 t=5.84s (frozen)
+```
+
+The Python example prints none of these lines, because the first timeout ends it. The
+traceback it prints instead ends with this line:
+
+```text
+vrsdk.VrError: timeout: no new state for sys_id 1 within 500.000ms
 ```
 
 Commands sent during the outage keep returning `Ok`, because publishing to a topic

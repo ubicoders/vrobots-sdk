@@ -31,8 +31,8 @@ One sentence saying what this page is for. No heading between the H1 and this li
 
 Rules:
 
-- Exactly one `#` H1 per page. It must match its `book/README.md` entry **character for
-  character**.
+- Exactly one `#` H1 per page. It must match its `book/src/SUMMARY.md` entry **character
+  for character**.
 - Sentence case for every heading. Not Title Case, not lowercase-with-hyphens.
 - `##` for sections. `###` only where a section genuinely nests. **Never `####`.**
 - The purpose line is one sentence, present tense, and says what the reader gets.
@@ -94,7 +94,7 @@ Four kinds, blockquote plus bold label, no preprocessor:
 
 > **Gotcha.** Behaves correctly and still surprises people. Say how to detect it.
 
-> **Sim bug.** Broken in the simulator. Name the version and link the issue file.
+> **Sim bug.** Broken in the simulator. Name the version and link the "Known simulator issues" page (`ch07-robots/07-known-issues.md`).
 
 > **Not yet.** On the wire but not acted on by any robot type today.
 ```
@@ -126,8 +126,8 @@ flowchart LR
 
 Use a diagram only when it shows ordering, causality, a state machine, or a
 namespace tree: something a table cannot express. Do not draw a diagram of a list.
-The book's diagram budget is fixed in `dev_plans/book_plan.md`; do not add diagrams
-beyond the ones assigned to your pages without saying so in your report.
+Do not add diagrams beyond the ones assigned to your pages without saying so in your
+report.
 
 Keep node labels short. Diagrams must read in both light and dark themes, so never
 rely on colour alone to carry meaning.

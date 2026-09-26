@@ -3,4 +3,5 @@ resolver = "2"
 members = [
     "crates/vrobots-sdk-sys",
     "crates/vrobots-sdk",
+    "examples/rust",
 ]

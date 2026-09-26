@@ -11,7 +11,7 @@ python examples/python/ex17_camera_pose.py
 This is the page where a camera gets created rather than opened, and `ex17_camera_pose` is
 the one example in the book that does it. Everywhere else the assumption holds that
 **every vrobot already ships `front_left` and `front_right` at 720p rgba8**, and a reader
-just opens one. You reach for `mount_camera` when that pair cannot serve: a camera
+opens one. You reach for `mount_camera` when that pair cannot serve: a camera
 somewhere else on the robot, pointing somewhere else, through a different lens, or in a
 different format.
 
@@ -93,10 +93,15 @@ std::printf("camera stream: %s\n", cam.service_name().c_str());
 `examples/python/ex17_camera_pose.py`:
 
 ```python
+# the ONE example that mounts its own camera; all others open front_left/front_right
+print(
+    f"requested: position={MOUNT_POSITION} m, euler={MOUNT_EULER_DEG} deg, "
+    f"fx=fy={FOCAL_PX} px"
+)
 cam = mr.mount_camera(
-    CAMERA,
-    RESOLUTION,
-    FORMAT,
+    "tilt",
+    "720p",
+    "rgb8",
     mount_position=MOUNT_POSITION,
     mount_euler_deg=MOUNT_EULER_DEG,
     fx=FOCAL_PX,
@@ -106,6 +111,9 @@ cam = mr.mount_camera(
 )
 print(f"camera stream: {cam.service_name}")
 ```
+
+The Python script passes the camera name, the resolution and the format as literals where
+Rust and C++ use constants.
 
 {{#endtab }}
 {{#endtabs }}
@@ -190,9 +198,12 @@ const double euler_deg[3] = {m.euler_rad[0] * RAD2DEG, m.euler_rad[1] * RAD2DEG,
 ```python
 m, i = frame.mount, frame.intrinsics
 
-# Degrees on the way in, radians on the way out: the wire is SI.
+# degrees on the way in, radians on the way out: the wire is SI
 euler_deg = tuple(round(math.degrees(a), 1) for a in m.euler_rad)
 ```
+
+Python also rounds each angle to a tenth of a degree, so its comparison with the previous
+frame's pose ignores smaller differences.
 
 {{#endtab }}
 {{#endtabs }}

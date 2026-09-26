@@ -184,23 +184,28 @@ robot.configure_sensors(config);
 `examples/python/ex24_sensor_config.py`:
 
 ```python
+# ImuNoise() defaults to an IDEAL channel; a field left at zero is applied as
+# zero, not "keep the current value".
 robot.configure_sensors(
     gyro_noise=vrsdk.ImuNoise(
-        white_std=GYRO_WHITE,
+        white_std=(0.02, 0.02, 0.02),
         bias_instability=(0.002,) * 3,
         bias_tau_s=60.0,
     ),
-    accel_noise=vrsdk.ImuNoise(white_std=ACCEL_WHITE),
-    baro_pressure_noise_std=BARO_WHITE_PA,
-    gps_quality=vrsdk.GpsQuality(eph=REPORTED_EPH, epv=9.0),
+    accel_noise=vrsdk.ImuNoise(white_std=(0.4, 0.4, 0.4)),
+    baro_pressure_noise_std=25.0,
+    gps_quality=vrsdk.GpsQuality(eph=4.5, epv=9.0),  # reported quality: echoes back exactly
     gps_noise=vrsdk.GpsNoise(
-        position_std=(2.0, 2.0, 3.0),  # NED metres
-        velocity_std=(0.2, 0.2, 0.3),  # NED m/s
+        position_std=(2.0, 2.0, 3.0),  # NED metres, the error actually applied
+        velocity_std=(0.2, 0.2, 0.3),
     ),
     optical_flow_mounted=True,
     optical_flow_noise_std=(0.05,) * 3,
 )
 ```
+
+Python writes the numbers in place where Rust and C++ name them as constants (`GYRO_WHITE`,
+`ACCEL_WHITE`, `BARO_WHITE_PA`, `REPORTED_EPH`). The values are the same.
 
 {{#endtab }}
 {{#endtabs }}

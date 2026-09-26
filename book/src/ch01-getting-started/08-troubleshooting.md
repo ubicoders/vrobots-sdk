@@ -10,8 +10,8 @@ playing all look the same from inside your loop.
 Two commands answer most of it before you read any further:
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- topic list
-cargo run -p vrobots-sdk --bin vrobots -- --version
+vrobots topic list
+vrobots --version
 ```
 
 ## Symptoms and causes
@@ -22,6 +22,7 @@ cargo run -p vrobots-sdk --bin vrobots -- --version
 | | The simulator is on another machine | Pass `--router tcp/<host>:7447` | [Two transports, one simulator](../ch02-concepts/01-transports.md) |
 | | zenoh discovery had too short a window | Retry with `-t 5` | [The vrobots command](../ch08-tooling/01-cli.md) |
 | | A `-k` filter excluded everything | Drop the flag | [The vrobots command](../ch08-tooling/01-cli.md) |
+| `topic list` marks a row `(stale: no process attached)` | The process that created that iceoryx2 record is gone, and the record stayed on disk | Once nothing is running, delete the leftover `*.service` files under the iceoryx2 root that the footer names | [The vrobots command](../ch08-tooling/01-cli.md) |
 | `connect` hangs, then times out | The `sys_id` does not exist in this scene | Read the ids out of `topic list`; ids are reallocated on every scene load | [System ids](../ch02-concepts/03-sys-id.md) |
 | | `connect(type, None)` was refused by the scene's catalog | Only `multirotor`, `truck` and `msd` are creatable in the sandbox; attach to the rest by id | [Robot lifecycle](../ch06-services/01-lifecycle.md) |
 | | The first state sample never arrived within `probe_timeout` | Run with `RUST_LOG=vrobots_sdk=debug` to see which of the four connect steps stalled | [What connect actually does](../ch02-concepts/05-connect.md) |
@@ -34,6 +35,7 @@ cargo run -p vrobots-sdk --bin vrobots -- --version
 | | The iceoryx2 pin differs from the simulator's | Compare `vrobots --version` against the simulator build; a patch mismatch delivers nothing and raises nothing | [Versions and pins](../ch08-tooling/03-version-and-pins.md) |
 | | `open_camera` was given a name, resolution or format that does not match the publisher | Copy the stream key from `topic list` and split it back into its three parts | [Mount, open and unmount](../ch05-cameras/01-mount-open-unmount.md) |
 | | You are calling `fresh()` faster than frames arrive | That is correct: `fresh()` returns `None` until a new frame lands. Use `latest()` if you want the current one regardless | [Freshness](../ch05-cameras/04-freshness.md) |
+| `open_camera` fails with a message that the service "exists but does not pair" | A stale iceoryx2 service record, usually from an older build | Stop the simulator and every client, delete the leftover `*.service` files under the iceoryx2 root that the message names, and retry | [The vrobots command](../ch08-tooling/01-cli.md) |
 | Fields look like garbage | Schema drift between the SDK and the simulator | Compare `vrobots_msgs` and `schema_version` from `vrobots --version` against the simulator build | [Versions and pins](../ch08-tooling/03-version-and-pins.md) |
 | | A vector was read in the wrong frame | Read `s.coord_frame_id`: the truck publishes `fru` while the multirotor and the Global Hawk publish `frd`, so the third component means opposite things | [Frames, axes and units](../ch02-concepts/07-frames-and-units.md) |
 | | The quaternion was unpacked as `[w, x, y, z]` | The order is `[x, y, z, w]`, matching the wire's `Vec4` field order | [Frames, axes and units](../ch02-concepts/07-frames-and-units.md) |
@@ -47,29 +49,31 @@ cargo run -p vrobots-sdk --bin vrobots -- --version
 > never integrates, so it hangs where it spawned and ignores every pulse width and even a
 > direct body force, while its actuator echo and rotor-speed model answer perfectly
 > normally. Created trucks and mass-spring-dampers have live physics, and the scene's own
-> multirotor flies. See `issues/created-multirotor-frozen-dynamics.md`. The examples that
-> need a multirotor to move take an optional `sys_id` so you can attach to the scene's one
-> instead.
+> multirotor flies. See [Known simulator issues](../ch07-robots/07-known-issues.md). The
+> three examples that would otherwise create one, `ex21_reset`, `ex22_physical_params` and
+> `ex27_rotor_config`, take an optional `sys_id` in every language, so you can attach to the
+> scene's one instead.
 
 ## When the table does not have it
 
 Turn the logs up. `RUST_LOG` overrides whatever filter the program passed to
-`init_logging`, and the SDK's own tracing events name each connect step as it happens.
+`init_logging`, and the SDK's own log events name each connect step as it happens.
 
 ```sh
 RUST_LOG=vrobots_sdk=debug cargo run -p vrobots-examples --bin ex01_hello_states
 ```
 
-`RUST_LOG` reaches the Rust core, so the other two surfaces turn the volume up in their own
-idiom instead. Python routes the same events into the standard `logging` module, so
-`vrsdk.init_logging("debug")` (or raising the `vrobots_sdk` logger's level yourself) is the
-equivalent. C++ registers a handler with `vrsdk::set_log_callback` and then calls
+`RUST_LOG` is read by the Rust crate's `init_logging`, so the other two surfaces turn the
+volume up in their own idiom instead. Python routes the same events into the standard
+`logging` module, so `vrsdk.init_logging("debug")` (or raising the `vrobots_sdk` logger's
+level yourself) is the equivalent. C++ registers a handler with `vrsdk::set_log_callback` and then calls
 `vrsdk::set_log_level(vrsdk::LogLevel::Debug)`. [Logging](../ch08-tooling/04-logging.md)
 covers all three.
 
-Add zenoh's own view with `RUST_LOG=vrobots_sdk=debug,zenoh=info`. iceoryx2 logs to stderr
-outside `tracing` entirely and is controlled by `IOX2_LOG_LEVEL`, which the SDK defaults to
-errors only.
+In Rust and C++ the SDK's library holds zenoh's and iceoryx2's own events at `warn`,
+whatever the filter or level asks for, so a `zenoh=info` directive adds nothing. iceoryx2
+also has a native logger that writes to stderr, outside the SDK's events entirely, and it is
+controlled by `IOX2_LOG_LEVEL`, which the SDK defaults to errors only.
 
 Two counters are worth printing from inside a loop that misbehaves without failing:
 `stats()` carries received, decode error, sequence gap and missed sample counts, and

@@ -1,12 +1,20 @@
 """ex22 - change the mass mid-flight and compare climb rates."""
 
+import sys
+
 from vrsdk import RobotType, VirtualRobot
+
+# optional: attach to the scene multirotor by id (`vrobots topic list`); it KEEPS the mass
+# set below until the scene reloads. With none, one is created and deleted, but a created
+# multirotor does not fly in sim v3.0.0 (both climbs read 0.00 m/s), so prefer the id.
+sys_id = int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 COLLECTIVE_US = 1800.0  # high enough that both masses still climb
 HZ = 25
 
-robot = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = the scene's multirotor
+robot = VirtualRobot(RobotType.MULTIROTOR, sys_id=sys_id)  # None: the manager creates one
 robot.connect()
+print(f"{'created' if sys_id is None else 'attached to'} sys_id={robot.sys_id}")
 
 
 def climb_run():
@@ -33,3 +41,7 @@ heavy = climb_run()
 print(f"{COLLECTIVE_US} us on every rotor, twice:")
 print(f"  1.0 kg -> {light:+6.2f} m/s")
 print(f"  2.0 kg -> {heavy:+6.2f} m/s")
+
+if sys_id is None:  # created above, so deleted here; a scene robot keeps the 2.0 kg
+    robot.delete()
+    print(f"deleted sys_id={robot.sys_id}")

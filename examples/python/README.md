@@ -1,14 +1,15 @@
 # Python examples
 
 Thirty-six complete programs, in book order, against the `ubicoders-vrsdk`
-wheel. Each is a real program with a `main()` and a `__main__` guard — **STM32
-shape**: `main()` does setup, then owns a plain loop. No base class, no runner,
-no callbacks; the SDK never calls your code.
+wheel. Each is a short, flat script with no `main()` function and no
+`__main__` guard, in the **STM32 shape**: setup at the top of the file, then a
+plain loop. No base class, no runner, no update callback: the loop is yours,
+and the SDK never calls into it.
 
-**No `argparse` anywhere.** Every setting is a module-level constant, and a
-permutation worth showing is its own file rather than a flag — which is why
-ex14, ex15, ex16 and ex17 exist instead of `--save`, `--resolution`, `--camera`
-and `--pose` on ex03.
+**No `argparse` anywhere.** Every setting is written in the file, as a
+module-level constant or a literal at the call, and a permutation worth showing
+is its own file rather than a flag. That is why ex14, ex15, ex16 and ex17 exist
+instead of `--save`, `--resolution`, `--camera` and `--pose` on ex03.
 
 The one exception is the **`sys_id` of a scene-authored robot**. Those robots are
 not in any spawn catalog, their ids are handed out at scene load and keep
@@ -36,7 +37,7 @@ python examples/python/ex31_globalhawk_direct.py 15
 | `ex11_topic_discovery.py` | `list_topics` and `topics(sys_id)` from code |
 | `ex12_version_info.py` | version pins, subscriber stats, `last_error` |
 | `ex13_open_camera.py` | attaching to `front_left`, and what a wrong triple looks like |
-| `ex14_camera_save.py` | one frame to disk as a PNG (PPM without OpenCV), then exit |
+| `ex14_camera_save.py` | one frame to disk as a PNG through OpenCV, then exit |
 | `ex15_camera_formats.py` | what a format and a resolution cost, and the robot-wide rule |
 | `ex16_two_cameras.py` | `front_left` + `front_right`, independent freshness, `t_ns` skew |
 | `ex17_camera_pose.py` | the one example that mounts: pose, lens, and reading them back |
@@ -66,36 +67,41 @@ Install the wheel (`pip install ubicoders-vrsdk`), start the simulator, then:
 
 ```bash
 python examples/python/ex01_hello_states.py
-python examples/python/ex03_hello_image.py     # an OpenCV window if cv2 is installed
+python examples/python/ex03_hello_image.py     # an OpenCV window: needs opencv-python
 python examples/python/ex10_sensors_tour.py
 python examples/python/ex20_logging_tour.py
 ```
 
-Ctrl-C stops any of them cleanly. Check the sim is actually publishing first
-with the command the wheel installs:
+Ctrl-C stops any of them. None catches `KeyboardInterrupt`, so Python prints a
+traceback on the way out; that is expected, not a fault. Check the sim is
+actually publishing first with the command the wheel installs:
 
 ```bash
 vrobots topic list
 ```
 
-`numpy` is required by the camera examples (`frame.image`); `opencv-python` is
-optional — ex03 prints metadata without it and ex14 falls back to a PPM.
+`numpy` is required by the examples that read pixels through `.image` (ex03,
+ex14, ex15, ex17 and ex34), and `opencv-python` by ex03, ex14 and ex34, which
+import `cv2` at the top.
 
 ## System ids in the test scene
 
 Sys ids are **allocated at scene load and keep incrementing across scene loads**
 — on a fresh boot straight into the Flatworld scene the truck is `0` and the
 multirotor `1`, but treat that as a convenience, not a contract. Each example
-names its id in a constant at the top; `vrobots topic list` (or `ex11`) shows
-what is really there.
+that attaches to one of them writes the id into its `VirtualRobot(...)` call,
+with a comment naming the robot; `vrobots topic list` (or `ex11`) shows what is
+really there.
 
 The service and type examples (ex23–ex26, ex28) do not use those ids at all: they
 **create** their own robot and delete it on the way out, so they leave the scene
 as they found it. ex29–ex33 and ex35 do the opposite — their robots are
 scene-authored, so they attach to the `sys_id` you pass and never delete anything. ex21, ex22 and
-ex27 do either, depending on whether you pass one — and when you do, **ex22 and
-ex27 leave their configuration on that robot until the scene is reloaded**, since
-neither mass nor rotor geometry can be read back to restore.
+ex27 do either, depending on whether you pass one. When you do, **ex22 and ex27
+leave their configuration on that robot until the scene is reloaded**, since
+neither mass nor rotor geometry can be read back to restore. Pass one anyway for
+now: as of simulator v3.0.0 a created multirotor does not fly, so the create
+path shows no climb at all.
 
 ## Three things that bite people
 
@@ -121,14 +127,14 @@ neither mass nor rotor geometry can be read back to restore.
 
 ## The twins
 
-`examples/cpp/` has the same programs against the same core, and the Rust
-examples will follow with the wrapper crate (see `examples/rust/`). They print
+`examples/cpp/` and `examples/rust/` have the same programs against the same
+core, the Rust ones through the `vrobots-sdk` wrapper crate. They print
 the same numbers, which is the point: the bindings add sugar, not behaviour.
 `ex20_logging_tour` is the one that legitimately differs — same concept, native
 idiom (Python `logging` here, a C callback in C++).
 
-Two smaller divergences in the new set, both because the C++ surface is thinner:
+One smaller divergence in the new set, because the C++ surface is thinner:
 `ex32_fw_rate_controller` reads its own `src_id` back out of `robot.options`
-here and sets it explicitly in C++, and the service examples print topic keys
-from `vrsdk.topics(sys_id)` where they exist and compose them inline otherwise
-(the per-service keys are not in `topics()` yet).
+here and sets it explicitly in C++. Topic keys never need composing by hand:
+`vrsdk.topics(sys_id)` returns every key the SDK builds for one robot, the
+per-service `srv_*` keys included, and ex11 prints the whole set.

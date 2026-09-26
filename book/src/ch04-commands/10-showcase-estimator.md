@@ -17,7 +17,7 @@ no Rust, C++ or C ABI equivalent, and nothing in it is re-exported at the top le
 | Question | Answer |
 |---|---|
 | Import | `from vrsdk import showcase`, or `import vrsdk.showcase` |
-| Other languages | none; the core crate, the C ABI and the C++ header do not know it exists |
+| Other languages | none; the Rust crate, the C ABI and the C++ header do not know it exists |
 | Source | not shipped. The behaviour is the API; the implementation is compiled into the wheel |
 | Privileges | none. It reads `robot.states`, the same public snapshot your loop reads |
 | Required | no. Nothing else in the SDK depends on it |
@@ -28,7 +28,7 @@ how it does it.
 
 ## The class
 
-From `crates/vrobots-sdk-py/python/vrsdk/showcase.pyi`:
+From `vrsdk/showcase.pyi`:
 
 ```python
 DEFAULT_ALPHA: float

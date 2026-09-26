@@ -40,8 +40,8 @@ service query is a genuine failure and reads the other way.
 A zenoh GET to a key nobody has opened is indistinguishable from a timeout, so the SDK
 reports it as its own variant: `configure_drive` on anything that is not a truck answers
 this, as does `configure_rotors` on anything that is not a multirotor. Asking and catching
-the variant is the supported way to discover what a robot can do, and is what
-`ex30_hello_halfdrone` is built on. The same code with an unexpected `sys_id` in the detail
+the variant is the supported way to discover what a robot can do, and is what the Rust and
+C++ versions of `ex30_hello_halfdrone` are built on. The same code with an unexpected `sys_id` in the detail
 string means something else, that no robot with that id is loaded.
 
 ## The same codes everywhere
@@ -55,7 +55,7 @@ string means something else, that no robot with that id is loaded.
 | CLI | exit code 1 for a command that ran and failed, 2 for arguments that did not parse, 0 for success |
 
 The CLI's exit codes are a separate scheme from `VrError::code()` and do not correspond to
-it. `run(args)` never calls `process::exit`.
+it. The CLI never calls `process::exit`; it returns its code to whatever runs it.
 
 **Next:** [Appendix D: Glossary](appendix-d-glossary.md)
 

@@ -131,7 +131,7 @@ you actually want.
 
 **What it means.** `states()` never blocks, never returns a half-written value, and
 has no error case. An SDK-owned subscriber keeps a snapshot fresh in the background
-and `states()` hands you an `Arc` of the most recent one. If the simulator stops, it
+and `states()` hands you a copy of the most recent one. If the simulator stops, it
 keeps returning that last snapshot forever.
 
 **Why.** A control loop that has to handle an error on every sensor read is a control
@@ -188,31 +188,25 @@ try {
 `examples/python/ex09_state_paced_loop.py`:
 
 ```python
-try:
-    mr.wait_new_state(TIMEOUT)
-except vrsdk.VrError as e:
-    if e.code != vrsdk.err.TIMEOUT:
-        raise  # a real failure
-    # Not a broken session: no sample arrived in time. The sim is
-    # paused, stopped, or the machine is very busy. `states` still
-    # returns the last snapshot it had.
-    s = mr.states
-    print(
-        f"no new state in {TIMEOUT}s ({e.detail}); "
-        f"still holding seq={s.seq} at t={s.elapsed:.3f}"
-    )
-    continue
+while True:
+    mr.wait_new_state(TIMEOUT)  # blocks until a snapshot newer than the current one
 ```
+
+`TIMEOUT` is 0.2 s, and the Python script puts no handler around the call. When no sample
+arrives in time, `wait_new_state` raises `vrsdk.VrError` with `code == vrsdk.err.TIMEOUT`,
+so a paused simulator ends this script with that exception.
+A loop that has to survive a stall catches `vrsdk.VrError`, tests `e.code`, and re-raises
+any other code, which is the test the Rust and C++ arms make.
 
 {{#endtab }}
 {{#endtabs }}
 
 Rust distinguishes the timeout by matching the `VrError::Timeout` variant. C++ and Python
-have one error type each, so they branch on the numeric code and re-raise anything else:
+have one error type each, so a handler branches on the numeric code and re-raises anything else:
 `e.code() != VRSDK_ERR_TIMEOUT` and `e.code != vrsdk.err.TIMEOUT` are the same test, and it
 is the same stable number in both.
 
-That arm prints a line each time the simulator goes quiet and keeps the loop alive.
+The Rust and C++ arms print a line each time the simulator goes quiet and keep the loop alive.
 Propagating the timeout out of `main` with `?` instead is what turns a paused
 simulator into a crashed program. `stats()` gives the same answer cumulatively:
 `received` stops climbing, and `seq_gaps` counts the samples that went missing while

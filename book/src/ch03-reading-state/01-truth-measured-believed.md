@@ -100,7 +100,7 @@ v3("lin_vel", r.estimate.kin.lin_vel, "m/s", "");
 `examples/python/ex10_sensors_tour.py`:
 
 ```python
-# -- believed -------------------------------------------------------
+# believed: the robot's own filter; valid=False means no estimator runs
 e = s.estimate
 print(
     f"BELIEVED  estimate  {stamp(e.valid, e.timestamp)}  "

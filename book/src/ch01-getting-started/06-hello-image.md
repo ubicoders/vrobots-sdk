@@ -13,7 +13,7 @@ python examples/python/ex03_hello_image.py
 **Every vrobot ships with `front_left` and `front_right` mounted, at 720p rgba8.** Reading
 images does not start with creating a camera: it starts with attaching to one of those.
 `open_camera` opens the iceoryx2 subscriber and touches the simulator not at all. The name,
-resolution and format are constants, as they are in every example.
+resolution and format are constants in Rust and C++ and literals at the call in Python.
 
 
 {{#tabs global="lang" }}
@@ -80,29 +80,22 @@ int main() {
 `examples/python/ex03_hello_image.py`:
 
 ```python
-SYS_ID = 1  # the multirotor in the test scene
-CAMERA = "front_left"  # every vrobot ships front_left and front_right
-RESOLUTION = "720p"
-FORMAT = "rgba8"  # Unity's native readback -- four channels, NOT rgb8
-FRAMES = 300  # then exit
-HZ = 100
+import cv2
 
+from vrsdk import RobotType, VirtualRobot
 
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
+FRAMES = 300
 
-    # open_camera SUBSCRIBES to a camera the robot already has, without
-    # mutating the sim. The name, resolution and format must match the
-    # publisher exactly -- on iceoryx2 those three strings are the stream
-    # identity -- so a mismatch surfaces as a TIMEOUT (ex13 shows that path).
-    cam = mr.open_camera(CAMERA, RESOLUTION, FORMAT)
-    print(f"camera stream: {cam.service_name}")
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor
+mr.connect()
+cam = mr.open_camera("front_left", "720p", "rgba8")  # rgba8: 4 channels, not rgb8
+print(f"camera stream: {cam.service_name}")
 
-    seen = 0
+seen = 0
 ```
+
+The Python script imports `cv2` first because it shows the frames in an OpenCV window, so it
+needs `opencv-python` installed.
 
 {{#endtab }}
 {{#endtabs }}
@@ -176,22 +169,21 @@ frame while the state half runs every iteration, and the code says which by bran
 `examples/python/ex03_hello_image.py`:
 
 ```python
-    # ===== loop =====
-    while seen < FRAMES:
-        s = mr.states
-
-        # Images are a separate stream with their own timestamps -- never assume
-        # they match the state's. Compare t_ns explicitly when fusing.
-        if cam.fresh:
-            frame = cam.frame  # metadata for the image we are about to read
-            img = cam.image  # numpy (h, w, c) uint8, top-down, RGB(A)
-            seen += 1
-
-            print(
-                f"Image {frame.camera_name} t={frame.elapsed:.3f} "
-                f"size=({frame.width}x{frame.height}) seq={frame.seq} "
-                f"lag_vs_state={(s.t_ns - frame.t_ns) / 1e6:.1f} ms"
-            )
+while seen < FRAMES:
+    s = mr.states
+    if cam.fresh:  # True only when a frame arrived since the last read
+        frame = cam.frame  # metadata for the image we are about to read
+        img = cam.image  # numpy (h, w, 4) uint8, top-down, RGBA
+        seen += 1
+        print(
+            f"Image {frame.camera_name} t={frame.elapsed:.3f} "
+            f"size=({frame.width}x{frame.height}) seq={frame.seq} "
+            f"lag_vs_state={(s.t_ns - frame.t_ns) / 1e6:.1f} ms"
+        )
+        cv2.imshow("vrsdk front_left", cv2.cvtColor(img, cv2.COLOR_RGBA2BGR))
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+    mr.rate(100)
 ```
 
 {{#endtab }}
@@ -199,7 +191,9 @@ frame while the state half runs every iteration, and the code says which by bran
 
 Rust and C++ ask and receive in one move, so the frame arrives inside an `Option` that the
 `if` unwraps. Python splits it: `cam.fresh` is a boolean property and `cam.image` is the
-numpy array, and reading the image is what consumes the freshness.
+numpy array, and reading the image is what consumes the freshness. The Python script also
+shows each fresh frame in an OpenCV window, converting RGBA to BGR at the `imshow` call, and
+pressing `q` in that window ends the loop early.
 
 ```text
 State t=0.410 (no new frame)
@@ -207,6 +201,9 @@ Image front_left t=0.412 size=(1280x720) seq=17 lag_vs_state=12.4 ms
       sky-ness (B-R) top=+98 bottom=-25 (top-down: sky above ground), fov_y=61.9 deg
 State t=0.420 (no new frame)
 ```
+
+That is the Rust and C++ output. The Python script prints only the `Image` lines, and the
+window is its orientation check.
 
 `fresh()` returns `Some` only when a frame has arrived since the last call, and it hands
 each frame out exactly once. That makes it the right read for work that must not run twice
@@ -225,9 +222,10 @@ subtraction explicitly is what fusion looks like here.
 
 Rows in `frame.data` are row-major and **top-down**: row 0 is the top of the picture. The
 wire is bottom-up, following Unity's render order, and the SDK flips while copying. The
-sky-ness figures are the check on that, measuring blue minus red on the first and last
-rows: outdoors the top row is sky and the bottom is ground. Channel order is the
-renderer's own RGBA, never swapped, so OpenCV users convert to BGR at the call site.
+sky-ness figures of the Rust and C++ programs are the check on that, measuring blue minus
+red on the first and last rows: outdoors the top row is sky and the bottom is ground.
+Channel order is the renderer's own RGBA, never swapped, so OpenCV users convert to BGR at
+the call site, as the Python script does.
 
 ## Nothing to clean up
 
@@ -276,28 +274,28 @@ subscription and `front_left` keeps rendering and publishing for everyone else.
 `examples/python/ex03_hello_image.py`:
 
 ```python
-    # Nothing to unmount: this handle never created a camera. Letting the stream
-    # be collected ends this subscription only -- front_left keeps rendering and
-    # publishing for everyone else.
-    st = cam.stats
-    print(
-        f"{seen} frame(s), received={st.received} "
-        f"decode_errors={st.decode_errors} seq_gaps={st.seq_gaps}"
-    )
+cv2.destroyAllWindows()
+st = cam.stats
+print(
+    f"{seen} frame(s), received={st.received} "
+    f"decode_errors={st.decode_errors} seq_gaps={st.seq_gaps}"
+)
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
+The Python script closes its window first and then prints the same summary as the other two.
+
 ```text
 120 frame(s), received=120 decode_errors=0 seq_gaps=0
 ```
 
-That count is `FRAMES`, so the Python run prints 300 rather than 120: it opens a window and
-wants more of them. Because nothing was mutated, the loop bound is a convenience rather
-than a cleanup deadline, and Ctrl-C is as safe an exit as running to the end. The one
-example that does have a cleanup step is `ex17_camera_pose`, which mounts a camera of its
-own.
+That count is `FRAMES`, so the Python run prints 300 rather than 120, or fewer if you press
+`q` first: it opens a window and wants more of them. Because nothing was mutated, the loop
+bound is a convenience rather than a cleanup deadline, and Ctrl-C is as safe an exit as
+running to the end. The one example that does have a cleanup step is `ex17_camera_pose`,
+which mounts a camera of its own.
 
 **Next:** [Hello service](07-hello-service.md)
 

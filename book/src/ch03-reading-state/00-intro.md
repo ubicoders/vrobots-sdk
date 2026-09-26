@@ -9,24 +9,30 @@ subscribes in the background, decodes each sample into an owned
 [snapshot](../appendix-d-glossary.md) and stores it. You never poll a queue and you
 never register a callback: you read the latest snapshot whenever your loop wants it.
 
-That read is the narrowest API in the SDK.
-
-From `crates/vrobots-sdk/src/robot.rs`:
+That read is the narrowest API in the SDK, one call with no arguments:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/robot.rs`:
+
 ```rust
-pub fn states(&self) -> Arc<State> {
-    self.channel.snapshot.load_full()
+#[must_use]
+pub fn states(&self) -> State {
+    let mut raw = sys::vrsdk_state_t::default();
+    // SAFETY: `self.raw` is live and connected; `raw` is writable storage
+    // for one `vrsdk_state_t`.
+    let code = unsafe { sys::vrsdk_robot_states(self.raw.as_ptr(), &mut raw) };
+    expect_ok(code, "vrsdk_robot_states");
+    State::from_raw(&raw)
 }
 ```
 
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 [[nodiscard]] State states() const {
@@ -39,7 +45,7 @@ pub fn states(&self) -> Arc<State> {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 class VirtualRobot:
@@ -50,17 +56,16 @@ class VirtualRobot:
 {{#endtab }}
 {{#endtabs }}
 
-The three differ only in how the copy is made and named. Rust hands back a reference-counted
-clone, so reading is a pointer bump. C++ copies the C struct into a value you can store and
-pass to another thread, and Python builds a `State` object. In Python it is a **property**,
-so it is `mr.states` with no parentheses; forgetting that is the most common transcription
-error when porting a loop from one of the other two.
+The three differ only in how the copy is made and named. Rust and C++ both have the C
+library fill a `vrsdk_state_t` and convert it into a value of their own, an owned `State` in
+Rust and a `vrsdk::State` in C++, which you can store and pass to another thread. Python
+builds a `State` object. In Python it is a **property**, so it is `mr.states` with no
+parentheses; forgetting that is the most common transcription error when porting a loop from
+one of the other two.
 
-This is a signature rather than a program: it returns immediately with the most
-recent decoded sample, hands you a reference-counted clone, and cannot fail. A
-`State` is a plain owned struct of fixed-size arrays and `Vec`s, with no borrows
-into the receive buffer, so it outlives the sample it came from and crosses to C++
-and Python as a memory copy.
+The call returns immediately with the most recent decoded sample, hands you a copy of it,
+and cannot fail. A `State` is a plain owned struct of fixed-size arrays, strings and `Vec`s,
+with no borrows into the receive buffer, so it outlives the sample it came from.
 
 Three consequences follow, and the rest of the chapter is mostly their detail:
 
@@ -141,7 +146,7 @@ while True:
     s = mr.states  # immutable latest snapshot, never torn
     x, y, z = s.kin.lin_pos
     print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
-    mr.rate(HZ)  # drift-compensated pacing, Hz
+    mr.rate(50)  # drift-compensated pacing, Hz
 ```
 
 {{#endtab }}

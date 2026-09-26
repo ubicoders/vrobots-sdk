@@ -1,0 +1,62 @@
+Licence Addendum: Additional Terms (Patents)
+
+This addendum accompanies the Creative Commons Attribution-NonCommercial-
+ShareAlike 4.0 International licence (the "Licence", see the LICENSE file)
+under which Ubicoders makes the VRobots SDK available. It is offered by
+Ubicoders as Licensor, in addition to the Licence, and forms part of the terms
+on which the SDK is licensed. It does not alter the text of the Licence. Terms
+written with a capital letter have the meaning the Licence gives them.
+
+"This implementation" means the copyrightable works distributed by Ubicoders
+as part of the VRobots SDK: the SDK libraries, bindings and tools, the example
+programs and the VRobots Book. "Covered Work" means this implementation and
+any Adapted Material based on it, in whole or in part.
+
+1. Patent licence from Ubicoders
+
+   Ubicoders grants to You a perpetual, worldwide, non-exclusive, no-charge,
+   royalty-free, irrevocable (except as stated in section 4) patent licence to
+   make, have made, use, run, modify and propagate this implementation, but
+   only to the extent that You do so within the rights granted to You by the
+   Licence (in particular, for NonCommercial purposes as the Licence defines
+   them). This licence covers only those patent claims, owned or controlled by
+   Ubicoders now or in the future, that are necessarily infringed by this
+   implementation. It does not cover claims that would be infringed only as a
+   consequence of further modification of this implementation.
+
+2. No patents on the Covered Work
+
+   As a condition of the Licence, You agree not to file, prosecute, acquire or
+   maintain any patent application or patent, anywhere in the world, that
+   claims any part of the Covered Work, any method that the Covered Work
+   performs, or any Adapted Material You or anyone else creates from it. This
+   includes claims dressed as improvements, combinations or applications of
+   the Covered Work.
+
+3. Grant-back of any such patent
+
+   If, despite section 2, You or Your agent, affiliate or exclusive licensee
+   own or control a patent claim that reads on the Covered Work or on any
+   Adapted Material, that claim is hereby licensed, perpetually, worldwide,
+   royalty-free and irrevocably, to Ubicoders and to every person who receives
+   the Covered Work under the Licence, for everything the Licence permits.
+   This grant-back survives any termination of Your rights.
+
+4. Termination
+
+   Your rights under the Licence and under section 1 terminate automatically
+   on the date You, or anyone acting for You, (a) file a patent application
+   in breach of section 2, or (b) institute, order or agree to the
+   institution of patent litigation or any other patent enforcement activity
+   against any entity (including a cross-claim or counterclaim) alleging that
+   the Covered Work, or any code incorporated within it, constitutes direct or
+   contributory patent infringement, or inducement of patent infringement.
+   Sections 3 and 5 survive termination.
+
+5. Scope
+
+   Nothing in these terms permits Commercial use of the Covered Work. Nothing
+   in these terms limits any right Ubicoders has under the Licence, under
+   copyright or under patent law. These terms bind everyone who exercises the
+   Licensed Rights; a person who does not accept them has no rights under the
+   Licence.

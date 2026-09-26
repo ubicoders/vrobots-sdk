@@ -14,12 +14,13 @@ two questions actually occur in.
 
 ## The calls
 
-Two listing calls and one capability question. From
-`crates/vrobots-sdk/src/discovery.rs`:
+Two listing calls and one capability question:
 
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/discovery.rs`:
 
 ```rust
 pub fn list_topics(timeout: Duration) -> VrResult<Vec<TopicInfo>>
@@ -30,7 +31,7 @@ pub fn discovery_covers_all_transports() -> bool
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 inline std::vector<TopicInfo> list_topics(double timeout_s = 1.5,
@@ -40,7 +41,7 @@ inline std::vector<TopicInfo> list_topics(double timeout_s = 1.5,
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def list_topics(
@@ -53,9 +54,9 @@ def list_topics(
 
 Rust splits the plain and the options-taking call in two; C++ and Python fold both into
 one function with defaulted trailing arguments, and Python narrows the options to the
-one field that matters here, `router`. Neither wrapper exposes
-`discovery_covers_all_transports`: it exists only as `vrsdk_discovery_covers_all_transports`
-in `crates/vrobots-sdk-capi/include/vrobots_sdk.h`.
+one field that matters here, `router`. Neither the C++ header nor the Python package
+exposes `discovery_covers_all_transports`: outside Rust it exists only as
+`vrsdk_discovery_covers_all_transports` in the C header `include/vrobots_sdk.h`.
 
 The listing calls block for `timeout` and print nothing; what they return is the
 vector described below.
@@ -165,16 +166,16 @@ branch on `observed` and `live` rather than a two-way one:
 `examples/python/ex11_topic_discovery.py`:
 
 ```python
-    print(f"\n{'wire':<4} {'Hz':>7} {'bytes':>9}  topic")
-    for t in topics:
-        # `observed` decides whether the numbers mean anything at all.
-        if t.observed:
-            hz, nbytes = f"{t.hz:.1f}", str(t.bytes)
-        elif t.live:
-            hz, nbytes = "-", "-"
-        else:
-            hz, nbytes = "stale", "-"
-        print(f"[{t.transport}] {hz:>7} {nbytes:>9}  {t.key}")
+print(f"\n{'wire':<4} {'Hz':>7} {'bytes':>9}  topic")
+for t in topics:
+    # zenoh topics are measured (observed); iceoryx2 come from a registry, unmeasured
+    if t.observed:
+        hz, nbytes = f"{t.hz:.1f}", str(t.bytes)
+    elif t.live:
+        hz, nbytes = "-", "-"
+    else:
+        hz, nbytes = "stale", "-"
+    print(f"[{t.transport}] {hz:>7} {nbytes:>9}  {t.key}")
 ```
 
 {{#endtab }}
@@ -221,9 +222,9 @@ one I want have a camera".
 `examples/python/ex11_topic_discovery.py`:
 
 ```python
-    by_robot: dict[int | None, list[str]] = defaultdict(list)
-    for t in topics:
-        by_robot[t.sys_id].append(t.key)
+by_robot = defaultdict(list)
+for t in topics:
+    by_robot[t.sys_id].append(t.key)
 ```
 
 {{#endtab }}
@@ -257,6 +258,10 @@ by robot:
 ```
 
 <!-- VERIFY: the sample values in the block above (rates, byte totals, which cameras the test scene ships and on which sys_id) are reconstructed from the example's format strings and need a live-simulator capture to confirm. -->
+
+After the grouping, the Python script prints one more section: the keys `vrsdk.topics()`
+builds for the first robot id it found, one `role key` line each, computed without asking
+the network.
 
 **Next:** [Versions and pins](03-version-and-pins.md)
 

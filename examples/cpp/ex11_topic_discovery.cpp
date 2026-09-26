@@ -18,9 +18,10 @@
 //   * **iceoryx2 has one.** Camera streams come from *reading* it, so they
 //     appear instantly and unmeasured -- all three counters are 0. `live` is
 //     what matters there: false marks a stale record whose owning process died
-//     (`sb topic prune` clears those). And because it is shared memory, the
-//     iceoryx2 half only ever sees **this host** -- a remote sim lists states
-//     and services but no cameras, which is not a discovery failure.
+//     (`vrobots topic list` flags those rows "stale: no process attached"). And
+//     because it is shared memory, the iceoryx2 half only ever sees **this
+//     host** -- a remote sim lists states and services but no cameras, which is
+//     not a discovery failure.
 //
 // An empty list is a legitimate answer, not an error: the sim is not in Play
 // mode, is on another machine (pass a `vrsdk_connect_options_t` with a router

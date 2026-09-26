@@ -62,9 +62,10 @@ construction has no measured rate.
 
 ## FlatBuffers on the wire
 
-Both transports carry FlatBuffers payloads, generated from the schemas in the
-`vrobots_msgs` submodule and shared byte for byte with the simulator's C# side. The
-submodule ships the generated Rust, so building the SDK needs no `flatc`.
+Both transports carry FlatBuffers payloads. The SDK and the simulator's C# side are
+generated from the same message schemas, `vrobots_msgs`, whose revision `vrobots --version`
+prints, so the two agree byte for byte. The generated code is compiled into the library you
+install, so nothing on your machine needs `flatc`.
 
 Two properties of that choice show up in the API. Decoding verifies the buffer
 before reading any field, so a truncated or hostile payload produces
@@ -75,8 +76,8 @@ not know about arrive as zero, not as an error.
 
 ## The pins are exact, and that is not pedantry
 
-`ipc_versions.json` at the repository root is the source of truth for the three IPC
-versions this SDK must match.
+Each SDK release is built against exact versions of the three IPC packages, and the
+simulator build it talks to has to use the same ones.
 
 | Package | Pin | Kind of pin |
 |---|---|---|
@@ -91,11 +92,10 @@ delivers nothing. The symptom is a camera stream that never produces a frame, wh
 reads as "the simulator is not publishing" and sends you looking in entirely the
 wrong place.
 
-Three mechanisms keep the pins honest, so this is a failure you should never
-actually see: `build.rs` fails the build on drift from `ipc_versions.json`,
-`scripts/check_versions.ps1` fails CI, and the release workflow refuses to build.
-`vrobots --version` prints the versions a given binary was built against, which is
-the first thing to check when a simulator and an SDK disagree.
+The SDK side of that comparison is fixed per release: the pins are checked before a
+release is built, so no wheel or C bundle ships with one that drifted. `vrobots --version`
+prints the versions a given install was built against, which is the first thing to check
+when a simulator and an SDK disagree.
 [Versions and pins](../ch08-tooling/03-version-and-pins.md) covers the whole
 procedure.
 

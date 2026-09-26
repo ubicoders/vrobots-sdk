@@ -1,24 +1,24 @@
 # Recording and testing without the simulator
 
-You capture real wire bytes once, check them in, and let `cargo test` decode them with Unity closed.
+You capture the exact bytes the simulator publishes, and see how such recordings let the SDK's decoder be tested with Unity closed.
 
 ```sh
-cargo run -p vrobots-sdk --bin vrobots -- record --sys-id 1 -n 5 --prefix state_multirotor
+vrobots record --sys-id 1 -n 5 --prefix state_multirotor
 ```
 
-That writes `state_multirotor_000.bin` through `state_multirotor_004.bin` into
-`crates/vrobots-sdk/tests/fixtures`, and those files are what makes the SDK's test
-suite mean something on a machine with no simulator on it.
+That writes `state_multirotor_000.bin` through `state_multirotor_004.bin` into a `captures`
+folder under the current directory, which the command creates if it is missing. Each file
+is one state payload exactly as it arrived. Pass `-o <PATH>` to write them somewhere else.
 
 ## Why the bytes have to come from the simulator
 
 A fixture the SDK built itself would test the SDK's own builder against the SDK's own
-decoder, which proves the crate is self-consistent and nothing else. It cannot catch
+decoder, which proves the SDK is self-consistent and nothing else. It cannot catch
 the failure that actually happens.
 
 Recorded frames are **C#-produced golden payloads**: the exact bytes the simulator's
-publisher put on the wire, captured once from a live simulator and checked in, then
-decoded by the SDK's own decoder in unit tests. A schema change on the simulator side
+publisher put on the wire, captured once from a live simulator and kept, then decoded
+by the SDK's own decoder in its unit tests. A schema change on the simulator side
 breaks a unit test instead of surfacing months later as garbage fields at runtime.
 That is the whole reason the recorder exists.
 
@@ -26,6 +26,10 @@ Recording is deliberately not a decode. What is written is the payload byte for 
 as it arrived, in raw `.bin` rather than base64 in text, because a fixture is only
 useful if it is exact and a binary file cannot be reformatted or line-ending
 converted on checkout.
+
+The same exactness makes a recording the most precise attachment a bug report can carry.
+Next to the output of `vrobots --version`, it shows what the simulator actually sent rather
+than what your program made of it.
 
 ## The command
 
@@ -38,16 +42,16 @@ converted on checkout.
 | `--mount` | off | Mount the camera first and unmount it afterwards. Requires `--camera`. **Mutates the simulator.** |
 | `-n`, `--count <USIZE>` | `5` | Frames to capture. |
 | `-t`, `--timeout <SECS>` | `10.0` | Give up after this long. |
-| `-o`, `--out <PATH>` | `crates/vrobots-sdk/tests/fixtures` | Output directory, created if missing. |
+| `-o`, `--out <PATH>` | `captures` | Output directory, created if missing. A relative path, the default included, is taken from the current directory. |
 | `--prefix <STR>` | `state` | File name prefix. |
 | `--router <ENDPOINT>` | | zenoh only. |
 
 ```text
-crates/vrobots-sdk/tests/fixtures/state_multirotor_000.bin (1200 bytes)
-crates/vrobots-sdk/tests/fixtures/state_multirotor_001.bin (1200 bytes)
-crates/vrobots-sdk/tests/fixtures/state_multirotor_002.bin (1200 bytes)
-crates/vrobots-sdk/tests/fixtures/state_multirotor_003.bin (1200 bytes)
-crates/vrobots-sdk/tests/fixtures/state_multirotor_004.bin (1200 bytes)
+captures/state_multirotor_000.bin (1200 bytes)
+captures/state_multirotor_001.bin (1200 bytes)
+captures/state_multirotor_002.bin (1200 bytes)
+captures/state_multirotor_003.bin (1200 bytes)
+captures/state_multirotor_004.bin (1200 bytes)
 5 frame(s) from vrobots/1/z/state
 ```
 
@@ -59,62 +63,45 @@ crates/vrobots-sdk/tests/fixtures/state_multirotor_004.bin (1200 bytes)
 > their streams under new names, and unmounting does not put them back. Without
 > `--mount` the camera must already exist, because the recorder only subscribes.
 
-## The calls behind it
+## What happens when it runs
 
-From `crates/vrobots-sdk/src/record.rs`:
+The recorder has no library API in any language: nothing of it appears in the `vrobots-sdk`
+crate, in `include/vrobots_sdk.h`, in `include/vrobots_sdk.hpp` or in `vrsdk/_vrsdk.pyi`.
+That is deliberate. It exists to produce fixtures for the SDK's own test suite, and
+`vrobots record` is the interface every language uses. A run has three parts:
 
-```rust
-pub struct RecordedFrame { pub key: String, pub bytes: Vec<u8> }
-
-pub fn record_frames(key: &str, count: usize, timeout: Duration, options: &ConnectOptions) -> VrResult<Vec<RecordedFrame>>
-pub fn record_camera_frames(sys_id: u32, camera: &str, resolution: &str, format: &str, count: usize, timeout: Duration) -> VrResult<Vec<RecordedFrame>>
-pub fn write_fixtures(frames: &[RecordedFrame], dir: &Path, prefix: &str) -> VrResult<Vec<PathBuf>>
-```
-
-These three are Rust-only. `RecordedFrame`, `record_frames`, `record_camera_frames` and
-`write_fixtures` appear in none of `crates/vrobots-sdk-capi/include/vrobots_sdk.h`,
-`cpp/include/vrobots_sdk.hpp` or `_vrsdk.pyi`, so there is nothing to show for the other
-two surfaces. That is deliberate: the recorder exists to produce fixtures for this crate's
-own test suite, and `vrobots record` is the interface every surface uses.
-
-They return values rather than printing; the CLI prints what they return.
-
-| Call | What it does |
+| Part | What it does |
 |---|---|
-| `record_frames` | A raw zenoh subscribe on one key, capturing each payload with no decode. `VrError::Timeout` when nothing arrives at all, with "is the sim in Play mode?" in the message. |
-| `record_camera_frames` | The iceoryx2 counterpart, capturing shared-memory slices as `[5760-byte prefix][pixels]`. The camera must already be mounted; this only subscribes. `VrError::Timeout` when no publisher appears or no frame arrives. |
-| `write_fixtures` | Writes `<prefix>_NNN.bin` as raw binary, creating the directory if needed, and returns the paths. `VrError::Config` when a write fails. |
-
-`RecordedFrame` carries the key it arrived on beside the bytes, so a capture across a
-wildcard still says which topic each payload came from.
+| State capture, without `--camera` | A raw zenoh subscribe on `vrobots/<sys_id>/z/state`, capturing each payload with no decode. When nothing arrives at all it fails with a timeout, and the message asks whether the simulator is in Play mode. |
+| Camera capture, with `--camera` | The iceoryx2 counterpart, capturing shared-memory slices as `[5760-byte prefix][pixels]`. The camera must already be mounted, or be mounted by `--mount`, because the capture itself only subscribes. It fails with a timeout when no publisher appears or no frame arrives. |
+| Writing | Each capture becomes `<prefix>_NNN.bin`, raw binary, in the output directory, which is created if needed. A write that fails ends the command with an error. |
 
 ## What the tests do with them
 
-`crates/vrobots-sdk/tests/replay_decode.rs` decodes the state fixtures and
-`camera_replay.rs` decodes the camera one. Because the bytes came from the other
-language, those tests assert things nobody would bother asserting about their own
-output: `src_id == 0`, which is reserved for the simulator, the schema version, a unit
-quaternion, an accelerometer reading about 1 g at rest.
+The SDK's own test suite decodes recorded state sets and a recorded camera frame.
+Because the bytes came from the other language, those tests assert things nobody would
+bother asserting about their own output: `src_id == 0`, which is reserved for the
+simulator, the schema version, a unit quaternion, an accelerometer reading about 1 g at
+rest.
 
 Each state set is consecutive samples off one subscriber, so `header.seq` increments
-by exactly one across the set. `replay_decode.rs` asserts that too, which makes the
-set a sequence-continuity fixture and not only a decode fixture.
+by exactly one across the set. The state tests assert that too, which makes the set a
+sequence-continuity fixture and not only a decode fixture.
 
-`crates/vrobots-sdk/src/hz.rs` uses the same fixture from the other direction: its
-generic header peek has to agree with the full decoder on the same bytes, or
-`topic hz` would invent gaps.
+The rate meter behind `topic hz` uses the same fixture from the other direction: its
+generic header peek has to agree with the full decoder on the same bytes, or `topic hz`
+would invent gaps.
 
 ## Refreshing them
 
 Only when the schema genuinely moves. A fixture that gets regenerated whenever a test
-fails is not a fixture. The exact commands live in
-`crates/vrobots-sdk/tests/fixtures/README.md`, along with the reason to keep the
-camera recording at 360p mono8: it is the smallest stream the simulator can produce,
-where the same frame at 720p rgba8 would be 3.6 MB of checked-in binary.
+fails is not a fixture. Camera recordings stay at 360p mono8, because that is the smallest
+stream the simulator can produce, where the same frame at 720p rgba8 would be 3.6 MB per
+file.
 
-Several assertions in `replay_decode.rs` encode the state the robot was in when
-captured, at rest with idle PWM. Recording a flying drone fails them for a good
-reason. Capture at rest, or change the assertions on purpose.
+Several of the state assertions encode the state the robot was in when captured, at rest
+with idle PWM, so a recording of a flying drone fails them for a good reason. Capture at
+rest for a bug report too, so the numbers mean the same thing to whoever reads them.
 
 **Next:** [Appendix A: Topic reference](../appendix-a-topics.md)
 

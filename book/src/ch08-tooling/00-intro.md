@@ -31,7 +31,7 @@ shared-memory open and silently delivers nothing when it disagrees, which presen
 as absence rather than as a fault. Checking a version takes one command and rules
 out a class of bug that logs will never explain.
 
-Rung 4 last. `tracing` events describe what the SDK did on your behalf, which is the
+Rung 4 last. The SDK's log events describe what it did on your behalf, which is the
 right level of detail once you know the wire is alive and compatible, and far too
 much detail before that.
 
@@ -46,8 +46,8 @@ much detail before that.
 which is where frame disagreements between robot types stop being theoretical.
 
 [Recording and testing without the simulator](07-recording-and-testing.md) covers
-capturing real wire bytes once and replaying them in unit tests, which is what makes
-`cargo test` meaningful with Unity closed.
+capturing the simulator's exact wire bytes with `vrobots record`, and how such recordings
+let the SDK's decoder be tested with Unity closed.
 
 ## Where else to look
 

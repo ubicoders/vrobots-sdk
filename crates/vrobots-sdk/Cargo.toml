@@ -1,10 +1,32 @@
 [package]
 name = "vrobots-sdk"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
-description = "Rust client SDK for the Ubicoders virtual robots simulator"
+# The `-sys` crate's minimum: its build script needs Rust 1.88.
+rust-version = "1.88"
+description = "Rust client SDK for the Ubicoders virtual robots simulator: a safe wrapper over the VRobots SDK C library"
 repository = "https://github.com/ubicoders/vrobots-sdk"
 license = "CC-BY-NC-SA-4.0"
+readme = "README.md"
+keywords = ["robotics", "simulator", "robots", "sdk", "zenoh"]
+categories = ["api-bindings", "science::robotics", "simulation"]
+
+[lib]
+name = "vrobots_sdk"
+
+[features]
+# Link the static C library instead of the shared one, so the program needs no
+# shared library at run time. Forwarded to `vrobots-sdk-sys`.
+static = ["vrobots-sdk-sys/static"]
 
 [dependencies]
-vrobots-sdk-sys = { path = "../vrobots-sdk-sys", version = "0.1.10" }
+# Exact pin: the bindings are shared with the C library by layout, so the wrapper
+# and the `-sys` crate always release together, at the same version.
+vrobots-sdk-sys = { path = "../vrobots-sdk-sys", version = "=0.1.11" }
+
+# docs.rs builds without network access and sets DOCS_RS, under which the
+# vrobots-sdk-sys build script uses its shipped copy of the bindings and links
+# nothing, so no C bundle is needed. The API is the same on every supported
+# target, so one target is documented.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

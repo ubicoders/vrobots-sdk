@@ -15,6 +15,8 @@ python examples/python/ex08_generic_cmd.py
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
 
+`crates/vrobots-sdk/src/commands.rs`:
+
 ```rust
 pub fn send_cmd(&self, cmd_id: u32, args: &CmdArgs) -> VrResult<()>
 ```
@@ -22,7 +24,7 @@ pub fn send_cmd(&self, cmd_id: u32, args: &CmdArgs) -> VrResult<()>
 {{#endtab }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 /// Publish any command by id -- the escape hatch for the whole
@@ -33,7 +35,7 @@ void send_cmd(std::uint32_t cmd_id, const vrsdk_cmd_args_t* args = nullptr)
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def send_cmd(
@@ -125,16 +127,12 @@ for (;;) {
 `examples/python/ex08_generic_cmd.py`:
 
 ```python
-# ===== loop =====
 while True:
-    # (1) An implemented id, built by hand. int_arr is the field SET_CAR
-    #     reads; everything else stays off the wire.
+    # cmd_id decides which payload fields mean anything; unset fields stay off the wire.
     car.send_cmd(cmd.SET_CAR, int_arr=[STEER_US, THROTTLE_US, BRAKE_US])
 
-    # (2) An id nothing acts on, whose payload rides vec3. Same call, no
-    #     exception, no effect. `cmd.name` turns an id back into its schema
-    #     name, which is what makes a log line readable.
-    car.send_cmd(cmd.ADD_BODY_FORCE, vec3=GUST_N)
+    # An id nothing acts on yet, with no typed wrapper: published, silently ignored.
+    car.send_cmd(cmd.ADD_BODY_FORCE, vec3=(0.0, 0.0, 25.0))
 ```
 
 {{#endtab }}
@@ -154,6 +152,11 @@ sent SET_CAR(304) + ADD_BODY_FORCE(203) -> echo=[1500, 1600, 1100]
       SET_CAR landed (the echo is the receipt); ADD_BODY_FORCE was ignored -- wrench=(<fx>,<fy>,<fz>) N unchanged
 ```
 
+The Python script prints one line per iteration instead,
+`sent SET_CAR(304) + ADD_BODY_FORCE(203) -> echo=[1500, 1600, 1100] wrench=(<fx>,<fy>,<fz>) N`,
+and leaves the verdict to you: the echo carries the pulse widths it sent, and the wrench
+does not respond to the force.
+
 `cmd::name(cmd_id) -> &'static str` maps an id back to its constant name for logging, and
 returns `""` for an id that is not in the schema.
 
@@ -162,6 +165,8 @@ returns `""` for an id that is not in the schema.
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/commands.rs`, with its doc comments left out:
 
 ```rust
 #[non_exhaustive]
@@ -180,7 +185,7 @@ pub struct CmdArgs {
 {{#endtab }}
 {{#tab name="C++" }}
 
-`crates/vrobots-sdk-capi/include/vrobots_sdk.h`:
+`include/vrobots_sdk.h`:
 
 ```c
 typedef struct vrsdk_cmd_args_t {
@@ -202,17 +207,17 @@ typedef struct vrsdk_cmd_args_t {
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
-int_val: int = 0
-float_val: float = 0.0
-int_arr: Optional[Sequence[int]] = None
-float_arr: Optional[Sequence[float]] = None
-vec3: Optional[Sequence[float]] = None
-vec4: Optional[Sequence[float]] = None
-vec3_arr: Optional[Sequence[Sequence[float]]] = None
-vec4_arr: Optional[Sequence[Sequence[float]]] = None
+int_val: int = 0,
+float_val: float = 0.0,
+int_arr: Optional[Sequence[int]] = None,
+float_arr: Optional[Sequence[float]] = None,
+vec3: Optional[Sequence[float]] = None,
+vec4: Optional[Sequence[float]] = None,
+vec3_arr: Optional[Sequence[Sequence[float]]] = None,
+vec4_arr: Optional[Sequence[Sequence[float]]] = None,
 ```
 
 {{#endtab }}

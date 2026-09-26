@@ -122,8 +122,9 @@ Two more:
 
 ## Example
 
-ex30 runs the capability probe, shows a four-entry command being dropped, then sweeps the
-differential and prints the roll angle it produces. The `sys_id` argument is required:
+ex30 sweeps the differential and prints the roll angle it produces. The Rust and C++
+programs first run the capability probe and show a four-entry command being dropped. The
+`sys_id` argument is required:
 
 ```sh
 cargo run -p vrobots-examples --bin ex30_hello_halfdrone -- 4
@@ -131,8 +132,9 @@ cargo run -p vrobots-examples --bin ex30_hello_halfdrone -- 4
 python examples/python/ex30_hello_halfdrone.py 4
 ```
 
-Take the id from `vrobots topic list`. The example shortens the service timeout to three
-seconds for the probe, never deletes the robot, and idles both rotors on the way out.
+Take the id from `vrobots topic list`. The Rust and C++ programs shorten the service timeout
+to three seconds for the probe. None of the three deletes the robot, and each idles both
+rotors on the way out.
 
 **Next:** [Global Hawk](06-globalhawk.md)
 

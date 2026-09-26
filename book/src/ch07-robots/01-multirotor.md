@@ -128,9 +128,8 @@ in the SDK; intrinsics are whatever `CameraOptions` requested, read back through
 > **Sim bug.** A multirotor created through `srv/create` publishes and serves normally and
 > its actuator echo is live, but its rigidbody never integrates: it does not fall under
 > gravity, does not climb under thrust, and `srv/reset` teleports it and then it freezes
-> again. Simulator v3.0.0, open, `issues/created-multirotor-frozen-dynamics.md`. Scene
-> multirotors are unaffected, so the workaround is to attach to one by `sys_id`. The full
-> account, including what attaching costs you, is on
+> again. Simulator v3.0.0, open. Scene multirotors are unaffected, so the workaround is to
+> attach to one by `sys_id`. The full account, including what attaching costs you, is on
 > [Known simulator issues](07-known-issues.md).
 
 Two more worth knowing before you configure anything:
@@ -153,8 +152,10 @@ python examples/python/ex02_hello_control.py
 ```
 
 Rebuild the airframe under itself with ex27, and change the mass under a running controller
-with ex22. Both take an **optional** `sys_id`: pass one to attach to the scene multirotor,
-omit it to create a robot instead.
+with ex22. Both take an **optional** `sys_id` in all three languages. Pass one to attach to
+the scene multirotor, which the program then leaves running until the scene reloads, with the
+new mass after ex22 and with a 1 kg mass and the rebuilt rotors after ex27. Omit it to create a
+robot, which the program deletes at the end.
 
 ```sh
 cargo run -p vrobots-examples --bin ex27_rotor_config -- 1

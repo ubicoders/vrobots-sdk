@@ -198,21 +198,24 @@ nothing you cannot do by hand.
 
 ## What the C++ surface does not have
 
-The examples work around three things the Rust and Python surfaces expose and
-this one does not. None is a blocker; each costs a line:
+The examples work around three things the Python package exposes and this
+surface does not. None is a blocker; each costs a line:
 
 - **No `cmd_name(id)`.** The ids themselves *are* here now, as
   `VRSDK_CMD_SET_CAR` and friends (plus `VRSDK_FW_*` for the fixed-wing modes),
-  so `ex33_fw_est_source` passes `VRSDK_CMD_SET_ANGVEL` by name — but there is
-  no id→string helper the way Rust's `cmd::name` and Python's `cmd.name` are.
+  so `ex33_fw_est_source` passes `VRSDK_CMD_SET_ANGVEL` by name, but there is
+  no id-to-string helper like Python's `vrsdk.cmd.name(cmd_id)`.
   (`ex08_generic_cmd` predates the constants and still spells its numbers out as
   `constexpr`s.)
-- **No topic-name builder.** Rust has `vrobots_sdk::topics::state(sys_id)`,
-  Python has `vrsdk.topics(sys_id)`; `ex04_hello_service`, `ex23_skins`,
+- **No topic-name builder.** Python's `vrsdk.topics(sys_id)` returns every topic
+  and service key of one robot; here `ex04_hello_service`, `ex23_skins`,
   `ex25_frames` and `ex26_drive_config` compose the keys inline.
-- **No accessor for the options in effect**, so `ex07_body_wrench` names the
-  default send frame rather than reading it back and `ex32_fw_rate_controller`
-  sets its own `src_id` explicitly rather than reading the default back (it has
-  to recognise its own traffic on the command bus). No `axes_name()` helper for
-  the numeric `axis_convention` tag either — the frame *id* string is on every
-  snapshot, which is what the examples print.
+- **No accessor for the options in effect.** Python reads them back from
+  `robot.options`; here `ex07_body_wrench` names the default send frame rather
+  than reading it back, and `ex32_fw_rate_controller` sets its own `src_id`
+  explicitly rather than reading the default back (it has to recognise its own
+  traffic on the command bus).
+
+The numeric `axis_convention` tag does have a label helper,
+`vrsdk::rotations::axes_name` (`vrsdk_axes_name` in C), but the examples print
+the frame id string every snapshot carries, which is the authoritative name.

@@ -101,33 +101,27 @@ int main() {
 `examples/python/ex02_hello_control.py`:
 
 ```python
-SYS_ID = 1  # the multirotor in the test scene
-PWM_US = 1501.0  # microseconds per rotor, on the 1100-2000 band
-HZ = 100
+"""ex02 - send raw per-rotor PWM; the echo in the state is the receipt."""
 
+from vrsdk import RobotType, VirtualRobot
 
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
+PWM_US = 1501.0  # 1100-2000 band; barely off idle, edit to 1700 to climb
 
-    # ===== loop =====
-    while True:
-        s = mr.states
-        x, y, z = s.kin.lin_pos
-        print(
-            f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
-            f"echo={s.actuator.pwm}"
-        )
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor
+mr.connect()
 
-        # Do some COOL control here and publish -- PID/EKF is user code, NOT the
-        # SDK. `set_mr_pwm(a, b, c, d)` and `set_mr_pwm([a, b, c, d])` are the
-        # same call.
-        cool_control_result = [PWM_US] * 4
-        mr.set_mr_pwm(cool_control_result)
+while True:
+    s = mr.states
+    x, y, z = s.kin.lin_pos
+    print(
+        f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f}) "
+        f"echo={s.actuator.pwm}"
+    )
 
-        mr.rate(HZ)
+    # Compute your control here and publish; commands latch until the next one.
+    mr.set_mr_pwm([PWM_US] * 4)
+
+    mr.rate(100)
 ```
 
 {{#endtab }}
@@ -164,7 +158,7 @@ fixed-size array and a slice.
 {{#tabs global="lang" }}
 {{#tab name="C++" }}
 
-`cpp/include/vrobots_sdk.hpp`:
+`include/vrobots_sdk.hpp`:
 
 ```cpp
 void set_mr_pwm(const std::vector<double>& pwm)
@@ -173,7 +167,7 @@ void set_mr_pwm(const std::vector<double>& pwm)
 {{#endtab }}
 {{#tab name="Python" }}
 
-`crates/vrobots-sdk-py/python/vrsdk/_vrsdk.pyi`:
+`vrsdk/_vrsdk.pyi`:
 
 ```python
 def set_mr_pwm(self, *pwm: Union[float, Sequence[float]]) -> None: ...
@@ -192,9 +186,9 @@ quadrotor and a two-element vector covers a `HalfDrone`. Python accepts either f
 |---|---|---|---|---|
 | Pulse width per rotor | microseconds | 1100.0 | 2000.0 | 1100 is idle, so `[1100; 4]` lets a flying drone fall |
 
-The band is checked client-side by a shared `check_pwm` helper, so a value outside it, or a
-non-finite value, returns `VrError::InvalidArgument` before anything is published. Passing a
-normalised 0.7 by mistake names the channel and the band it missed:
+The band is checked client-side, by one check every surface shares, so a value outside it,
+or a non-finite value, returns `VrError::InvalidArgument` before anything is published.
+Passing a normalised 0.7 by mistake names the channel and the band it missed:
 
 ```text
 pwm[0] = 0.7 is outside the 1100-2000 us pulse-width band (neutral is 1500; values look like microseconds, not normalised units)

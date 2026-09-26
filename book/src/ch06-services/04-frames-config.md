@@ -72,20 +72,19 @@ std::printf("scene frame: \"%s\" (axis_convention %d)\n", scene.coord_frame_id.c
 `examples/python/ex25_frames.py`:
 
 ```python
+# Scene scope, not robot scope: the answer is the same for every robot loaded.
 scene = robot.scene_frame()
-print(
-    f"scene frame: {scene.coord_frame_id!r} "
-    f"(axis_convention {scene.axis_convention}, {scene.axis_convention_name!r})"
-)
+print(f"scene frame: {scene.coord_frame_id!r} ({scene.axis_convention_name!r})")
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-The query is the same everywhere; what you can print of the answer is not. Rust reads the enum
-tag's name through `Axes::name()` and Python through `axis_convention_name`, while in C++
-`axis_convention` is a plain integer with no name beside it, so the C++ line prints the number
-alone.
+The query is the same everywhere; what each program prints of the answer is not. Rust prints
+the enum tag together with its name through `Axes::name()`. Python prints the name alone
+through `axis_convention_name`, although `scene.axis_convention` holds the number as well. In
+C++ `axis_convention` is a plain integer with no name beside it, so the C++ line prints the
+number alone.
 
 It returns `SceneFrame { coord_frame_id: String, axis_convention: Axes }`. A frame the scene
 registered at runtime has no enum value, so `axis_convention` comes back `UNSPECIFIED` and the
@@ -94,6 +93,9 @@ string is the only thing that identifies it.
 ```text
 scene frame: "fru" (axis_convention <n>, <name>)
 ```
+
+The Python script prints the id and the name without the number, in Python's own quotes:
+`scene frame: 'fru' ('<name>')`.
 
 > **Note.** Nothing persists between launches. The scene frame starts at `fru` every time the
 > simulator is started, whatever the last session left it at.
@@ -178,19 +180,20 @@ robot.set_frames("frd",
 `examples/python/ex25_frames.py`:
 
 ```python
+# Frames are presentation, never physics: the motion is unchanged, the numbers permute.
 robot.set_frames(
     "frd",
     [
-        # Keep the gyro reading the way it was, while the robot moves to frd.
-        DeviceFrame(device.GYROSCOPE, "fru"),
-        # Clear any override this device had: fall back to the robot's level.
+        DeviceFrame(device.GYROSCOPE, "fru"),  # keep the gyro reading as it was
+        # The frames service matches "gps"; the state block it moves is "gnss".
         DeviceFrame(device.GPS, vrsdk.INHERIT_FRAME),
-        # Deliberate miss: this truck has no camera called "front". The entry
-        # is skipped with a log line and an `ok` ack; the others still apply.
-        DeviceFrame(device.camera("front"), "cv"),
     ],
 )
 ```
+
+The Python script sends two entries rather than three: it leaves out the deliberate miss on
+`device.camera("front")`, so its run does not show an entry being skipped. The skipping is the
+simulator's behaviour and is the same whichever language sends the request.
 
 {{#endtab }}
 {{#endtabs }}
@@ -244,10 +247,8 @@ robot.set_frames(vrsdk::INHERIT_FRAME,
 `examples/python/ex25_frames.py`:
 
 ```python
-robot.set_frames(
-    vrsdk.INHERIT_FRAME,
-    [DeviceFrame(device.GYROSCOPE, vrsdk.INHERIT_FRAME)],
-)
+# INHERIT_FRAME clears an override so the level below wins again.
+robot.set_frames(vrsdk.INHERIT_FRAME, [DeviceFrame(device.GYROSCOPE, vrsdk.INHERIT_FRAME)])
 ```
 
 {{#endtab }}
@@ -279,6 +280,9 @@ wrong.
   an entry with an empty frame id  [<code>] <message>
 (use INHERIT_FRAME to clear an override; "" would be skipped sim-side)
 ```
+
+The Python script stops after the cleared run and does not make these calls. In Python each of
+the three raises `vrsdk.VrError` with `code == vrsdk.err.INVALID_ARGUMENT`.
 
 ## Where the confirmation is
 

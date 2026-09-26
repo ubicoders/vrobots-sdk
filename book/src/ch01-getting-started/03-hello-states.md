@@ -10,7 +10,8 @@ python examples/python/ex01_hello_states.py
 
 ## The whole program
 
-There is no framework here. `main` does setup, then owns a plain infinite loop.
+There is no framework here. The program does its setup, then owns a plain infinite loop:
+inside `main` in Rust and C++, and at the top level of the script in Python.
 
 {{#tabs global="lang" }}
 {{#tab name="Rust" }}
@@ -89,43 +90,28 @@ int main() {
 `examples/python/ex01_hello_states.py`:
 
 ```python
-import vrsdk
+"""ex01 - read the robot's states in a loop."""
+
 from vrsdk import RobotType, VirtualRobot
 
-SYS_ID = 1  # the multirotor in the test scene
-HZ = 50
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor, 0 = truck
+mr.connect()
 
-
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
-
-    # ===== loop =====
-    while True:
-        s = mr.states  # immutable latest snapshot, never torn
-        x, y, z = s.kin.lin_pos
-        print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
-        mr.rate(HZ)  # drift-compensated pacing, Hz
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nstopped.")
-    except vrsdk.VrError as e:
-        # Every SDK failure is one exception type carrying a stable code.
-        raise SystemExit(f"error [{e.code} {e.kind}] {e.detail}")
+while True:
+    s = mr.states  # immutable latest snapshot, never torn
+    x, y, z = s.kin.lin_pos
+    print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
+    mr.rate(50)  # drift-compensated pacing, Hz
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-Three surfaces, one shape: setup, then a loop you own. The C++ version registers a log
-callback where Rust and Python call `init_logging`, and `states` is a method in Rust and C++
-but a property in Python. Fifty lines a second, until you press Ctrl-C:
+Three surfaces, one shape: setup, then a loop you own. Rust calls `init_logging`, the C++
+version registers a log callback, and the Python script sets up no logging of its own.
+`states` is a method in Rust and C++ but a property in Python. On a failure, Rust returns
+the error from `main`, C++ catches it and prints its code, and the Python script ends with
+the `VrError` traceback. Fifty lines a second, until you press Ctrl-C:
 
 ```text
 State t=0.000 pos=(0.000,1.05,0.00)
@@ -134,15 +120,19 @@ State t=0.040 pos=(0.000,1.05,0.00)
 State t=0.060 pos=(0.000,1.05,0.00)
 ```
 
-`init_logging("info")` also puts the SDK's own connect progress on stderr. Your position
-numbers will differ; a robot sitting still on the ground is the expected first sight.
+In Rust, `init_logging("info")` also prints the SDK's own connect progress to standard
+output. The Python package forwards the SDK's warnings to Python `logging` as soon as
+`vrsdk` is imported, so the script shows those and nothing quieter;
+`vrsdk.init_logging("info")` turns the connect progress on. Your position numbers will
+differ; a robot sitting still on the ground is the expected first sight.
 
 ## The STM32 shape, line by line
 
-Read the program as four moves.
+Read the program as four moves. The Python script makes the last three.
 
-1. **`init_logging("info")`** installs a `tracing` subscriber. `RUST_LOG` overrides the
-   filter you pass, and the call is a no-op if a subscriber is already installed.
+1. **`init_logging("info")`** registers a handler that prints the SDK's log events.
+   `RUST_LOG` overrides the filter you pass, and the call is a no-op if a handler is already
+   registered.
 2. **`VirtualRobot::connect(RobotType::Multirotor, Some(SYS_ID))`** attaches to a robot the
    scene already contains. `Some(id)` never touches the manager's create service. It
    subscribes the state topic and blocks until the first snapshot arrives, so `states()` is
@@ -188,13 +178,15 @@ sequence number: a jump larger than one means a sample was dropped.
 
 ## Which id is the multirotor
 
-`SYS_ID` is 1 because in the test scene, booted straight into the Flatworld scene,
-**sys_id 1 is the multirotor and sys_id 0 is the truck**.
+The id is 1, `SYS_ID` in Rust and C++ and `sys_id=1` in the Python call, because in the test
+scene, booted straight into the Flatworld scene, **sys_id 1 is the multirotor and sys_id 0
+is the truck**.
 
 That is a convenience, not a contract. Ids are allocated at scene load and keep
-incrementing across loads, so the same scene reloaded gives you different numbers. A
-`const` at the top of an example is there so the example has something to run against, and
-[`vrobots topic list`](02-first-contact.md) is what tells you the truth.
+incrementing across loads, so the same scene reloaded gives you different numbers. The
+constant at the top of an example, or the literal in its call, is there so the example has
+something to run against, and [`vrobots topic list`](02-first-contact.md) is what tells you
+the truth.
 
 **Next:** [Hello control](04-hello-control.md)
 

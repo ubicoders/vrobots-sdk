@@ -4,13 +4,15 @@ This book teaches you to drive Ubicoders virtual robots from code, and then serv
 
 ## What the SDK is
 
-`vrobots_sdk` is the Rust SDK for controlling Ubicoders virtual robots running in a Unity
+The VRobots SDK is the client SDK for controlling Ubicoders virtual robots running in a Unity
 simulator. It talks to the simulator over two transports, [zenoh](appendix-d-glossary.md)
 for state, commands and services and [iceoryx2](appendix-d-glossary.md) for camera frames,
 with FlatBuffers on the wire in both directions.
 
-The Rust crate is the single implementation. The C++ and Python SDKs are thin bindings over
-it, so the three surfaces cannot drift: the same lifecycle, the same snapshots, the same
+One Rust core is the single implementation, and every language reaches it through a thin
+layer: the Python package is a binding over it, the C++ SDK is a header-only wrapper over
+its C library, and the `vrobots-sdk` Rust crate is a safe wrapper over the same C library.
+The surfaces therefore cannot drift: the same lifecycle, the same snapshots, the same
 timestamps, and the same stable error codes in
 [Appendix C](appendix-c-errors.md).
 
@@ -21,19 +23,22 @@ timestamps, and the same stable error codes in
 | Python 3.8 or newer | `pip install ubicoders-vrsdk` is the entire SDK install. The wheel carries the compiled Rust core and the `vrobots` command, so no toolchain, no `flatc` and no clone are involved. Windows and Linux x86-64. |
 | The example programs | The wheel ships the library, not the examples. A plain `git clone` of this repository gets them; the Python ones import `vrsdk` and nothing else. |
 | The Unity simulator, in Play mode | Required for anything that talks to a robot. |
-| Rust 1.89 or newer | Only to work in Rust or C++ from source. The crate is edition 2024, and the clone needs `--recurse-submodules` for the private `vrobots_msgs` submodule that ships the generated FlatBuffers code. |
+| A C++17 compiler, for C++ | The SDK itself comes prebuilt in the C bundle for your OS, a download from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases) that holds the C header, the header-only C++ wrapper and the `vrobots_sdk_capi` library, so nothing of the SDK is compiled on your machine. The examples build with CMake 3.16 or newer. Windows x86-64 (MSVC) and Linux x86-64 with glibc 2.28 or newer. |
+| Rust 1.88 or newer, for Rust | The `vrobots-sdk` crate links the same prebuilt `vrobots_sdk_capi` library, and its build downloads the C bundle of the crate's own version from the [Releases page](https://github.com/ubicoders/vrobots-sdk/releases), so the SDK's library is never compiled on your machine. Once the crate is published on crates.io, `cargo add vrobots-sdk` adds it to a project; until then, use it from a clone of this repository. Windows x86-64 (MSVC) and Linux x86-64 with glibc 2.28 or newer. |
 
 [Installing the SDK and the simulator](ch01-getting-started/01-install.md) covers them in
 order.
 
 ## The one idea to internalise first
 
-This SDK is **STM32-shaped, not Arduino-shaped**. `main()` does setup and then owns a plain
-loop. There is no base class, no runner, no `setup()` and `update()` callbacks, and the SDK
-never calls your code. If you have used the older Python client, this is the single largest
+This SDK is **STM32-shaped, not Arduino-shaped**. Your program does its setup and then owns a
+plain loop: inside `main()` in Rust and C++, and at the top level of the script in Python.
+There is no base class, no runner, no `setup()` and `update()` callbacks, and the SDK never
+calls your code. If you have used the older Python client, this is the single largest
 difference, and every page in the book assumes it.
 
-The whole of `main` in the first example shows the shape.
+The first example shows the shape: the whole of `main` in Rust and C++, and the whole script
+in Python.
 
 
 {{#tabs global="lang" }}
@@ -95,26 +100,28 @@ int main() {
 `examples/python/ex01_hello_states.py`:
 
 ```python
-def main() -> None:
-    # ===== setup =====
-    vrsdk.init_logging("info")
-    mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=SYS_ID)
-    mr.connect()
+"""ex01 - read the robot's states in a loop."""
 
-    # ===== loop =====
-    while True:
-        s = mr.states  # immutable latest snapshot, never torn
-        x, y, z = s.kin.lin_pos
-        print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
-        mr.rate(HZ)  # drift-compensated pacing, Hz
+from vrsdk import RobotType, VirtualRobot
+
+mr = VirtualRobot(RobotType.MULTIROTOR, sys_id=1)  # sys_id 1 = multirotor, 0 = truck
+mr.connect()
+
+while True:
+    s = mr.states  # immutable latest snapshot, never torn
+    x, y, z = s.kin.lin_pos
+    print(f"State t={s.elapsed:.3f} pos=({x:.3f},{y:.2f},{z:.2f})")
+    mr.rate(50)  # drift-compensated pacing, Hz
 ```
 
 {{#endtab }}
 {{#endtabs }}
 
-The program prints one line per iteration at the rate `robot.rate` paces it to, until you
-stop it with Ctrl+C. [The shape of a program](ch02-concepts/04-program-shape.md) explains
-why the loop belongs to you rather than to the SDK.
+The program prints one line per iteration at the rate `rate` paces it to, until you stop it
+with Ctrl-C. The Python script does not catch that interrupt, so it ends with a
+`KeyboardInterrupt` traceback, which is expected rather than a fault.
+[The shape of a program](ch02-concepts/04-program-shape.md) explains why the loop belongs
+to you rather than to the SDK.
 
 ## How the book is organised
 
@@ -139,12 +146,16 @@ they all lean on the five rules it sets out.
 
 ## Examples
 
-Thirty-three complete programs live under `examples/rust/src/bin/`. Each is a real `fn main`
-rather than a snippet, takes no command-line arguments (settings are constants at the top of
-the file), and is mirrored one for one in Python and C++ under `examples/python/` and
-`examples/cpp/`, with the same numbers and the same behaviour.
+Thirty-six complete programs live under `examples/rust/`, `examples/cpp/` and
+`examples/python/`, the same programs under the same names in all three languages. Each is a
+whole program rather than a snippet, with its settings written in the file, as constants at
+the top or as literals at the call. The Python programs are short, flat scripts with no
+`main()` function, and several leave out a side demonstration that their Rust and C++ twins
+carry, such as a call made to be refused; the pages say so where it matters. The only
+command-line argument any of them takes is a `sys_id`, because the ids of robots the scene
+placed are handed out at load time and no constant can know them.
 
-Run one by its bin name, or by the equivalent name in the language you are using:
+Every runnable page names its example once per language, in the order of the tabs:
 
 ```sh
 cargo run -p vrobots-examples --bin ex01_hello_states
@@ -152,18 +163,29 @@ cargo run -p vrobots-examples --bin ex01_hello_states
 python examples/python/ex01_hello_states.py
 ```
 
-The C++ line assumes the build in
+The Python line runs from a clone of this repository once `pip install ubicoders-vrsdk` is
+done. The C++ line assumes the CMake build in
 [Installing the SDK and the simulator](ch01-getting-started/01-install.md); on Windows the
-binary is `target\cpp-build\Release\ex01_hello_states.exe`.
+binary is `target\cpp-build\Release\ex01_hello_states.exe`. The Rust line runs from the root
+of the same clone, where the Rust examples form the package `vrobots-examples`, and its first
+build fetches the C library as that page describes.
 
-Every code block in this book is copied from one of those files or from a signature in the
-SDK source, so anything you read here compiles as written.
+Every Rust, C++ and Python block in this book is copied from one of those example files or
+from a declaration the SDK ships, so what you read matches what you install. Rust
+declarations come from the `vrobots-sdk` crate's source in `crates/vrobots-sdk/src/`, C++ ones
+from the C bundle's `include/vrobots_sdk.h` and `include/vrobots_sdk.hpp`, and Python ones
+from the type stubs that pip installs with the package, such as `vrsdk/_vrsdk.pyi`.
+
+> **Note.** The `vrobots-sdk` crate is not on crates.io until its first publication, so for
+> now a Rust program builds against the crate in a clone of this repository. Its build
+> downloads the C bundle from the GitHub Release of the crate's own version, and a version
+> with no Release yet builds only against an unpacked bundle named by `VROBOTS_SDK_DIR`.
 
 ## Versions
 
-This book documents SDK 0.1.4 against simulator v3.0.0. The IPC pins that build speaks are
+This book documents SDK 0.1.11 against simulator v3.0.1. The IPC pins that release speaks are
 flatbuffers 25.12.19, iceoryx2 0.9.3 and zenoh 1.9.0, and `vrobots --version` prints the set
-your build actually carries. The pins are exact on purpose:
+your installed SDK actually carries. The pins are exact on purpose:
 [Versions and pins](ch08-tooling/03-version-and-pins.md) explains what a caret pin one patch
 off does, and why it looks like the simulator has stopped publishing.
 

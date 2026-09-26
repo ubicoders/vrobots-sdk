@@ -59,13 +59,16 @@ println!(
 `examples/python/ex16_two_cameras.py`:
 
 ```python
-    # Two subscriptions, no mutation: both cameras are already on the robot.
-    left = mr.open_camera(LEFT, RESOLUTION, FORMAT)
-    right = mr.open_camera(RIGHT, RESOLUTION, FORMAT)
-    print(f"left : {left.service_name}")
-    print(f"right: {right.service_name}")
-    print(f"mounted by this handle: {mr.mounted_cameras()}  <- neither is ours")
+# two subscriptions, no mutation: both cameras are already on the robot
+left = mr.open_camera("front_left", "720p", "rgba8")
+right = mr.open_camera("front_right", "720p", "rgba8")
+print(f"left : {left.service_name}")
+print(f"right: {right.service_name}")
+print(f"mounted by this handle: {mr.mounted_cameras()}  <- neither is ours")
 ```
+
+The Python script passes the camera names, the resolution and the format as literals where
+Rust and C++ use the constants `LEFT`, `RIGHT`, `RESOLUTION` and `FORMAT`.
 
 {{#endtab }}
 {{#endtabs }}
@@ -125,13 +128,11 @@ while n_left < FRAMES || n_right < FRAMES {
 `examples/python/ex16_two_cameras.py`:
 
 ```python
-    while n_left < FRAMES or n_right < FRAMES:
-        # Two consumers, each draining its own stream. Neither call can consume
-        # the other's frame.
-        f = left.read()
-        if f is not None:
-            n_left += 1
-            last_left_ns = f.t_ns
+while n_left < FRAMES or n_right < FRAMES:
+    f = left.read()
+    if f is not None:
+        n_left += 1
+        last_left_ns = f.t_ns
 ```
 
 {{#endtab }}
@@ -179,9 +180,10 @@ let skew_ms = if last_left_ns == 0 {
 `examples/python/ex16_two_cameras.py`:
 
 ```python
-                skew_ms = (
-                    float("nan") if last_left_ns == 0 else (f.t_ns - last_left_ns) / 1e6
-                )
+# the SDK never pairs the streams; relate frames by t_ns yourself
+skew_ms = (
+    float("nan") if last_left_ns == 0 else (f.t_ns - last_left_ns) / 1e6
+)
 ```
 
 {{#endtab }}
@@ -246,12 +248,9 @@ if let Some(frame) = cam.fresh() {
 `examples/python/ex03_hello_image.py`:
 
 ```python
-        s = mr.states
-
-        # Images are a separate stream with their own timestamps -- never assume
-        # they match the state's. Compare t_ns explicitly when fusing.
-        if cam.fresh:
-            frame = cam.frame  # metadata for the image we are about to read
+s = mr.states
+if cam.fresh:  # True only when a frame arrived since the last read
+    frame = cam.frame  # metadata for the image we are about to read
 ```
 
 {{#endtab }}
@@ -271,8 +270,8 @@ There is no unmount at the end of this example, for either stream. This handle c
 neither camera, so it has nothing to remove: letting the streams go ends two subscriptions,
 and both cameras keep rendering and publishing for everyone else.
 
-That is also why `unmount_camera(LEFT)` here would be refused rather than obeyed -- it
-removes only what `mount_camera` added, and page
+That is also why `unmount_camera("front_left")` here would be refused rather than obeyed:
+it removes only what `mount_camera` added, and page
 [Mount, open and unmount](01-mount-open-unmount.md) shows the refusal in full. A program
 that does mount a pair of its own unmounts each by name, in either order, since each call
 removes exactly the name it is given and cannot undo the other.

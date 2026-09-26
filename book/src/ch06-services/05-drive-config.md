@@ -105,13 +105,12 @@ const Circle clamped = circle(robot, "max_steer_deg = 90 -> clamped to 60");
 `examples/python/ex26_drive_config.py`:
 
 ```python
-# ===== run 2: half the steering =====
 robot.configure_drive(max_steer_deg=15.0)
-narrow = circle(robot, "max_steer_deg = 15")
+circle("max_steer_deg = 15")
 
-# ===== run 3: more than the simulator allows =====
+# Out-of-range values are substituted silently: 90 is hard-clamped to 60, acked ok.
 robot.configure_drive(max_steer_deg=90.0)
-clamped = circle(robot, "max_steer_deg = 90 -> clamped to 60")
+circle("max_steer_deg = 90 -> clamped to 60")
 ```
 
 {{#endtab }}
@@ -132,6 +131,10 @@ steady turn radius (speed / yaw rate), same command every time:
   max_steer_deg = 90 -> clamped to 60    r=<m>   speed=<m/s>  yaw=<rad/s>  servo=<value>
   drive_mode = 2, 40 N.m, 30 deg         r=<m>   speed=<m/s>  yaw=<rad/s>  servo=<value>
 ```
+
+That summary is the Rust and C++ output. The Python script prints each run's line as the run
+ends, with the same label, radius, speed and yaw rate, and without the header line or the
+servo column.
 
 The 90 that came back as 60 is indistinguishable from a 60 that was asked for. The circle is
 the only witness.
@@ -195,17 +198,15 @@ Run 4 fills in every field, including the factory band restated explicitly.
 `examples/python/ex26_drive_config.py`:
 
 ```python
-# ===== run 4: rear-wheel drive, softer motor, factory band restated =====
 robot.configure_drive(
     drive_mode=2,  # rear axle only (4 = all wheels)
     max_steer_deg=30.0,
-    steer_rate_dps=120.0,  # 0 would be an ideal, instant servo
+    steer_rate_dps=120.0,
     max_motor_torque_nm=40.0,
     no_load_wheel_rpm=200.0,
     idle_brake_torque_nm=5.0,
     max_brake_torque_nm=150.0,
-    # All four numbers move together, and this IS the factory band.
-    pwm_band=PwmBand(1100, 1500, 1900, 30),
+    pwm_band=PwmBand(1100, 1500, 1900, 30),  # the factory band; all four move together
 )
 ```
 
@@ -217,8 +218,9 @@ numbers travel as a group: `PwmBand::new(...)` in Rust, `PwmBand(...)` in Python
 `vrsdk_pwm_band_t` in C++. There is no keep-current for one number inside it, so the C++ flag
 `has_pwm_band` decides only whether the whole block is sent.
 
-The truck keeps driving through the change: no dropout, no re-spawn, and one line of echo at
-the start of the next circle.
+The truck keeps driving through the change: no dropout and no re-spawn. The Rust and C++
+programs also print one line of echo at the start of the next circle; the Python script does
+not.
 
 ## Reading the drivetrain in the state stream
 
@@ -241,6 +243,10 @@ as *which* wheels lead under power, not as two silent channels.
   drive_mode = 3   [<code>] <message>
   nothing set      [<code>] <message>
 ```
+
+The Python script stops after the fourth circle and does not make these calls. In Python,
+`configure_drive(drive_mode=3)` and a `configure_drive()` with no arguments each raise
+`vrsdk.VrError` with `code == vrsdk.err.INVALID_ARGUMENT`.
 
 **Next:** [Rotors and thrust curves](06-rotor-config.md)
 
