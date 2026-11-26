@@ -203,17 +203,18 @@ throughout.
 
 | # | Device | Kind | Driven by | `normalized` | `measured` | Range | Speed limit |
 |---|---|---|---|---|---|---|---|
-| 0 | A1, base, revolute | `SERVO` | entry 0 of `SET_ARM_JOINTS`, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 120 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 1 | A2, shoulder, revolute | `SERVO` | entry 1, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 120 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 2 | A3, elbow, revolute | `SERVO` | entry 2, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 3 | A4, wrist, revolute | `SERVO` | entry 3, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 4 | A5, wrist, revolute | `SERVO` | entry 4, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 5 | A6, wrist, revolute | `SERVO` | entry 5, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| 6 | GRIPPER, two fingers | `GRIPPER` | `SET_ARM_GRIPPER`, m | commanded opening over 0.085, [0, 1] | gap between the pads now, m; the object's width while holding | 0 to 0.085 m, an 85 mm stroke <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 0.15 m/s of opening, settable from 0.02 to 0.15 <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
+| 0 | A1, base, revolute | `SERVO` | entry 0 of `SET_ARM_JOINTS`, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 120 deg/s |
+| 1 | A2, shoulder, revolute | `SERVO` | entry 1, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 120 deg/s |
+| 2 | A3, elbow, revolute | `SERVO` | entry 2, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s |
+| 3 | A4, wrist, revolute | `SERVO` | entry 3, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s |
+| 4 | A5, wrist, revolute | `SERVO` | entry 4, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s |
+| 5 | A6, wrist, revolute | `SERVO` | entry 5, rad | position across its range, [-1, 1] | rad | -360 to 360 degrees | 180 deg/s |
+| 6 | GRIPPER, two fingers | `GRIPPER` | `SET_ARM_GRIPPER`, m | commanded opening over 0.085, [0, 1] | gap between the pads now, m; the object's width while holding | 0 to 0.085 m, an 85 mm stroke | 0.15 m/s of opening, settable from 0.02 to 0.15 |
 | 7 | CONTACT | `CONTACT` | nothing: it is a reading | 0 | 0 none, 1 tool contact, 2 collision stop | | |
-| 8 | HOLD | `HOLD` | nothing: it is a reading | 1 holding, 0 not | held mass, kg; 0 is nothing held | payload up to 5 kg <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | |
+| 8 | HOLD | `HOLD` | nothing: it is a reading | 1 holding, 0 not | held mass, kg; 0 is nothing held | payload up to 5 kg | |
 
-No joint has an acceleration ramp. `table_arm_actuators()` decodes the report into `joints`,
+No joint has an acceleration ramp, so a 90 degree step of A3 takes about 0.52 s.
+`table_arm_actuators()` decodes the report into `joints`,
 `joints_normalized`, `gripper_command_m`, `gripper_opening_m`, `holding`, `held_mass_kg` and
 `contact`. Decode by robot type and never by count: read as a rail arm's, these nine entries
 decode without complaint into wrong numbers. See
@@ -268,8 +269,9 @@ None.
 | Property | Value |
 |---|---|
 | Arm | a UR10 with a Robotiq 2F-85 gripper |
-| Arm mass | 28.9 kg <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| Gripper mass | 0.9 kg <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
+| Mass on the properties topic | 33.6 kg: every body of the arm, gripper included. The maker's figures are 28.9 kg for the arm and 0.9 kg for the gripper; the simulator's link masses come from the public UR10 robot model, which sums higher |
+| Centre of gravity | follows the pose |
+| Inertia | not published; see [Robot properties](../ch06-services/13-properties.md#arms-publish-the-whole-rig-and-no-inertia) |
 | Reach | 1.3 m from the base axis |
 | Robot origin | the centre of the arm base, which never moves; in the Table Arm scene it is 0.03 m above the board top and 0.45 m behind the board centre |
 | Board, in the Table Arm scene | 1.60 by 1.40 m, 0.04 m thick |

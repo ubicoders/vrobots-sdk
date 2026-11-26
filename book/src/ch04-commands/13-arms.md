@@ -99,6 +99,15 @@ a newer command replaces it. There is no acceleration ramp and no coordination b
 joints, so one distant setpoint starts every joint at full speed and they arrive at
 different times. For a smooth path, stream intermediate setpoints along your own trajectory.
 
+| Arm | Joint | Top speed |
+|---|---|---|
+| Rail arm | rail | 1.2 m/s |
+| Rail arm | A1 to A6 | 105 / 94 / 100 / 136 / 129 / 206 deg/s |
+| Table arm | A1 to A6 | 120 / 120 / 180 / 180 / 180 / 180 deg/s |
+
+At those speeds a 2 m move along the rail takes about 1.7 s, and a 90 degree step of the
+table arm's A3 about 0.52 s. The speeds are fixed: no command or service changes them.
+
 ## Three ways a move ends
 
 Nothing replies, so the actuator report is the only proof. `rail_arm_actuators()` and
@@ -190,13 +199,11 @@ if arm.contact != ArmContact.NO_CONTACT:
 {{#endtabs }}
 
 `contact` is an `ArmContact` enum value in Rust and C++ and the integer code in Python, where
-`contact_name` gives the text. A move that completes prints its progress and ends with
-`-- arrived`:
+`contact_name` gives the text. A move that completes prints a progress line every fifth
+sample and ends with `-- arrived`. The last line of this move, 1 m along the rail:
 
 ```text
-   t= 0.01s  rail 4.060 m  A1   +2.0  A2  -61.8  A3  +90.0  A4   +0.0  A5  +62.4  A6   +0.0 deg  worst error 0.9400
-   t= 0.23s  rail 4.660 m  A1  +22.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  worst error 0.3400
-   t= 0.35s  rail 5.000 m  A1  +30.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  -- arrived
+   t= 0.81s  rail 5.000 m  A1  +30.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  -- arrived
 ```
 
 ## The protective stop and the CONTACT reading
@@ -217,7 +224,8 @@ through. A collision stop against an object or another robot also publishes a
 [safety event](../ch10-events/00-safety-events.md); a tool contact does not.
 
 > **Gotcha.** Only the end pose of each step is tested. At full speed, something thinner than
-> one step's travel can be passed through. Approach thin obstacles with small setpoint
+> one step's travel can be passed through: in one 0.02 s step a point on the rail arm's tool
+> moves up to about 12 cm, and its track 2.4 cm. Approach thin obstacles with small setpoint
 > increments.
 
 The table arm also stops before hitting itself, which reads as code 2, or as code 1 when the

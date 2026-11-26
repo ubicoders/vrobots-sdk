@@ -184,12 +184,12 @@ def move_to(robot, goal):
 {{#endtab }}
 {{#endtabs }}
 
-A clear move ends on the `arrived` line, with the rail in metres and the axes in degrees:
+A clear move prints a progress line every fifth sample and ends on the `arrived` line, with
+the rail in metres and the axes in degrees. The 1 m of rail is the slowest part of this
+move, and its last line reads:
 
 ```text
-   t= 0.01s  rail 4.060 m  A1   +2.0  A2  -61.8  A3  +90.0  A4   +0.0  A5  +62.4  A6   +0.0 deg  worst error 0.9400
-   t= 0.23s  rail 4.660 m  A1  +22.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  worst error 0.3400
-   t= 0.35s  rail 5.000 m  A1  +30.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  -- arrived
+   t= 0.81s  rail 5.000 m  A1  +30.0  A2  -70.0  A3  +90.0  A4   +0.0  A5  +70.0  A6   +0.0 deg  -- arrived
 ```
 
 ## Services
@@ -201,7 +201,7 @@ field can be read back.
 
 | Field | Units | Default | Notes |
 |---|---|---|---|
-| `fallback_speed_limits` | 7 values: m/s, then rad/s | 1 m/s, then 105 / 101 / 107 / 136 / 129 / 206 deg/s | all or nothing; **changes no speed on this arm** |
+| `fallback_speed_limits` | 7 values: m/s, then rad/s | 1.2 m/s, then 105 / 94 / 100 / 136 / 129 / 206 deg/s | all or nothing; **changes no speed on this arm** |
 | `protective_stop` | bool | on | |
 | `self_collision` | bool | off | acts only with the protective stop on; untested on this arm |
 | `contact_tolerance` | m | 0.005 | how deep a link may press before the stop; below 0 becomes 0 |
@@ -240,18 +240,19 @@ Nine entries. `pwm` is 0 throughout.
 
 | # | Device | Kind | Driven by | `normalized` | `measured` | Range | Speed limit | Home |
 |---|---|---|---|---|---|---|---|---|
-| 0 | rail, a linear track | `LINEAR` | entry 0 of `SET_ARM_JOINTS`, m | position across its range, [-1, 1] | m | 0 to 8 m | 1.2 m/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 4 m |
-| 1 | A1, revolute | `SERVO` | entry 1, rad | position across its range, [-1, 1] | rad | -185 to 185 degrees | 105 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 0 |
-| 2 | A2, revolute | `SERVO` | entry 2, rad | position across its range, [-1, 1] | rad | -140 to -5 degrees | 94 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | -60 degrees |
-| 3 | A3, revolute | `SERVO` | entry 3, rad | position across its range, [-1, 1] | rad | -120 to 168 degrees | 100 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 90 degrees |
-| 4 | A4, revolute | `SERVO` | entry 4, rad | position across its range, [-1, 1] | rad | -350 to 350 degrees | 136 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 0 |
-| 5 | A5, revolute | `SERVO` | entry 5, rad | position across its range, [-1, 1] | rad | -122.5 to 122.5 degrees | 129 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 60 degrees |
-| 6 | A6, revolute | `SERVO` | entry 6, rad | position across its range, [-1, 1] | rad | -350 to 350 degrees | 206 deg/s <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> | 0 |
+| 0 | rail, a linear track | `LINEAR` | entry 0 of `SET_ARM_JOINTS`, m | position across its range, [-1, 1] | m | 0 to 8 m | 1.2 m/s | 4 m |
+| 1 | A1, revolute | `SERVO` | entry 1, rad | position across its range, [-1, 1] | rad | -185 to 185 degrees | 105 deg/s | 0 |
+| 2 | A2, revolute | `SERVO` | entry 2, rad | position across its range, [-1, 1] | rad | -140 to -5 degrees | 94 deg/s | -60 degrees |
+| 3 | A3, revolute | `SERVO` | entry 3, rad | position across its range, [-1, 1] | rad | -120 to 168 degrees | 100 deg/s | 90 degrees |
+| 4 | A4, revolute | `SERVO` | entry 4, rad | position across its range, [-1, 1] | rad | -350 to 350 degrees | 136 deg/s | 0 |
+| 5 | A5, revolute | `SERVO` | entry 5, rad | position across its range, [-1, 1] | rad | -122.5 to 122.5 degrees | 129 deg/s | 60 degrees |
+| 6 | A6, revolute | `SERVO` | entry 6, rad | position across its range, [-1, 1] | rad | -350 to 350 degrees | 206 deg/s | 0 |
 | 7 | VACUUM, a 400 by 300 mm foam pad | `VACUUM` | `SET_ARM_VACUUM` | the latch: 0 off, 1 on | held mass, kg; 0 is nothing held | holds up to 400 N; seals within 0.01 m and 15 degrees of square | switches at once | off |
 | 8 | CONTACT | `CONTACT` | nothing: it is a reading | 0 | 0 none, 1 tool contact, 2 collision stop | | | 0 |
 
 No joint has an acceleration ramp: a joint starts and stops at its speed limit within one
-physics step. `rail_arm_actuators()` decodes the report into `joints`, `joints_normalized`,
+physics step. That includes the track, whose acceleration is not modelled: it reaches
+1.2 m/s at once, so a 2 m move takes about 1.7 s. `rail_arm_actuators()` decodes the report into `joints`, `joints_normalized`,
 `vacuum_on`, `holding`, `held_mass_kg` and `contact`. The table arm reports nine entries
 too, laid out differently after the joints, so decode by robot type and never by count;
 `properties()` publishes the kind of each entry. See
@@ -290,9 +291,9 @@ robots carry.
 | Name | Mount in `fru`, m | Orientation | Stream | Focal lengths | Field of view | Clip | Rate | Plan |
 |---|---|---|---|---|---|---|---|---|
 | `overhead` | (-0.90, -3.94, 4.80), fixed to the base | straight down | 720p rgba8, 1280 by 720 | fx 640 px, fy 640 px | 90.0 by 58.7 degrees | 0.3 to 30 m | every rendered frame, about 60 per second | Community and Pro |
-| `wrist` | on the vacuum tool, moving with it; the offset is not documented | moves with the tool; not documented | 720p rgba8, 1280 by 720 | fx 834 px, fy 834 px | 75.0 by 46.7 degrees | 0.01 to 10 m | every rendered frame, about 60 per second | Pro |
+| `wrist` | on the vacuum tool, moving with it: 0.04 m beyond one short edge of the pad and 0.02 m behind the pad face | tilted 25 degrees toward the pad axis, so its centre line crosses the axis about 0.5 m below the pad face | 720p rgba8, 1280 by 720 | fx 834 px, fy 834 px | 75.0 by 46.7 degrees | 0.01 to 10 m | every rendered frame, about 60 per second | Pro |
 
-<!-- VERIFY: rail arm camera mounts, focal lengths and clip planes. They are the shipped model's values, not measured live, and the wrist camera's offset and viewing direction on the tool are not documented. -->
+<!-- VERIFY: rail arm camera mounts, focal lengths and clip planes. They are the shipped model's values, not measured live. -->
 
 Open one with `open_camera("overhead", "720p", "rgba8")`; on the Warehouse arm the topics
 are `vrobots/2/i/cam/overhead/720p_rgba8` and `vrobots/2/i/cam/wrist/720p_rgba8`. Every
@@ -309,8 +310,10 @@ None.
 | Property | Value |
 |---|---|
 | Arm | a KUKA KR 210 R3100-2 on an ABB IRBT 7004 track |
-| Robot mass | about 1134 kg <!-- VERIFY: datasheet default, confirm against the simulator after the change lands --> |
-| Track travel | 8 m |
+| Mass on the properties topic | 1551 kg, the whole rig: the track carriage and robot base at 630 kg, plus the arm's links. The robot alone is about 1134 kg by the maker's figure |
+| Centre of gravity | follows the pose: moving the rail 1 m moves it 1 m |
+| Inertia | not published; see [Robot properties](../ch06-services/13-properties.md#arms-publish-the-whole-rig-and-no-inertia) |
+| Track travel | 8 m, at up to 1.2 m/s |
 | Reach at home | about 2.3 m from the A1 axis to the pad |
 | Robot origin | the base, which never moves |
 | Default frame | `fru`: x forward, y right, z up |
@@ -322,11 +325,10 @@ and everything the arm does is in its actuator report.
 
 ## Known quirks
 
-> **Gotcha.** Only the end pose of each step is tested. At full speed a point on the tool
-> moves up to about 11 cm in one step, so an obstacle thinner than that can be passed
+> **Gotcha.** Only the end pose of each step is tested. A physics step is 0.02 s. At full
+> speed a point on the tool moves up to about 12 cm in one step (A1 at 105 deg/s), and the
+> track alone carries the whole arm 2.4 cm, so an obstacle thinner than that can be passed
 > through. Stream intermediate setpoints along your own path when clearance matters.
-
-<!-- VERIFY: the 11 cm figure was worked out for the earlier joint speeds; recompute it once the datasheet speeds land. -->
 
 Four more:
 

@@ -48,6 +48,13 @@ A joint runs at its own speed limit. A fallback backs only a joint that reports 
 every joint of both shipped arms reports one. So `fallback_speed_limits` changes no speed on
 either arm today, whatever you send, and the ack is `ok` regardless.
 
+The defaults repeat the speed limits the joints already report:
+
+| Arm | Default `fallback_speed_limits` |
+|---|---|
+| Rail arm | 1.2 m/s, then 105 / 94 / 100 / 136 / 129 / 206 deg/s |
+| Table arm | 120 / 120 / 180 / 180 / 180 / 180 deg/s |
+
 The field is all or nothing. It must hold exactly one finite entry per joint, or the
 simulator refuses the whole field while the rest of the request still applies. The SDK
 checks the count against the handle's arm type before sending.

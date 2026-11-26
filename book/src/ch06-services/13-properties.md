@@ -54,6 +54,30 @@ The mass properties are read off the simulated body, so a skin swap or a moving 
 the next keepalive. What the sample does **not** carry is how the robot is tuned: no lift
 speed, no wheel geometry, no joint range. No configuration service reads anything back.
 
+## Arms publish the whole rig and no inertia
+
+The two arms are posed, not driven by forces, and their sample differs from a rigid
+robot's in three ways.
+
+| Arm | `mass` | What it counts | `cg` | `inertia` |
+|---|---|---|---|---|
+| [Rail arm](../ch07-robots/10-rail-arm.md) | 1551 kg | the whole rig: the track carriage and robot base at 630 kg, plus the arm's links | follows the pose: moving the rail 1 m moves it 1 m | not published |
+| [Table arm](../ch07-robots/11-table-arm.md) | 33.6 kg | every body of the arm, gripper included | follows the pose | not published |
+
+The mass is the sum over every body of the rig, so it is larger than the maker's figure for
+the robot alone. The centre of gravity is recomputed at the pose of each sample, so read it
+beside the joints it belongs to.
+
+An absent tensor reads as zeros in every language, and nothing else marks it:
+
+| Language | `inertia` when none is published |
+|---|---|
+| Rust | `[[0.0; 3]; 3]` |
+| C++ | a `std::array<Vec3, 3>` of zeros |
+| Python | three lists of three `0.0` |
+
+A physical tensor is never all zeros, so test for that before you use the field.
+
 ## The actuator kinds
 
 [`actuator.pwm`, `normalized` and `measured`](../ch03-reading-state/05-actuator.md) are
