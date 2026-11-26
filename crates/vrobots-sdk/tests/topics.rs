@@ -4,7 +4,7 @@
 use vrobots_sdk::topics;
 
 /// `vrsdk.topics(1)` in Python, key for key and in the same order.
-const PYTHON_TOPICS_1: [(&str, &str); 18] = [
+const PYTHON_TOPICS_1: [(&str, &str); 25] = [
     ("state", "vrobots/1/z/state"),
     ("command", "vrobots/1/z/cmd"),
     ("estimate", "vrobots/1/z/estimate"),
@@ -19,7 +19,14 @@ const PYTHON_TOPICS_1: [(&str, &str); 18] = [
     ("srv_rotors", "vrobots/1/z/srv/rotors"),
     ("srv_msd", "vrobots/1/z/srv/msd"),
     ("srv_cartpole", "vrobots/1/z/srv/cartpole"),
+    ("srv_turret", "vrobots/1/z/srv/turret"),
+    ("srv_forklift", "vrobots/1/z/srv/forklift"),
+    ("srv_palletrobot", "vrobots/1/z/srv/palletrobot"),
+    ("srv_arm", "vrobots/1/z/srv/arm"),
+    ("srv_lidars", "vrobots/1/z/srv/lidars"),
     ("frames", "vrobots/1/z/frames"),
+    ("properties", "vrobots/1/z/properties"),
+    ("safety_events", "vrobots/1/z/event/safety"),
     ("manager_create", "vrobots/manager/z/srv/create"),
     ("manager_delete", "vrobots/manager/z/srv/delete"),
     ("scene_frame", "vrobots/scene/z/srv/frame"),
@@ -65,6 +72,26 @@ fn every_builder_matches_appendix_a() {
     assert_eq!(topics::SCENE_ROOT, "vrobots/scene");
     assert_eq!(topics::ALL, "vrobots/**");
     assert_eq!(topics::ALL_STATES, "vrobots/*/z/state");
+}
+
+#[test]
+fn the_lidar_safety_properties_and_robot_service_names() {
+    assert_eq!(topics::safety_events(0), "vrobots/0/z/event/safety");
+    assert_eq!(topics::ALL_SAFETY_EVENTS, "vrobots/*/z/event/safety");
+    assert_eq!(topics::properties(3), "vrobots/3/z/properties");
+    assert_eq!(topics::lidar_3d(0, "lidar"), "vrobots/0/i/lidar/lidar");
+    assert_eq!(
+        topics::lidar_2d(1, "lidar_front_left"),
+        "vrobots/1/z/lidar/lidar_front_left"
+    );
+    assert_eq!(topics::ALL_LIDARS_2D, "vrobots/*/z/lidar/*");
+    assert_eq!(topics::srv_turret(5), "vrobots/5/z/srv/turret");
+    assert_eq!(topics::srv_forklift(0), "vrobots/0/z/srv/forklift");
+    assert_eq!(topics::srv_palletrobot(1), "vrobots/1/z/srv/palletrobot");
+    assert_eq!(topics::srv_arm(2), "vrobots/2/z/srv/arm");
+    assert_eq!(topics::srv_lidars(0), "vrobots/0/z/srv/lidars");
+    assert_eq!(topics::sys_id_of(&topics::lidar_3d(2, "lidar")), Some(2));
+    assert_eq!(topics::sys_id_of(topics::ALL_SAFETY_EVENTS), None);
 }
 
 #[test]

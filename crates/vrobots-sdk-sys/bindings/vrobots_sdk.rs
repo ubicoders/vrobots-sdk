@@ -63,6 +63,60 @@ pub const VRSDK_CMD_SET_FW_THRUST: i32 = 308;
 pub const VRSDK_CMD_SET_FW_THRUST_BIAS: i32 = 309;
 pub const VRSDK_CMD_SET_FW_CTRL_MODE: i32 = 310;
 pub const VRSDK_CMD_SET_FW_EST_SOURCE: i32 = 311;
+pub const VRSDK_CMD_SET_FORKLIFT: i32 = 312;
+pub const VRSDK_CMD_SET_PALLETROBOT: i32 = 314;
+pub const VRSDK_CMD_SET_ARM_JOINTS: i32 = 315;
+pub const VRSDK_CMD_SET_ARM_VACUUM: i32 = 316;
+pub const VRSDK_CMD_SET_TURRET_RATES: i32 = 317;
+pub const VRSDK_CMD_SET_TURRET_JOINTS: i32 = 318;
+pub const VRSDK_CMD_SET_TURRET_LASER: i32 = 319;
+pub const VRSDK_CMD_SET_ARM_GRIPPER: i32 = 320;
+pub const VRSDK_FORKLIFT_CH_STEER: i32 = 0;
+pub const VRSDK_FORKLIFT_CH_THROTTLE: i32 = 1;
+pub const VRSDK_FORKLIFT_CH_LIFT: i32 = 2;
+pub const VRSDK_FORKLIFT_CH_FORK_WIDTH: i32 = 3;
+pub const VRSDK_FORKLIFT_CH_BRAKE: i32 = 4;
+pub const VRSDK_FORKLIFT_ACT_DRIVE: i32 = 0;
+pub const VRSDK_FORKLIFT_ACT_STEERING: i32 = 1;
+pub const VRSDK_FORKLIFT_ACT_LIFT: i32 = 2;
+pub const VRSDK_FORKLIFT_ACT_FORK_WIDTH: i32 = 3;
+pub const VRSDK_FORKLIFT_ACT_COUNT: i32 = 4;
+pub const VRSDK_PALLETROBOT_CH_FL: i32 = 0;
+pub const VRSDK_PALLETROBOT_CH_FR: i32 = 1;
+pub const VRSDK_PALLETROBOT_CH_RL: i32 = 2;
+pub const VRSDK_PALLETROBOT_CH_RR: i32 = 3;
+pub const VRSDK_PALLETROBOT_CH_PAD_LIFT: i32 = 4;
+pub const VRSDK_PALLETROBOT_CH_PAD_TURN: i32 = 5;
+pub const VRSDK_PALLETROBOT_CH_COUNT: i32 = 6;
+pub const VRSDK_RAIL_ARM_JOINT_COUNT: i32 = 7;
+pub const VRSDK_RAIL_ARM_ACTUATOR_COUNT: i32 = 9;
+pub const VRSDK_RAIL_ARM_RAIL: i32 = 0;
+pub const VRSDK_RAIL_ARM_A1: i32 = 1;
+pub const VRSDK_RAIL_ARM_A2: i32 = 2;
+pub const VRSDK_RAIL_ARM_A3: i32 = 3;
+pub const VRSDK_RAIL_ARM_A4: i32 = 4;
+pub const VRSDK_RAIL_ARM_A5: i32 = 5;
+pub const VRSDK_RAIL_ARM_A6: i32 = 6;
+pub const VRSDK_RAIL_ARM_VACUUM: i32 = 7;
+pub const VRSDK_RAIL_ARM_CONTACT: i32 = 8;
+pub const VRSDK_TABLE_ARM_JOINT_COUNT: i32 = 6;
+pub const VRSDK_TABLE_ARM_ACTUATOR_COUNT: i32 = 9;
+pub const VRSDK_TABLE_ARM_A1: i32 = 0;
+pub const VRSDK_TABLE_ARM_A2: i32 = 1;
+pub const VRSDK_TABLE_ARM_A3: i32 = 2;
+pub const VRSDK_TABLE_ARM_A4: i32 = 3;
+pub const VRSDK_TABLE_ARM_A5: i32 = 4;
+pub const VRSDK_TABLE_ARM_A6: i32 = 5;
+pub const VRSDK_TABLE_ARM_GRIPPER: i32 = 6;
+pub const VRSDK_TABLE_ARM_CONTACT: i32 = 7;
+pub const VRSDK_TABLE_ARM_HOLD: i32 = 8;
+pub const VRSDK_TABLE_ARM_GRIPPER_STROKE_M: f64 = 0.085;
+pub const VRSDK_ARM_MAX_JOINTS: i32 = 16;
+pub const VRSDK_TURRET_ACT_HEADING: i32 = 0;
+pub const VRSDK_TURRET_ACT_PITCH: i32 = 1;
+pub const VRSDK_TURRET_ACT_LASER: i32 = 2;
+pub const VRSDK_TURRET_ACT_COUNT: i32 = 3;
+pub const VRSDK_SAFETY_EVENT_QUEUE_CAPACITY: i32 = 1024;
 pub const VRSDK_OK: i32 = 0;
 pub const VRSDK_ERR_SESSION: i32 = 1;
 pub const VRSDK_ERR_INVALID_ARGUMENT: i32 = 2;
@@ -87,6 +141,11 @@ pub const VRSDK_ROBOT_MSD: i32 = 2;
 pub const VRSDK_ROBOT_CARTPOLE: i32 = 3;
 pub const VRSDK_ROBOT_HALFDRONE: i32 = 4;
 pub const VRSDK_ROBOT_GLOBALHAWK: i32 = 5;
+pub const VRSDK_ROBOT_FORKLIFT: i32 = 6;
+pub const VRSDK_ROBOT_PALLETROBOT: i32 = 7;
+pub const VRSDK_ROBOT_RAILARM: i32 = 8;
+pub const VRSDK_ROBOT_TABLEARM: i32 = 9;
+pub const VRSDK_ROBOT_TURRET: i32 = 10;
 pub const VRSDK_PIXEL_MONO8: i32 = 1;
 pub const VRSDK_PIXEL_RGB8: i32 = 2;
 pub const VRSDK_PIXEL_RGBA8: i32 = 3;
@@ -107,6 +166,30 @@ pub const VRSDK_FW_ONBOARD_RATE: i32 = 0;
 pub const VRSDK_FW_DIRECT_SURFACE: i32 = 1;
 pub const VRSDK_FW_EST_TRUTH: i32 = 0;
 pub const VRSDK_FW_EST_OBSERVER: i32 = 1;
+pub const VRSDK_ARM_CONTACT_NONE: i32 = 0;
+pub const VRSDK_ARM_CONTACT_TOOL: i32 = 1;
+pub const VRSDK_ARM_CONTACT_COLLISION_STOP: i32 = 2;
+pub const VRSDK_ARM_CONTACT_UNKNOWN: i32 = -1;
+pub const VRSDK_ACTUATOR_KIND_UNSPECIFIED: i32 = 0;
+pub const VRSDK_ACTUATOR_KIND_ROTOR: i32 = 1;
+pub const VRSDK_ACTUATOR_KIND_SERVO: i32 = 2;
+pub const VRSDK_ACTUATOR_KIND_WHEEL: i32 = 3;
+pub const VRSDK_ACTUATOR_KIND_SURFACE: i32 = 4;
+pub const VRSDK_ACTUATOR_KIND_LINEAR: i32 = 5;
+pub const VRSDK_ACTUATOR_KIND_VACUUM: i32 = 6;
+pub const VRSDK_ACTUATOR_KIND_LASER: i32 = 7;
+pub const VRSDK_ACTUATOR_KIND_GRIPPER: i32 = 8;
+pub const VRSDK_ACTUATOR_KIND_CONTACT: i32 = 9;
+pub const VRSDK_ACTUATOR_KIND_HOLD: i32 = 10;
+pub const VRSDK_ACTUATOR_KIND_UNKNOWN: i32 = -1;
+pub const VRSDK_SAFETY_TIER_UNSPECIFIED: i32 = 0;
+pub const VRSDK_SAFETY_TIER_NEAR_MISS: i32 = 1;
+pub const VRSDK_SAFETY_TIER_CONTACT: i32 = 2;
+pub const VRSDK_SAFETY_TIER_STRIKE: i32 = 3;
+pub const VRSDK_SAFETY_OTHER_UNSPECIFIED: i32 = 0;
+pub const VRSDK_SAFETY_OTHER_PERSON: i32 = 1;
+pub const VRSDK_SAFETY_OTHER_ROBOT: i32 = 2;
+pub const VRSDK_SAFETY_OTHER_OBJECT: i32 = 3;
 /** A live camera frame stream. Release with `vrsdk_camera_free`.
 
  Freeing it stops this subscription's reader thread. **It does not unmount the
@@ -129,6 +212,16 @@ pub struct vrsdk_camera_t {
 pub struct vrsdk_frame_t {
     _unused: [u8; 0],
 }
+/** A live lidar scan stream, 3-D or 2-D. Release with `vrsdk_lidar_free`.
+
+ Freeing it ends this subscription only; **the lidar keeps scanning**. A 3-D
+ stream owns its subscriber and outlives the robot handle; a 2-D stream rides
+ the robot's zenoh session and goes quiet once that robot handle is freed.*/
+#[repr(C)]
+#[derive(Debug)]
+pub struct vrsdk_lidar_t {
+    _unused: [u8; 0],
+}
 /** One robot in the simulator. Create with `vrsdk_robot_new`, release with
  `vrsdk_robot_free`.
 
@@ -139,6 +232,18 @@ pub struct vrsdk_frame_t {
 #[repr(C)]
 #[derive(Debug)]
 pub struct vrsdk_robot_t {
+    _unused: [u8; 0],
+}
+/** Safety events from one robot or from every robot, queued until read.
+ Release with `vrsdk_safety_free`.
+
+ Only incidents after the subscriber is live arrive; zenoh replays nothing.
+ Freeing the handle undeclares the subscriber and closes the session the
+ swarm-wide stream opened for itself. The per-robot stream rides its robot's
+ session and goes quiet once that robot handle is freed.*/
+#[repr(C)]
+#[derive(Debug)]
+pub struct vrsdk_safety_stream_t {
     _unused: [u8; 0],
 }
 /** A live view of one command id on a robot's `z/cmd` topic. Release with
@@ -428,12 +533,13 @@ pub struct vrsdk_sensor_config_t {
     /// Mount (true) or unmount (false) the optical-flow sensor. Idempotent.
     pub optical_flow_mounted: bool,
 }
-/** A truck's pulse-width band. One flag covers all four numbers.
+/** A pulse-width band -- the truck's, the forklift's or the pallet robot's.
+ One flag covers all four numbers.
 
- The truck's factory band is 1100 / 1500 / 1900 us -- note that this is *not*
- the multirotor's 1100-2000, and that `vrsdk_robot_set_car` validates against
- the wider band. The simulator resets the whole band to its factory values if
- the ordering `min_us < neutral_us < max_us` does not hold, so a
+ The factory band of all three is 1100 / 1500 / 1900 us -- note that this is
+ *not* the multirotor's 1100-2000, and that the command calls validate
+ against the wider band. The simulator resets the whole band to its factory
+ values if the ordering `min_us < neutral_us < max_us` does not hold, so a
  partially-sensible band is not a thing you can ask for. There is deliberately
  no `*_default` for this struct: fill all four or leave `has_pwm_band` false.*/
 #[repr(C)]
@@ -629,6 +735,323 @@ pub struct vrsdk_cartpole_config_t {
  initial condition, so setting it mid-swing stops the swing.*/
     pub initial_pole_angle_deg: f64,
 }
+/** The `vrsdk_robot_configure_turret` request -- joint limits and max rates,
+ the laser's range and the stereo pair. **Turret only.**
+
+ Angles are radians, rates rad/s and lengths metres, signed as in
+ `vrsdk_robot_set_turret_joints`. The simulator acks OK whatever it does with
+ a value, so this layer refuses a non-finite one, a rate, baseline, focal
+ length or laser range that is not strictly positive, and a min above its
+ max sent together. Defaults: heading rate pi/2, pitch rate pi/3, heading
+ -pi/2 to +pi/2, pitch -0.262 to +1.178, baseline 0.80 m, focal length
+ 600 px, laser range 200 m, stereo height 0.35 m (clamped to 0.25-1.0),
+ stereo forward 0.40 m (clamped to -0.79-0.45).
+
+ The stereo fields act on the cameras named `left` and `right` together.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_turret_config_t {
+    /// Whether `max_heading_rate` is written.
+    pub has_max_heading_rate: bool,
+    /// How fast the pylon turns, rad/s.
+    pub max_heading_rate: f64,
+    /// Whether `max_pitch_rate` is written.
+    pub has_max_pitch_rate: bool,
+    /// How fast the head tilts, rad/s.
+    pub max_pitch_rate: f64,
+    /// Whether `heading_min` is written.
+    pub has_heading_min: bool,
+    /// Lower heading limit, rad: how far the pylon turns left.
+    pub heading_min: f64,
+    /// Whether `heading_max` is written.
+    pub has_heading_max: bool,
+    /// Upper heading limit, rad: how far the pylon turns right.
+    pub heading_max: f64,
+    /// Whether `pitch_min` is written.
+    pub has_pitch_min: bool,
+    /// Lower pitch limit, rad: how far the barrel goes down.
+    pub pitch_min: f64,
+    /// Whether `pitch_max` is written.
+    pub has_pitch_max: bool,
+    /// Upper pitch limit, rad: how far the barrel goes up.
+    pub pitch_max: f64,
+    /// Whether `stereo_baseline` is written.
+    pub has_stereo_baseline: bool,
+    /// Distance between the two optical centres, m.
+    pub stereo_baseline: f64,
+    /// Whether `stereo_focal_length` is written.
+    pub has_stereo_focal_length: bool,
+    /// Focal length of both cameras, px at the current resolution, fx = fy.
+    pub stereo_focal_length: f64,
+    /// Whether `laser_max_range` is written.
+    pub has_laser_max_range: bool,
+    /// How far the laser measures, m; beyond it the range reads 0.
+    pub laser_max_range: f64,
+    /// Whether `stereo_height` is written.
+    pub has_stereo_height: bool,
+    /// Height of both optical centres above the pivot, m.
+    pub stereo_height: f64,
+    /// Whether `stereo_forward` is written.
+    pub has_stereo_forward: bool,
+    /** Distance of both optical centres ahead of the pivot along the barrel,
+ m; negative is behind it.*/
+    pub stereo_forward: f64,
+}
+/** The `vrsdk_robot_configure_forklift` request -- drive, rear steering and
+ mast. **Forklift only.**
+
+ SI where the simulator stores degrees or rpm: angles in rad, rates in rad/s;
+ pulse widths in microseconds. The simulator heals out-of-range values and
+ acks OK, so this layer refuses only what it refuses: a non-finite value,
+ also once converted to degrees or rpm. Defaults: torque 1200 N*m per front
+ wheel, no-load wheel speed 13.93 rad/s, idle brake 800 N*m, full brake
+ 2000 N*m, steer 0.785 rad at 1.047 rad/s, lift -0.215 to 1.11 m at 0.5 m/s,
+ fork width 0.158 to 1.334 m at 0.1 m/s, band 1100 / 1500 / 1900 us with a
+ 20 us deadband, initial pulses 1500 / 1500 / 1100 / 1301 us.
+
+ A range is judged one request at a time, so send both ends to move one past
+ its other end. The `initial_*_us` pulses take effect at the next
+ `vrsdk_robot_reset`.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_forklift_config_t {
+    /// Whether `max_motor_torque` is written.
+    pub has_max_motor_torque: bool,
+    /// Peak motor torque per front wheel, N*m.
+    pub max_motor_torque: f64,
+    /// Whether `no_load_wheel_speed` is written.
+    pub has_no_load_wheel_speed: bool,
+    /// Front-wheel speed at full throttle with no load, rad/s.
+    pub no_load_wheel_speed: f64,
+    /// Whether `idle_brake_torque` is written.
+    pub has_idle_brake_torque: bool,
+    /// Brake torque per wheel while the throttle sits in the deadband, N*m.
+    pub idle_brake_torque: f64,
+    /// Whether `max_brake_torque` is written.
+    pub has_max_brake_torque: bool,
+    /// Brake torque per wheel at a full brake command, N*m.
+    pub max_brake_torque: f64,
+    /// Whether `max_steer_angle` is written.
+    pub has_max_steer_angle: bool,
+    /// Rear-wheel angle at full stick, rad.
+    pub max_steer_angle: f64,
+    /// Whether `steer_slew_rate` is written.
+    pub has_steer_slew_rate: bool,
+    /// Steering servo sweep rate, rad/s; 0 is an instant servo.
+    pub steer_slew_rate: f64,
+    /// Whether `lift_min` is written.
+    pub has_lift_min: bool,
+    /// Carriage height at the bottom of the band, m; negative is allowed.
+    pub lift_min: f64,
+    /// Whether `lift_max` is written.
+    pub has_lift_max: bool,
+    /// Carriage height at the top of the band, m.
+    pub lift_max: f64,
+    /// Whether `lift_speed` is written.
+    pub has_lift_speed: bool,
+    /// Carriage speed, m/s.
+    pub lift_speed: f64,
+    /// Whether `fork_width_min` is written.
+    pub has_fork_width_min: bool,
+    /// Fork width, centre to centre, at the bottom of the band, m.
+    pub fork_width_min: f64,
+    /// Whether `fork_width_max` is written.
+    pub has_fork_width_max: bool,
+    /// Fork width, centre to centre, at the top of the band, m.
+    pub fork_width_max: f64,
+    /// Whether `fork_width_speed` is written.
+    pub has_fork_width_speed: bool,
+    /// Fork-width change speed, m/s.
+    pub fork_width_speed: f64,
+    /// Whether `pwm_band` is written.
+    pub has_pwm_band: bool,
+    /// The pulse-width band of all five `SET_FORKLIFT` channels.
+    pub pwm_band: vrsdk_pwm_band_t,
+    /// Whether `initial_steer_us` is written.
+    pub has_initial_steer_us: bool,
+    /// The steer pulse a reset re-latches, us.
+    pub initial_steer_us: u32,
+    /// Whether `initial_throttle_us` is written.
+    pub has_initial_throttle_us: bool,
+    /// The throttle pulse a reset re-latches, us.
+    pub initial_throttle_us: u32,
+    /// Whether `initial_lift_us` is written.
+    pub has_initial_lift_us: bool,
+    /// The lift pulse a reset re-latches and snaps the carriage to, us.
+    pub initial_lift_us: u32,
+    /// Whether `initial_fork_width_us` is written.
+    pub has_initial_fork_width_us: bool,
+    /// The fork-width pulse a reset re-latches and snaps the forks to, us.
+    pub initial_fork_width_us: u32,
+}
+/** The `vrsdk_robot_configure_palletrobot` request -- pulse band, virtual
+ mecanum geometry, drive and pad. **PalletRobot only.**
+
+ SI, pulse widths in microseconds. The simulator heals out-of-range values
+ and acks OK, so this layer refuses only what it refuses: a non-finite value,
+ the pad rate also once converted to degrees. Defaults: band 1100 / 1500 /
+ 1900 us with a 20 us deadband, R 0.054 m, lx 0.35 m, ly 0.30 m, wheels
+ 28 rad/s at 60 rad/s^2, traction 6 m/s^2, parked hold 4 /s, pad 0.06 m at
+ 0.03 m/s, pad turn 1.571 rad/s.
+
+ The latched command is re-mapped onto a new band on the next step, so send
+ a fresh frame (or reset) after changing it. Nothing on the wire reads the
+ geometry back.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_palletrobot_config_t {
+    /// Whether `pwm_band` is written.
+    pub has_pwm_band: bool,
+    /// The pulse-width band of all six `SET_PALLETROBOT` channels.
+    pub pwm_band: vrsdk_pwm_band_t,
+    /// Whether `wheel_radius` is written.
+    pub has_wheel_radius: bool,
+    /// Virtual wheel radius R, m.
+    pub wheel_radius: f64,
+    /// Whether `half_wheelbase` is written.
+    pub has_half_wheelbase: bool,
+    /// Centre to the front and rear axles, lx, m.
+    pub half_wheelbase: f64,
+    /// Whether `half_track` is written.
+    pub has_half_track: bool,
+    /// Centre to the left and right wheels, ly, m.
+    pub half_track: f64,
+    /// Whether `max_wheel_speed` is written.
+    pub has_max_wheel_speed: bool,
+    /// Wheel speed at full stick, rad/s.
+    pub max_wheel_speed: f64,
+    /// Whether `wheel_accel` is written.
+    pub has_wheel_accel: bool,
+    /// Wheel motor acceleration limit, rad/s^2; 0 jumps to the command.
+    pub wheel_accel: f64,
+    /// Whether `max_traction_accel` is written.
+    pub has_max_traction_accel: bool,
+    /// Ceiling on the body acceleration the drive applies, m/s^2.
+    pub max_traction_accel: f64,
+    /// Whether `parked_hold_gain` is written.
+    pub has_parked_hold_gain: bool,
+    /// Parked hold stiffness, 1/s; 0 is no hold.
+    pub parked_hold_gain: f64,
+    /// Whether `pad_lift_max` is written.
+    pub has_pad_lift_max: bool,
+    /// Pad height at the top of the band, m.
+    pub pad_lift_max: f64,
+    /// Whether `pad_lift_speed` is written.
+    pub has_pad_lift_speed: bool,
+    /// Pad lift speed, m/s; 0 is instant.
+    pub pad_lift_speed: f64,
+    /// Whether `pad_turn_max_rate` is written.
+    pub has_pad_turn_max_rate: bool,
+    /// Pad turn rate at full stick, rad/s.
+    pub pad_turn_max_rate: f64,
+}
+/** The `vrsdk_robot_configure_arm` request -- joint speed fallbacks, the
+ protective stop, and the tool. **Rail arm and table arm only.**
+
+ The rail arm reads the `suction_*` fields, the table arm the `gripper_*`
+ fields, and each **ignores the other arm's tool fields** (the rest of the
+ request still applies). SI, angles in rad. The simulator heals out-of-range
+ values and acks OK, so this layer refuses only what it refuses: a
+ non-finite value, and speed fallbacks that are not one finite entry per
+ joint -- 7 on the rail arm, 6 on the table arm.
+
+ The speed fallbacks back only a joint whose driver reports no speed limit,
+ and every joint of both shipped arms reports one: on those rigs the field
+ changes no speed.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_arm_config_t {
+    /// Whether `fallback_speed_limits` is written.
+    pub has_fallback_speed_limits: bool,
+    /// Entries used in `fallback_speed_limits`.
+    pub fallback_speed_limit_count: u32,
+    /** One speed limit per joint, in actuator order: m/s for the rail, rad/s
+ for a revolute joint. An entry `<= 0` means the simulator's generic
+ 1 m/s or 90 deg/s.*/
+    pub fallback_speed_limits: [f64; 16usize],
+    /// Whether `protective_stop` is written.
+    pub has_protective_stop: bool,
+    /// Refuse joint steps that would drive the arm into anything.
+    pub protective_stop: bool,
+    /// Whether `self_collision` is written.
+    pub has_self_collision: bool,
+    /// Also refuse steps into the arm itself; needs the protective stop.
+    pub self_collision: bool,
+    /// Whether `contact_tolerance` is written.
+    pub has_contact_tolerance: bool,
+    /// How far a link may sink into something before the step is refused, m.
+    pub contact_tolerance: f64,
+    /// Whether `strike_speed` is written.
+    pub has_strike_speed: bool,
+    /// Closing speed above which a collision is a strike, m/s.
+    pub strike_speed: f64,
+    /// Whether `collision_rearm` is written.
+    pub has_collision_rearm: bool,
+    /// Time clear of an obstacle before meeting it again is a new event, s.
+    pub collision_rearm: f64,
+    /// Whether `suction_capacity` is written.
+    pub has_suction_capacity: bool,
+    /// Vacuum (rail arm): suction force, N.
+    pub suction_capacity: f64,
+    /// Whether `suction_reach` is written.
+    pub has_suction_reach: bool,
+    /// Vacuum (rail arm): the gap within which the cup seals, m.
+    pub suction_reach: f64,
+    /// Whether `suction_max_tilt` is written.
+    pub has_suction_max_tilt: bool,
+    /// Vacuum (rail arm): the largest tilt that still seals, rad.
+    pub suction_max_tilt: f64,
+    /// Whether `suction_accel_window` is written.
+    pub has_suction_accel_window: bool,
+    /// Vacuum (rail arm): the span the load's acceleration is averaged over, s.
+    pub suction_accel_window: f64,
+    /// Whether `gripper_speed` is written.
+    pub has_gripper_speed: bool,
+    /// Gripper (table arm): finger speed, m/s of opening.
+    pub gripper_speed: f64,
+    /// Whether `gripper_max_payload` is written.
+    pub has_gripper_max_payload: bool,
+    /// Gripper (table arm): the heaviest body the fingers hold, kg.
+    pub gripper_max_payload: f64,
+}
+/** One entry of the `vrsdk_robot_configure_lidars` request: a mounted lidar,
+ by name, and what to change on it.
+
+ `name` is borrowed for the duration of the call. The mount is in the
+ **robot's** frame -- metres, and radians in that frame's own Euler order --
+ the frame and shape `vrsdk_lidar_params_t` reports it in, so a mount read
+ off a scan goes back unchanged; position and rotation travel together.
+ `segments` is clamped simulator-side to [1, the device's maximum], and a
+ `layer_mask` of 0 means the default raycast layers.*/
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vrsdk_lidar_config_entry_t {
+    /// The lidar, by the name it was mounted under -- also its topic segment.
+    pub name: *const ::core::ffi::c_char,
+    /// Whether `mount_position` and `mount_euler_rad` are written.
+    pub has_mount: bool,
+    /// The optical centre's offset from the robot origin, m.
+    pub mount_position: [f64; 3usize],
+    /// The mount rotation, rad, about the robot frame's x, y and z axes.
+    pub mount_euler_rad: [f64; 3usize],
+    /// Whether `segments` is written.
+    pub has_segments: bool,
+    /// Pose snapshots per revolution; 1 means no spin distortion.
+    pub segments: u32,
+    /// Whether `layer_mask` is written.
+    pub has_layer_mask: bool,
+    /// The Unity physics layers the beams can hit, as a bit mask.
+    pub layer_mask: i32,
+}
+impl Default for vrsdk_lidar_config_entry_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 /** Everything tunable about a connection.
 
  Fill it with `vrsdk_options_default` first. Every pointer may be NULL, which
@@ -674,6 +1097,20 @@ pub struct vrsdk_connect_options_t {
     /** The enum tag beside `coord_frame_id`. Keep the two consistent; the
  string wins when they disagree.*/
     pub axis_convention: vrsdk_axes_t,
+    /** Whether a robot this handle *creates* spawns at `initial_position` /
+ `initial_orientation` rather than at the world origin. Default false.
+ Ignored when attaching to an existing id.*/
+    pub has_initial_pose: bool,
+    /** Spawn position in **raw Unity world coordinates**, metres: +x right, +y
+ up, +z forward. The simulator applies it as given and **ignores
+ `coord_frame_id`**; nothing is converted. Default `{0, 0, 0}`.*/
+    pub initial_position: [f64; 3usize],
+    /** Spawn rotation, a Unity world quaternion `{x, y, z, w}`, normalized
+ before sending. A heading of `yaw` radians about the up axis is
+ `{0, sin(yaw/2), 0, cos(yaw/2)}`, positive turning +z toward +x.
+ Default `{0, 0, 0, 1}`. It is also the robot's home for
+ `vrsdk_robot_reset`.*/
+    pub initial_orientation: [f64; 4usize],
 }
 impl Default for vrsdk_connect_options_t {
     fn default() -> Self {
@@ -797,6 +1234,53 @@ impl Default for vrsdk_rate_report_t {
         }
     }
 }
+/** What one actuator entry is, as `z/properties` publishes it. See the
+ `VRSDK_ACTUATOR_KIND_*` codes, which are the wire values.*/
+pub type vrsdk_actuator_kind_t = i32;
+/** What a robot is: mass, centre of gravity, inertia and the kind of each
+ actuator entry -- what `vrsdk_robot_properties` reads off `z/properties`.
+
+ `cg` and `inertia` are on body axes in the frame `coord_frame_id` names,
+ the robot's own. The two arrays are index-parallel to `vrsdk_actuator_t`'s,
+ and truncated to `VRSDK_MAX_ACTUATORS` like them.*/
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vrsdk_robot_properties_t {
+    /// Mass, kg. The one frame-invariant field.
+    pub mass: f64,
+    /// Centre of gravity from the robot origin, m.
+    pub cg: [f64; 3usize],
+    /** Inertia tensor about the centre of gravity, kg*m^2, nine doubles
+ row-major: `inertia[3 * row + col]`. A tensor converts by conjugation
+ (`R * I * R^T`), never with the vector rule.*/
+    pub inertia: [f64; 9usize],
+    /// Entries used in `moment_arms`; 0 for a robot type that publishes none.
+    pub moment_arm_count: u32,
+    /// Each actuator's moment arm from the centre of gravity, m.
+    pub moment_arms: [f64; 16usize],
+    /** Entries used in `actuator_types`; 0 for a robot type that publishes no
+ layout.*/
+    pub actuator_type_count: u32,
+    /// What each actuator entry is, a `VRSDK_ACTUATOR_KIND_*` code.
+    pub actuator_types: [vrsdk_actuator_kind_t; 16usize],
+    /** True when the robot published more entries than `VRSDK_MAX_ACTUATORS`
+ and the arrays above were cut short.*/
+    pub truncated: bool,
+    /// The convention `cg` and `inertia` are expressed in.
+    pub axis_convention: vrsdk_axes_t,
+    /** The frame id `cg` and `inertia` are expressed in -- authoritative when it
+ and `axis_convention` disagree.*/
+    pub coord_frame_id: [::core::ffi::c_char; 64usize],
+}
+impl Default for vrsdk_robot_properties_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
 /** This build's version identity.
 
  A schema or IPC version mismatch does not present as an error -- it presents
@@ -830,6 +1314,111 @@ impl Default for vrsdk_version_info_t {
             s.assume_init()
         }
     }
+}
+/** What a lidar is, where it sits, and the beam layout that places its ranges.
+
+ Every number crossed the wire as `float` and is widened here.*/
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vrsdk_lidar_params_t {
+    /// Index of this lidar on the robot, 0-based, in mount order.
+    pub lidar_id: u32,
+    /// The lidar's name on the robot, also its topic segment.
+    pub name: [::core::ffi::c_char; 64usize],
+    /** Optical centre's offset from the robot origin, m, in the **robot's**
+ frame (`mount_coord_frame_id`), not the scan's.*/
+    pub mount_position: [f64; 3usize],
+    /// Mount rotation, rad, about the robot frame's x, y and z.
+    pub mount_euler_rad: [f64; 3usize],
+    /// The convention the two mount fields are in.
+    pub mount_axis_convention: vrsdk_axes_t,
+    /// The frame id the two mount fields are in; authoritative.
+    pub mount_coord_frame_id: [::core::ffi::c_char; 64usize],
+    /// Rings: 16 for the 3-D unit, 1 for a planar scanner.
+    pub rings: u32,
+    /// Beams per ring per revolution.
+    pub columns: u32,
+    /// Azimuth of column 0, rad; column 0 is forward.
+    pub azimuth_start: f64,
+    /// Azimuth from one column to the next, rad, counter-clockwise from above.
+    pub azimuth_step: f64,
+    /// Elevation of ring 0, the lowest, rad.
+    pub elevation_start: f64,
+    /// Elevation from one ring to the next, rad, positive up.
+    pub elevation_step: f64,
+    /// Returns nearer than this are not seen, m.
+    pub min_range: f64,
+    /// Nothing within this range is a `+inf` range, m.
+    pub max_range: f64,
+    /// Revolutions per second: 20 for 3-D, 10 for 2-D.
+    pub scan_rate: f64,
+    /// Pose snapshots the revolution was cast from; 1 is no spin distortion.
+    pub segments: u32,
+}
+impl Default for vrsdk_lidar_params_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+/** Everything about one lidar scan except its ranges -- what
+ `vrsdk_lidar_fresh` and `vrsdk_lidar_latest` copy out beside them.
+
+ Range `ring * columns + column` lies along azimuth `azimuth_start + column *
+ azimuth_step` and elevation `elevation_start + ring * elevation_step`, in
+ metres from the optical centre; `+inf` means no return, never 0.*/
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vrsdk_lidar_scan_info_t {
+    /** When the revolution completed, unix ns -- the clock of
+ `vrsdk_state_t::t_ns`.*/
+    pub t_ns: i64,
+    /// Seconds since the robot's first state sample.
+    pub elapsed: f64,
+    /** The simulator's per-topic scan counter; it restarts at 0 when the topic
+ reopens.*/
+    pub seq: u64,
+    /// The robot the lidar is on.
+    pub sys_id: u32,
+    /** The enum tag beside `coord_frame_id`; unspecified for the default
+ `"flu"`, which has no enum value.*/
+    pub axis_convention: vrsdk_axes_t,
+    /// The lidar's frame: `"flu"` unless overridden as device `lidar/<name>`.
+    pub coord_frame_id: [::core::ffi::c_char; 64usize],
+    /** The frame `vrsdk_lidar_points` expresses points in: `coord_frame_id`
+ when the SDK can resolve it, `"flu"` otherwise.*/
+    pub points_frame_id: [::core::ffi::c_char; 64usize],
+    /// Ranges in the scan: `rings * columns`, checked on decode.
+    pub range_count: usize,
+    /// The unit, its mount and its beam layout.
+    pub params: vrsdk_lidar_params_t,
+}
+impl Default for vrsdk_lidar_scan_info_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+/// Counters for one lidar stream.
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_lidar_stats_t {
+    /// Scans received and published.
+    pub received: u64,
+    /// Payloads that did not decode. Counted, never fatal.
+    pub decode_errors: u64,
+    /// Times the sequence number jumped forward by more than one.
+    pub seq_gaps: u64,
+    /// Total scans missed across all gaps.
+    pub missed_scans: u64,
+    /// The last sequence number seen.
+    pub last_seq: u64,
 }
 /** A log level. See the `VRSDK_LOG_*` codes; they are ordered, so
  `level >= VRSDK_LOG_WARN` is a valid test.*/
@@ -1298,6 +1887,89 @@ pub type vrsdk_fw_mode_t = i32;
  `vrsdk_frame_def_t::euler_order` read off `z/frames` can be handed straight
  back to `vrsdk_euler_to_quat`.*/
 pub type vrsdk_euler_order_t = i32;
+/// A forklift's drive, steering and mast, from `actuator.measured`.
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_forklift_actuators_t {
+    /// Front-axle speed, rad/s, positive rolling forward.
+    pub drive_speed: f64,
+    /// Steering angle, rad, positive turning right.
+    pub steering_angle: f64,
+    /// Carriage height on the mast, m; -0.215 is a floor pallet's pocket.
+    pub lift_height: f64,
+    /// Distance between the forks, centre to centre, m.
+    pub fork_width: f64,
+}
+/// A pallet robot's wheels and pad, from `actuator.measured`.
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_palletrobot_actuators_t {
+    /** Wheel motor speeds, rad/s, positive rolling forward, ordered FL, FR, RL,
+ RR -- the `VRSDK_PALLETROBOT_CH_*` indices.*/
+    pub wheel_speeds: [f64; 4usize],
+    /// Pad height above its rest, m: 0 to 0.06.
+    pub pad_height: f64,
+    /// Pad angle relative to the body, rad, in [-pi, pi), clockwise from above.
+    pub pad_angle: f64,
+}
+/// What cut an arm's last joint step short. See the `VRSDK_ARM_CONTACT_*` codes.
+pub type vrsdk_arm_contact_t = i32;
+/** The rail arm's actuator report, decoded. The table arm reports nine entries
+ too, laid out differently: decode by robot type, never by count.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_rail_arm_actuators_t {
+    /// Joint positions: the rail in m, then A1 to A6 in rad.
+    pub joints: [f64; 7usize],
+    /// Each joint's position across its range, [-1, 1]; +/-1 is at a limit.
+    pub joints_normalized: [f64; 7usize],
+    /// The `SET_ARM_VACUUM` latch, echoed back.
+    pub vacuum_on: bool,
+    /// Whether a load is on the pad: `held_mass_kg` above zero.
+    pub holding: bool,
+    /// The held load's mass, kg; 0 when nothing is held.
+    pub held_mass_kg: f64,
+    /// What cut the last joint step short: a `VRSDK_ARM_CONTACT_*` code.
+    pub contact: vrsdk_arm_contact_t,
+}
+/** The table arm's actuator report, decoded. The rail arm reports nine entries
+ too: decode by robot type, never by count.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_table_arm_actuators_t {
+    /// Joint positions, A1 to A6, rad.
+    pub joints: [f64; 6usize],
+    /// Each joint's position across its range, [-1, 1].
+    pub joints_normalized: [f64; 6usize],
+    /** The `SET_ARM_GRIPPER` latch, m, after the clamp to the stroke. It
+ crossed the wire as `float`, so compare with a tolerance.*/
+    pub gripper_command_m: f64,
+    /// The gap between the pads now, m -- the held object's width.
+    pub gripper_opening_m: f64,
+    /// Whether a body is held between the pads.
+    pub holding: bool,
+    /// The held body's mass, kg; 0 when nothing is held.
+    pub held_mass_kg: f64,
+    /// What cut the last joint step short: a `VRSDK_ARM_CONTACT_*` code.
+    pub contact: vrsdk_arm_contact_t,
+}
+/// A turret's joints and laser, decoded.
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_turret_actuators_t {
+    /// Pylon angle, rad: positive to the right of rest, seen from above.
+    pub heading: f64,
+    /// Head angle, rad: positive raises the barrel.
+    pub pitch: f64,
+    /// The pylon's rate as a fraction of its max rate, [-1, 1].
+    pub heading_rate_fraction: f64,
+    /// The head's rate as a fraction of its max rate, [-1, 1].
+    pub pitch_rate_fraction: f64,
+    /// Whether the laser is switched on.
+    pub laser_on: bool,
+    /// Muzzle to the first hit, m; 0 while off or when nothing is in range.
+    pub laser_range: f64,
+}
 /** One `device -> frame` override, an entry of the `vrsdk_robot_set_frames`
  request.
 
@@ -1305,11 +1977,12 @@ pub type vrsdk_euler_order_t = i32;
 
  The device names the sim matches, **exactly and case-sensitively**:
  `"accelerometer"`, `"gyroscope"`, `"magnetometer"`, `"barometer"`, `"gps"`,
- `"optical_flow"`, and `"camera/<name>"` for one camera. An unrecognised name
- is skipped with a log line and an OK ack.
+ `"optical_flow"`, `"camera/<name>"` for one camera and `"lidar/<name>"` for
+ one lidar (which re-labels its points, never its ranges). An unrecognised
+ name is skipped with a log line and an OK ack.
 
- Registered frame ids are `"unity"`, `"frd"`, `"fru"`, `"cv"`, plus whatever
- the scene registered at run time. `"inherit"` **clears** the override so the
+ Registered frame ids are `"unity"`, `"frd"`, `"fru"`, `"flu"`, `"cv"`, plus
+ whatever the scene registered at run time. `"inherit"` **clears** the override so the
  level below wins again -- distinct from an empty string, which this layer
  refuses because the sim silently skips it.*/
 #[repr(C)]
@@ -1431,6 +2104,72 @@ pub struct vrsdk_frame_transform_t {
  conversion crosses it. Recomputed from `matrix` by every function that
  takes one of these, so a hand-edited struct behaves as its matrix says.*/
     pub det: f64,
+}
+/** How bad a safety incident was. See the `VRSDK_SAFETY_TIER_*` codes.
+ Deliberately not ordered: unspecified also stands for a newer tier.*/
+pub type vrsdk_safety_tier_t = i32;
+/// What the robot met. See the `VRSDK_SAFETY_OTHER_*` codes.
+pub type vrsdk_safety_other_kind_t = i32;
+/** One safety incident, as the robot reported it. The header fields are the
+ **robot's**: `sys_id` and `robot_name` say whose incident it is.*/
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct vrsdk_safety_event_t {
+    /// The robot the incident belongs to.
+    pub sys_id: u32,
+    /// The robot's wire name.
+    pub robot_name: [::core::ffi::c_char; 64usize],
+    /// The robot's event counter, from 0. A jump is an event lost on the way.
+    pub seq: u64,
+    /// When the simulator reported it, unix ns.
+    pub t_ns: i64,
+    /** Seconds since the robot's first state sample; 0 on the swarm-wide
+ stream, which has no robot epoch.*/
+    pub elapsed: f64,
+    /// How bad it was: a `VRSDK_SAFETY_TIER_*` code.
+    pub tier: vrsdk_safety_tier_t,
+    /// The other party's scene name, or for a robot its wire name.
+    pub other_name: [::core::ffi::c_char; 64usize],
+    /// What the robot met: a `VRSDK_SAFETY_OTHER_*` code.
+    pub other_kind: vrsdk_safety_other_kind_t,
+    /// The robot's peak speed toward the other party, m/s, `+` closing.
+    pub closing_speed: f64,
+    /// Contact impulse, N*s; 0 for a near miss and for an arm link.
+    pub impulse: f64,
+    /// The robot was the one moving in.
+    pub robot_at_fault: bool,
+    /// Where it happened: a **world** position in `coord_frame_id`.
+    pub position: [f64; 3usize],
+    /// The convention `position` is in.
+    pub axis_convention: vrsdk_axes_t,
+    /// The frame id `position` is in; the robot's own frame, authoritative.
+    pub coord_frame_id: [::core::ffi::c_char; 64usize],
+}
+impl Default for vrsdk_safety_event_t {
+    fn default() -> Self {
+        let mut s = ::core::mem::MaybeUninit::<Self>::uninit();
+        unsafe {
+            ::core::ptr::write_bytes(s.as_mut_ptr(), 0, 1);
+            s.assume_init()
+        }
+    }
+}
+/** Counters for a safety stream. On an aperiodic topic a lost event looks
+ exactly like no event, so these are the only way to know the record is
+ complete.*/
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone)]
+pub struct vrsdk_safety_stats_t {
+    /// Events that arrived and decoded, read or not.
+    pub received: u64,
+    /// Events evicted unread from a full queue.
+    pub dropped: u64,
+    /// Payloads that did not decode. Counted, never fatal.
+    pub decode_errors: u64,
+    /// Times a robot's `seq` jumped forward by more than one.
+    pub seq_gaps: u64,
+    /// Total events those jumps imply missing.
+    pub missed_events: u64,
 }
 /** One command seen on a robot's `z/cmd` topic -- what
  `vrsdk_setpoint_fresh` and `vrsdk_setpoint_latest` copy out.
@@ -1738,6 +2477,43 @@ unsafe extern "C" {
 
  `out` must point to writable storage for one `vrsdk_cartpole_config_t`.*/
     pub fn vrsdk_cartpole_config_default(out: *mut vrsdk_cartpole_config_t);
+    /** Fill `out` with an empty turret request -- nothing set.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_turret_config_t`.*/
+    pub fn vrsdk_turret_config_default(out: *mut vrsdk_turret_config_t);
+    /** Fill `out` with an empty forklift request -- nothing set.
+
+ The `pwm_band` block is left at zero on purpose, as for the truck: set all
+ four or leave the flag false.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_forklift_config_t`.*/
+    pub fn vrsdk_forklift_config_default(out: *mut vrsdk_forklift_config_t);
+    /** Fill `out` with an empty pallet-robot request -- nothing set.
+
+ The `pwm_band` block is left at zero on purpose: set all four or leave the
+ flag false.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_palletrobot_config_t`.*/
+    pub fn vrsdk_palletrobot_config_default(out: *mut vrsdk_palletrobot_config_t);
+    /** Fill `out` with an empty arm request -- nothing set, no speed fallbacks.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_arm_config_t`.*/
+    pub fn vrsdk_arm_config_default(out: *mut vrsdk_arm_config_t);
+    /** Fill `out` with an empty lidar entry: a NULL name and nothing set. Point
+ `name` at the lidar's name before use.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_lidar_config_entry_t`.*/
+    pub fn vrsdk_lidar_config_entry_default(out: *mut vrsdk_lidar_config_entry_t);
     /** List the vrobots topics that are live right now.
 
  Both transports, and they mean different things:
@@ -1819,6 +2595,34 @@ unsafe extern "C" {
         options: *const vrsdk_connect_options_t,
         out: *mut vrsdk_rate_report_t,
     ) -> vrsdk_err_t;
+    /** Read what robot `sys_id` is off its `z/properties` -- mass, centre of
+ gravity, inertia and the kind of each actuator entry -- with no robot handle.
+
+ The cheap way to find a robot by type: `vrsdk_list_topics` says which ids
+ are on the wire, and this reads each one's `actuator_types` without
+ connecting to it. A one-shot read on a zenoh session of its own, closed
+ before this returns, as `vrsdk_list_topics` does; a fresh session needs a
+ moment of zenoh discovery and the topic is a 1 Hz keepalive, so a read takes
+ about a second. Nothing is kept: a robot handle arms its layout check with
+ its own `vrsdk_robot_properties` read.
+
+ `options` may be NULL for the defaults; only the connection settings and
+ `probe_timeout_s` are used. `VRSDK_ERR_TIMEOUT` if no sample arrives within
+ `probe_timeout_s` -- no robot at that id, or a simulator from before this
+ topic existed -- `VRSDK_ERR_SESSION` if zenoh will not open,
+ `VRSDK_ERR_CONFIG` for an unusable router endpoint, and `VRSDK_ERR_DECODE`
+ if the payload is malformed.
+
+ # Safety
+
+ `options`, if non-NULL, must be an initialised struct whose strings are
+ valid for the call; `out` must point to writable storage for one
+ `vrsdk_robot_properties_t`.*/
+    pub fn vrsdk_read_properties(
+        sys_id: u32,
+        options: *const vrsdk_connect_options_t,
+        out: *mut vrsdk_robot_properties_t,
+    ) -> vrsdk_err_t;
     /** Whether this build can enumerate **both** transports.
 
  False means the iceoryx2 half is missing, so camera streams
@@ -1873,6 +2677,162 @@ unsafe extern "C" {
  the process instead, which is what makes this a real test rather than a
  comment. Nothing else in the API can reach it.*/
     pub fn vrsdk_panic_for_test() -> vrsdk_err_t;
+    /** The newest scan **if it is new since the last call**.
+
+ `*out_valid` receives false when nothing new has arrived, and the outputs
+ are left untouched -- the normal case, not a failure. Each scan is handed
+ out **once**, so two threads racing on one stream cannot both receive it.
+
+ `out_ranges` receives the scan's `range_count` ranges, metres in beam order
+ (`ring * columns + column`), `+inf` where a beam found nothing, and the
+ scan is claimed. When `ranges_cap` is smaller than that, nothing is
+ written, the scan is **not** claimed, and `VRSDK_ERR_INVALID_ARGUMENT`
+ names the size to allocate.
+
+ `out_ranges` NULL is the info-only read: `*out_info` describes the scan a
+ call with a buffer would claim -- `range_count` is the size to allocate --
+ and **nothing is claimed**. `vrsdk_lidar_has_fresh` is the same question
+ without the copy.
+
+ # Safety
+
+ `handle` must be a live lidar handle; `out_info` and `out_valid` must be
+ writable; `out_ranges`, if non-NULL, must be writable for `ranges_cap`
+ floats.*/
+    pub fn vrsdk_lidar_fresh(
+        handle: *const vrsdk_lidar_t,
+        out_info: *mut vrsdk_lidar_scan_info_t,
+        out_ranges: *mut f32,
+        ranges_cap: usize,
+        out_valid: *mut bool,
+    ) -> vrsdk_err_t;
+    /** Whether a scan `vrsdk_lidar_fresh` has not handed out yet is waiting: the
+ poll before sizing a buffer. Copies nothing, claims nothing, allocates
+ nothing. False for a NULL handle.
+
+ A true answer can still meet `*out_valid == false` from the
+ `vrsdk_lidar_fresh` that follows when another thread claims the scan first.
+
+ # Safety
+
+ `handle` must be NULL or a live lidar handle.*/
+    pub fn vrsdk_lidar_has_fresh(handle: *const vrsdk_lidar_t) -> bool;
+    /** The newest scan, new or not; `*out_valid` is false only before the first.
+
+ Does not consume freshness. With `out_ranges` NULL it is the size query:
+ `out_info->range_count` is what to allocate. Otherwise as
+ `vrsdk_lidar_fresh`.
+
+ # Safety
+
+ As `vrsdk_lidar_fresh`.*/
+    pub fn vrsdk_lidar_latest(
+        handle: *const vrsdk_lidar_t,
+        out_info: *mut vrsdk_lidar_scan_info_t,
+        out_ranges: *mut f32,
+        ranges_cap: usize,
+        out_valid: *mut bool,
+    ) -> vrsdk_err_t;
+    /** Block until a scan newer than the last stored one arrives.
+
+ A `VRSDK_ERR_TIMEOUT` never means the stream is broken; it is also how a
+ lidar that stopped publishing -- a tier change, a despawn -- is detected.
+
+ # Safety
+
+ `handle` must be a live lidar handle.*/
+    pub fn vrsdk_lidar_wait_new_scan(
+        handle: *const vrsdk_lidar_t,
+        timeout_s: f64,
+    ) -> vrsdk_err_t;
+    /** Copy this stream's identity out: the lidar's name, the topic it reads
+ (exactly as `vrobots topic list` prints it) and its transport --
+ `VRSDK_TRANSPORT_ICEORYX2` for 3-D, `VRSDK_TRANSPORT_ZENOH` for 2-D.
+
+ Each buffer may be NULL to skip it, and so may `out_transport`.
+
+ # Safety
+
+ `handle` must be a live lidar handle; each non-NULL buffer must be writable
+ for its declared capacity; `out_transport`, if non-NULL, must be writable.*/
+    pub fn vrsdk_lidar_info(
+        handle: *const vrsdk_lidar_t,
+        out_name: *mut ::core::ffi::c_char,
+        name_cap: usize,
+        out_topic: *mut ::core::ffi::c_char,
+        topic_cap: usize,
+        out_transport: *mut vrsdk_transport_t,
+    ) -> vrsdk_err_t;
+    /** Copy the stream's counters into `out`.
+
+ # Safety
+
+ `handle` must be a live lidar handle; `out` must be writable.*/
+    pub fn vrsdk_lidar_stats(
+        handle: *const vrsdk_lidar_t,
+        out: *mut vrsdk_lidar_stats_t,
+    ) -> vrsdk_err_t;
+    /** The most recent decode failure on this stream, without raising it.
+
+ A malformed scan is counted and dropped, never fatal. `*out_code` receives
+ the code or `VRSDK_OK`; `out_message`, if non-NULL, receives the detail.
+
+ # Safety
+
+ `handle` must be a live lidar handle; `out_code` must be writable;
+ `out_message`, if non-NULL, must be writable for `message_cap` bytes.*/
+    pub fn vrsdk_lidar_last_error(
+        handle: *const vrsdk_lidar_t,
+        out_code: *mut vrsdk_err_t,
+        out_message: *mut ::core::ffi::c_char,
+        message_cap: usize,
+    ) -> vrsdk_err_t;
+    /** Whether the stream is still receiving: false after `vrsdk_lidar_stop`, and
+ for a NULL handle.
+
+ # Safety
+
+ `handle` must be NULL or a live lidar handle.*/
+    pub fn vrsdk_lidar_is_running(handle: *const vrsdk_lidar_t) -> bool;
+    /** Stop reading. Idempotent; `vrsdk_lidar_free` does it too. The lidar keeps
+ publishing.
+
+ # Safety
+
+ `handle` must be a live lidar handle.*/
+    pub fn vrsdk_lidar_stop(handle: *const vrsdk_lidar_t) -> vrsdk_err_t;
+    /** Release a lidar handle, stopping and joining a 3-D reader thread or
+ undeclaring a 2-D subscriber. Freeing NULL is a no-op.
+
+ # Safety
+
+ `handle` must be NULL or a lidar handle that has not already been freed.*/
+    pub fn vrsdk_lidar_free(handle: *mut vrsdk_lidar_t);
+    /** Every beam of a copied scan as a point: `out_xyz` receives `3 *
+ range_count` floats, `{x0, y0, z0, x1, ...}`, metres, in
+ `info->points_frame_id`.
+
+ Point `i` is beam `i`, so the cloud stays organised by ring and column; a
+ beam with no return is `{NaN, NaN, NaN}`. Points are in the lidar's frame,
+ not the robot's: the mount is in `info->params` for a consumer that wants
+ them on the body. `range_count` is normally `info->range_count`.
+
+ `VRSDK_ERR_INVALID_ARGUMENT`, with nothing written, when `xyz_cap` is
+ smaller than `3 * range_count`. No ranges make no points: with
+ `range_count` 0 the call succeeds and writes nothing.
+
+ # Safety
+
+ `info` must point to an initialised `vrsdk_lidar_scan_info_t`; `ranges` must
+ be readable for `range_count` floats; `out_xyz` must be writable for
+ `xyz_cap` floats. Both may be NULL when `range_count` is 0.*/
+    pub fn vrsdk_lidar_points(
+        info: *const vrsdk_lidar_scan_info_t,
+        ranges: *const f32,
+        range_count: usize,
+        out_xyz: *mut f32,
+        xyz_cap: usize,
+    ) -> vrsdk_err_t;
     /** Register a callback for the SDK's log events, or pass NULL to unregister.
 
  Safe to call at any time, including before any robot exists -- and that is
@@ -1939,6 +2899,12 @@ unsafe extern "C" {
  `options` may be NULL for the defaults; otherwise fill it with
  `vrsdk_options_default` first. Nothing in it is retained after this returns.
 
+ `VRSDK_ERR_INVALID_ARGUMENT` for an unknown robot type code, a `sys_id`
+ past 32 bits, a timeout that is not positive and finite, or a string that
+ is not UTF-8. The rest of `options` is judged by `vrsdk_robot_connect`: a
+ zero `src_id`, the router endpoint, and the spawn pose, which only a create
+ sends.
+
  On success `*out` receives a handle the caller owns and must release with
  `vrsdk_robot_free`. On failure `*out` is set to NULL.
 
@@ -1967,13 +2933,23 @@ unsafe extern "C" {
  carries the simulator's own message naming every key it *does* know:
 
  ```text
- unknown type 'globalhawk' (known: multirotor, truck, msd)
+ unknown type 'globalhawk' (known: multirotor, truck, msd, forklift, palletrobot,
+ kr210_rail, tablearm, turret)
  ```
 
  `VRSDK_ROBOT_CARTPOLE`, `VRSDK_ROBOT_HALFDRONE` and `VRSDK_ROBOT_GLOBALHAWK`
  are scene-authored in the shipped scenes: attach to those with an explicit
  `sys_id`, which never touches the create service and therefore works whatever
- the catalog says.
+ the catalog says. The forklift, pallet robot, rail arm, table arm and turret
+ are in the spawner's catalog, **not yet verified on a live simulator**, and
+ runtime create needs the **Pro** tier: on Community every create is refused.
+
+ A created robot spawns at `vrsdk_connect_options_t::initial_position` /
+ `initial_orientation` when `has_initial_pose` is set -- **raw Unity world
+ coordinates**, the request's frame ignored -- and at the world origin
+ otherwise. A pose with a non-finite value or a zero-length rotation is
+ refused here, not by `vrsdk_robot_new`, with `VRSDK_ERR_INVALID_ARGUMENT`
+ before anything is sent; so is a zero `src_id`.
 
  # Safety
 
@@ -2093,14 +3069,15 @@ unsafe extern "C" {
 
  Values outside 1100-2000 are refused with `VRSDK_ERR_INVALID_ARGUMENT`
  rather than clamped -- a normalised 0.7 is a unit mistake, and clamping it
- would look like a valid idle command.
+ would look like a valid idle command. A fraction is rounded to the nearest
+ microsecond, a half up.
 
  There is no reply. Proof it landed is `state.actuator.pwm` echoing it back.
 
  # Safety
 
  `handle` must be a live, connected handle; `pwm` must be readable for `count`
- doubles.*/
+ doubles, and may be NULL when `count` is 0.*/
     pub fn vrsdk_robot_set_mr_pwm(
         handle: *const vrsdk_robot_t,
         pwm: *const f64,
@@ -2131,7 +3108,8 @@ unsafe extern "C" {
  | brake    | released     | --                | full         |
 
  Brake is **bottom-anchored**: 1100 is released, not 1500. Pass NULL for
- `brake` to send the two-channel form, which brakes nothing.
+ `brake` to send the two-channel form, which brakes nothing. A fraction is
+ rounded to the nearest microsecond, a half up.
 
  # Safety
 
@@ -2306,7 +3284,7 @@ unsafe extern "C" {
  # Safety
 
  `handle` must be a live, connected handle; `radians` must be readable for
- `count` doubles.*/
+ `count` doubles, and may be NULL when `count` is 0.*/
     pub fn vrsdk_robot_set_fw_surfaces(
         handle: *const vrsdk_robot_t,
         radians: *const f64,
@@ -2475,6 +3453,196 @@ unsafe extern "C" {
         cmd_id: u32,
         args: *const vrsdk_cmd_args_t,
     ) -> vrsdk_err_t;
+    /** `SET_FORKLIFT` -- steer, throttle, lift and fork width, microseconds, plus an
+ optional brake.
+
+ Steer and throttle centre on 1500 (1100 full left / full reverse, 1900 full
+ right / full forward); a centred throttle holds the idle brake. Lift (1100
+ is -0.215 m, a floor pallet's pocket height, 1900 is 1.11 m) and fork width
+ (0.158 to 1.334 m) are position servos that **slew**, so the move is done
+ when `vrsdk_robot_forklift_actuators` says so, not when `actuator.pwm`
+ echoes it.
+
+ `brake_us` NULL sends the four-channel frame, which **releases** the brake;
+ non-NULL adds the fifth channel, bottom-anchored (1100 released, 1900 full).
+ Values outside the 1100-2000 band are refused with
+ `VRSDK_ERR_INVALID_ARGUMENT`; a fraction is rounded to the nearest
+ microsecond, a half up.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `brake_us`, if non-NULL, must be
+ readable for one double.*/
+    pub fn vrsdk_robot_set_forklift(
+        handle: *const vrsdk_robot_t,
+        steer_us: f64,
+        throttle_us: f64,
+        lift_us: f64,
+        fork_width_us: f64,
+        brake_us: *const f64,
+    ) -> vrsdk_err_t;
+    /** `SET_PALLETROBOT` -- four mecanum wheel ESCs and the pad, microseconds.
+
+ Wheels: 1100 is -28 rad/s, 1500 stop, 1900 +28 rad/s forward. The robot
+ takes no twist, so **the mixing is yours**; scale all four together when one
+ would exceed the band. Pad lift is a position servo (1100 down, 1900 at
+ 0.06 m); pad turn is a rate (1500 holds, 1900 is +90 deg/s clockwise from
+ above). Values outside 1100-2000 are refused with
+ `VRSDK_ERR_INVALID_ARGUMENT`; a fraction is rounded to the nearest
+ microsecond, a half up, so the mix needs no rounding of its own.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_palletrobot(
+        handle: *const vrsdk_robot_t,
+        fl_us: f64,
+        fr_us: f64,
+        rl_us: f64,
+        rr_us: f64,
+        pad_lift_us: f64,
+        pad_turn_us: f64,
+    ) -> vrsdk_err_t;
+    /** `SET_ARM_JOINTS` -- one position setpoint per joint, SI, in actuator order.
+
+ `VRSDK_RAIL_ARM_JOINT_COUNT` (7) on the rail arm -- the rail in metres, then
+ A1 to A6 in radians -- and `VRSDK_TABLE_ARM_JOINT_COUNT` (6) on the table
+ arm. A latch: each joint is clamped to its range and driven toward its
+ setpoint at its own top speed, with no ramp and no coordination; a step into
+ anything is refused with the setpoint still latched.
+
+ `VRSDK_ERR_INVALID_ARGUMENT`, before anything is sent, if `count` is 0, an
+ entry is NaN, infinite or beyond `float` range, or -- on a handle built as a
+ rail or table arm -- `count` is not that arm's joint count. The simulator
+ would drop any of those whole and say nothing.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `setpoints` must be readable for
+ `count` doubles, and may be NULL when `count` is 0.*/
+    pub fn vrsdk_robot_set_arm_joints(
+        handle: *const vrsdk_robot_t,
+        setpoints: *const f64,
+        count: usize,
+    ) -> vrsdk_err_t;
+    /** `SET_ARM_VACUUM` -- the rail arm's suction pad, on or off.
+
+ A latch. While on and empty the pad grips a loose object within reach of its
+ top, square to it and within its rating (40 kg by default); off releases it.
+ `vrsdk_rail_arm_actuators_t::vacuum_on` echoes the latch and `held_mass_kg`
+ turns non-zero on a grip. The table arm ignores this.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_arm_vacuum(
+        handle: *const vrsdk_robot_t,
+        on: bool,
+    ) -> vrsdk_err_t;
+    /** `SET_ARM_GRIPPER` -- the table arm's gripper, as the gap between its pads in
+ **metres**.
+
+ A latch, clamped by the simulator to 0 to `VRSDK_TABLE_ARM_GRIPPER_STROKE_M`
+ (85 mm): 0 closes fully, and a millimetre figure such as 40 silently opens
+ fully. Closing on a loose object within the payload holds it until the
+ opening is commanded at least 2 mm wider. The rail arm ignores this.
+
+ `VRSDK_ERR_INVALID_ARGUMENT` for an opening that is NaN, infinite or beyond
+ `float` range.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_arm_gripper(
+        handle: *const vrsdk_robot_t,
+        opening_m: f64,
+    ) -> vrsdk_err_t;
+    /** `SET_TURRET_RATES` -- turn the joints at a rate, **rad/s**.
+
+ Positive `heading_rate` turns right seen from above, positive `pitch_rate`
+ raises the barrel; nothing is frame-converted. Each is clamped to its max
+ rate, and a joint at a limit stops there. Shares one latch with
+ `vrsdk_robot_set_turret_joints`: whichever arrived last is in charge, so a
+ controller that stops sending leaves the turret slewing to its limits.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_turret_rates(
+        handle: *const vrsdk_robot_t,
+        heading_rate: f64,
+        pitch_rate: f64,
+    ) -> vrsdk_err_t;
+    /** `SET_TURRET_JOINTS` -- aim at joint targets, **radians**.
+
+ Signs as `vrsdk_robot_set_turret_rates`; `{0, 0}` is the rest pose. Each
+ target is clamped to its limits and reached at the joint's max rate, then
+ held, until the next motion command.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_turret_joints(
+        handle: *const vrsdk_robot_t,
+        heading: f64,
+        pitch: f64,
+    ) -> vrsdk_err_t;
+    /** `SET_TURRET_LASER` -- switch the laser on or off. A latch of its own; while
+ on, `vrsdk_turret_actuators_t::laser_range` is the distance to the first
+ thing the beam hits.
+
+ # Safety
+
+ `handle` must be a live, connected handle.*/
+    pub fn vrsdk_robot_set_turret_laser(
+        handle: *const vrsdk_robot_t,
+        on: bool,
+    ) -> vrsdk_err_t;
+    /** The forklift's drive, steering and mast, from the latest snapshot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_forklift_actuators(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_forklift_actuators_t,
+    ) -> vrsdk_err_t;
+    /** The pallet robot's wheels and pad, from the latest snapshot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_palletrobot_actuators(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_palletrobot_actuators_t,
+    ) -> vrsdk_err_t;
+    /** The rail arm's joints, vacuum and contact, from the latest snapshot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_rail_arm_actuators(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_rail_arm_actuators_t,
+    ) -> vrsdk_err_t;
+    /** The table arm's joints, gripper and contact, from the latest snapshot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_table_arm_actuators(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_table_arm_actuators_t,
+    ) -> vrsdk_err_t;
+    /** The turret's joints and laser, from the latest snapshot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_turret_actuators(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_turret_actuators_t,
+    ) -> vrsdk_err_t;
     /** Watch this robot's `SET_ANGVEL` setpoint -- **somebody else's command**, as
  an input to your controller.
 
@@ -2621,6 +3789,62 @@ unsafe extern "C" {
         resolution_cap: usize,
         out_format: *mut ::core::ffi::c_char,
         format_cap: usize,
+    ) -> vrsdk_err_t;
+    /** Subscribe to one of the robot's 3-D lidars. **Never mutates the sim.**
+
+ The truck, multirotor and forklift each carry one, named `"lidar"`: 16 rings
+ of 900 columns, 0.4-100 m, 20 Hz. Scans ride iceoryx2 on
+ `vrobots/{sys_id}/i/lidar/{name}`, so **the sim must run on this host**.
+
+ `VRSDK_ERR_INVALID_ARGUMENT` for an empty name or one with characters other
+ than letters, digits, `_` and `-`; `VRSDK_ERR_TIMEOUT` if the topic is not
+ found within `camera_timeout_s` -- which is also exactly what a Community
+ login looks like, since lidar is Pro; `VRSDK_ERR_SESSION` if the service will
+ not pair. On success `*out` receives a handle to release with
+ `vrsdk_lidar_free`.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `name` must be NUL-terminated and
+ valid for the call; `out` must be writable.*/
+    pub fn vrsdk_robot_open_lidar_3d(
+        handle: *const vrsdk_robot_t,
+        name: *const ::core::ffi::c_char,
+        out: *mut *mut vrsdk_lidar_t,
+    ) -> vrsdk_err_t;
+    /** Subscribe to one of the robot's 2-D lidars. **Never mutates the sim.**
+
+ The pallet robot carries two, `"lidar_front_left"` and `"lidar_rear_right"`:
+ one ring of 360 beams at 1 degree, 0.15-12 m, 10 Hz. Scans ride zenoh on
+ `vrobots/{sys_id}/z/lidar/{name}`. zenoh has no registry, so this **waits for
+ the first scan**, up to `probe_timeout_s`, and the stream already holds it.
+
+ `VRSDK_ERR_TIMEOUT` if no scan arrives in time -- not found, or the
+ Community tier; `VRSDK_ERR_DECODE` if samples arrived but none decoded; the
+ name errors of `vrsdk_robot_open_lidar_3d`.
+
+ # Safety
+
+ As `vrsdk_robot_open_lidar_3d`.*/
+    pub fn vrsdk_robot_open_lidar_2d(
+        handle: *const vrsdk_robot_t,
+        name: *const ::core::ffi::c_char,
+        out: *mut *mut vrsdk_lidar_t,
+    ) -> vrsdk_err_t;
+    /** Subscribe to this robot's safety events: every near miss, contact and strike
+ it is involved in, queued until read.
+
+ Nothing arrives until an incident happens, so an empty stream says nothing
+ about the subscription; `vrsdk_safety_stats` says whether anything was lost.
+ On the Community tier only the focused robot is on the wire at all. On
+ success `*out` receives a handle to release with `vrsdk_safety_free`.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must be writable.*/
+    pub fn vrsdk_robot_subscribe_safety_events(
+        handle: *const vrsdk_robot_t,
+        out: *mut *mut vrsdk_safety_stream_t,
     ) -> vrsdk_err_t;
     /** Return the robot to its home pose. `srv/reset`.
 
@@ -2805,6 +4029,31 @@ unsafe extern "C" {
         handle: *const vrsdk_robot_t,
         out: *mut vrsdk_frame_def_t,
     ) -> vrsdk_err_t;
+    /** Read what the robot is off `z/properties`: mass, centre of gravity,
+ inertia, and the kind of each actuator entry (`VRSDK_ACTUATOR_KIND_*`).
+
+ The topic publishes when the robot's wire opens, on any parameter change
+ and as a 1 Hz keepalive, so this is a one-shot read like
+ `vrsdk_robot_frame_def`: subscribe, take the first sample, undeclare.
+
+ The handle keeps the layout read here, and from then on
+ `vrsdk_robot_forklift_actuators` and its siblings return `VRSDK_ERR_DECODE`
+ for a report whose published layout contradicts their own -- the one way to
+ tell a table arm from a rail arm, whose reports are both nine entries long.
+ Without a read they decode as before.
+
+ `VRSDK_ERR_TIMEOUT` if no sample arrives within `probe_timeout_s` -- also
+ what a simulator from before this topic existed gives -- and
+ `VRSDK_ERR_DECODE` if the payload is malformed.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `out` must point to writable
+ storage for one `vrsdk_robot_properties_t`.*/
+    pub fn vrsdk_robot_properties(
+        handle: *const vrsdk_robot_t,
+        out: *mut vrsdk_robot_properties_t,
+    ) -> vrsdk_err_t;
     /** Configure a truck's drivetrain. `srv/drive`. **Truck only.**
 
  Every value is read live by the steering servo, drive motor and dynamics, so
@@ -2851,7 +4100,7 @@ unsafe extern "C" {
  # Safety
 
  `handle` must be a live, connected handle; `rotors` must be readable for
- `count` entries.*/
+ `count` entries, and may be NULL when `count` is 0.*/
     pub fn vrsdk_robot_configure_rotors(
         handle: *const vrsdk_robot_t,
         rotors: *const vrsdk_rotor_spec_t,
@@ -2900,6 +4149,114 @@ unsafe extern "C" {
     pub fn vrsdk_robot_configure_cartpole(
         handle: *const vrsdk_robot_t,
         config: *const vrsdk_cartpole_config_t,
+    ) -> vrsdk_err_t;
+    /** Set a turret's joint limits and max rates, the laser's range and the stereo
+ pair. `srv/turret`. **Turret only.**
+
+ Fill `config` with `vrsdk_turret_config_default` first, then set the
+ `has_*` flag and value of each field to change. Limits that exclude the
+ current pose do not snap it: the joint walks back to the nearest limit.
+ Everything set here survives `vrsdk_robot_reset`.
+
+ Returns `VRSDK_ERR_INVALID_ARGUMENT` if nothing is set, a value is not
+ finite, a rate, baseline, focal length or laser range is not strictly
+ positive, or a min and max sent together are reversed -- the simulator acks
+ OK whatever it does with those; `VRSDK_ERR_NO_RESPONDER` if this robot is
+ not a turret.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `config`, if non-NULL, must point
+ to an initialised `vrsdk_turret_config_t`.*/
+    pub fn vrsdk_robot_configure_turret(
+        handle: *const vrsdk_robot_t,
+        config: *const vrsdk_turret_config_t,
+    ) -> vrsdk_err_t;
+    /** Tune a forklift's drive, rear steering and mast. `srv/forklift`.
+ **Forklift only.**
+
+ Fill `config` with `vrsdk_forklift_config_default` first, then set the
+ `has_*` flag and value of each field to change. The drive, steering and
+ mast read their settings live; the `initial_*_us` pulses wait for the next
+ `vrsdk_robot_reset`. Everything set here survives a reset.
+
+ Returns `VRSDK_ERR_INVALID_ARGUMENT` if nothing is set or a value is not
+ finite (also once converted to degrees or rpm, as the simulator does);
+ `VRSDK_ERR_NO_RESPONDER` if this robot is not a forklift.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `config`, if non-NULL, must point
+ to an initialised `vrsdk_forklift_config_t`.*/
+    pub fn vrsdk_robot_configure_forklift(
+        handle: *const vrsdk_robot_t,
+        config: *const vrsdk_forklift_config_t,
+    ) -> vrsdk_err_t;
+    /** Tune a pallet robot's pulse band, virtual mecanum geometry, drive and pad.
+ `srv/palletrobot`. **PalletRobot only.**
+
+ Fill `config` with `vrsdk_palletrobot_config_default` first, then set the
+ `has_*` flag and value of each field to change. The drive reads its settings
+ live. Everything set here survives `vrsdk_robot_reset`.
+
+ Returns `VRSDK_ERR_INVALID_ARGUMENT` if nothing is set or a value is not
+ finite (the pad rate also once converted to degrees);
+ `VRSDK_ERR_NO_RESPONDER` if this robot is not a pallet robot.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `config`, if non-NULL, must point
+ to an initialised `vrsdk_palletrobot_config_t`.*/
+    pub fn vrsdk_robot_configure_palletrobot(
+        handle: *const vrsdk_robot_t,
+        config: *const vrsdk_palletrobot_config_t,
+    ) -> vrsdk_err_t;
+    /** Tune an arm's joint speed fallbacks, its protective stop and its tool.
+ `srv/arm`. **Rail arm and table arm only.**
+
+ Fill `config` with `vrsdk_arm_config_default` first, then set the `has_*`
+ flag and value of each field to change. The rail arm reads the `suction_*`
+ fields and the table arm the `gripper_*` fields; each ignores the other's.
+ Everything set here survives `vrsdk_robot_reset`.
+
+ Returns `VRSDK_ERR_INVALID_ARGUMENT` if nothing is set, a value is not
+ finite, `fallback_speed_limit_count` exceeds `VRSDK_ARM_MAX_JOINTS`, or the
+ speed fallbacks are empty or -- on a handle built as a rail or table arm --
+ not that arm's joint count; `VRSDK_ERR_NO_RESPONDER` if this robot is not an
+ arm.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `config`, if non-NULL, must point
+ to an initialised `vrsdk_arm_config_t`.*/
+    pub fn vrsdk_robot_configure_arm(
+        handle: *const vrsdk_robot_t,
+        config: *const vrsdk_arm_config_t,
+    ) -> vrsdk_err_t;
+    /** Re-mount and retune the robot's lidars, by name. `srv/lidars`. **Every
+ robot that carries one; Pro only.**
+
+ Fill each entry with `vrsdk_lidar_config_entry_default` first, point its
+ `name` at a lidar the robot carries, then set the `has_*` flags of what to
+ change. Lidars not named are left alone, and nothing here mounts, renames
+ or unmounts one. The mount is in the robot's frame, as
+ `vrsdk_lidar_params_t` reports it, whatever frame the handle declared. The
+ next scans carry the new mount and segments.
+
+ Returns `VRSDK_ERR_INVALID_ARGUMENT` if `count` is 0, a name is NULL, empty,
+ not a usable topic segment or given twice, an entry sets nothing, or a
+ mount value is not finite; `VRSDK_ERR_SERVICE` on the Community tier, with
+ the simulator's own message in `vrsdk_last_error_message`.
+
+ # Safety
+
+ `handle` must be a live, connected handle; `entries` must be readable for
+ `count` entries whose names are NUL-terminated and valid for the call, and
+ may be NULL when `count` is 0.*/
+    pub fn vrsdk_robot_configure_lidars(
+        handle: *const vrsdk_robot_t,
+        entries: *const vrsdk_lidar_config_entry_t,
+        count: usize,
     ) -> vrsdk_err_t;
     /** Release a dormant robot's dynamics hold. `srv/activate`.
 
@@ -2964,6 +4321,90 @@ unsafe extern "C" {
  `handle` must be NULL or a handle from `vrsdk_robot_new` that has not already
  been freed. Using it afterwards is undefined behaviour.*/
     pub fn vrsdk_robot_free(handle: *mut vrsdk_robot_t);
+    /** Decode an actuator report as a forklift's: drive speed, steering angle, lift
+ height and fork width, from `measured`.
+
+ `VRSDK_ERR_DECODE` when `measured` holds fewer than
+ `VRSDK_FORKLIFT_ACT_COUNT` entries. The robot type is not checked.
+
+ # Safety
+
+ `actuator` must point to an initialised `vrsdk_actuator_t`; `out` must be
+ writable.*/
+    pub fn vrsdk_forklift_actuators_from_actuator(
+        actuator: *const vrsdk_actuator_t,
+        out: *mut vrsdk_forklift_actuators_t,
+    ) -> vrsdk_err_t;
+    /** Decode an actuator report as a pallet robot's: four wheel speeds, pad height
+ and pad angle, from `measured`.
+
+ `VRSDK_ERR_DECODE` when `measured` holds fewer than
+ `VRSDK_PALLETROBOT_CH_COUNT` entries. The robot type is not checked.
+
+ # Safety
+
+ As `vrsdk_forklift_actuators_from_actuator`.*/
+    pub fn vrsdk_palletrobot_actuators_from_actuator(
+        actuator: *const vrsdk_actuator_t,
+        out: *mut vrsdk_palletrobot_actuators_t,
+    ) -> vrsdk_err_t;
+    /** Decode an actuator report as the rail arm's, from `normalized` and
+ `measured`.
+
+ `VRSDK_ERR_DECODE` when either holds fewer than
+ `VRSDK_RAIL_ARM_ACTUATOR_COUNT` entries. The robot type is not checked, and
+ the table arm's nine entries decode here without complaint into wrong
+ numbers.
+
+ # Safety
+
+ As `vrsdk_forklift_actuators_from_actuator`.*/
+    pub fn vrsdk_rail_arm_actuators_from_actuator(
+        actuator: *const vrsdk_actuator_t,
+        out: *mut vrsdk_rail_arm_actuators_t,
+    ) -> vrsdk_err_t;
+    /** Decode an actuator report as the table arm's, from `normalized` and
+ `measured`.
+
+ `VRSDK_ERR_DECODE` when either holds fewer than
+ `VRSDK_TABLE_ARM_ACTUATOR_COUNT` entries. The robot type is not checked, and
+ the rail arm's nine entries decode here without complaint into wrong numbers.
+
+ # Safety
+
+ As `vrsdk_forklift_actuators_from_actuator`.*/
+    pub fn vrsdk_table_arm_actuators_from_actuator(
+        actuator: *const vrsdk_actuator_t,
+        out: *mut vrsdk_table_arm_actuators_t,
+    ) -> vrsdk_err_t;
+    /** Decode an actuator report as a turret's, from `normalized` and `measured`.
+
+ `VRSDK_ERR_DECODE` when either holds fewer than `VRSDK_TURRET_ACT_COUNT`
+ entries. The robot type is not checked.
+
+ # Safety
+
+ As `vrsdk_forklift_actuators_from_actuator`.*/
+    pub fn vrsdk_turret_actuators_from_actuator(
+        actuator: *const vrsdk_actuator_t,
+        out: *mut vrsdk_turret_actuators_t,
+    ) -> vrsdk_err_t;
+    /** A short, stable name for a contact code: `"no_contact"`, `"tool_contact"`,
+ `"collision_stop"`, and `"unknown"` for anything else. Never NULL.
+
+ The returned string is a static literal -- do not free it.*/
+    pub fn vrsdk_arm_contact_name(
+        contact: vrsdk_arm_contact_t,
+    ) -> *const ::core::ffi::c_char;
+    /** A short, stable name for an actuator kind: `"unspecified"`, `"rotor"`,
+ `"servo"`, `"wheel"`, `"surface"`, `"linear"`, `"vacuum"`, `"laser"`,
+ `"gripper"`, `"contact"`, `"hold"`, and `"unknown"` for anything else. Never
+ NULL.
+
+ The returned string is a static literal -- do not free it.*/
+    pub fn vrsdk_actuator_kind_name(
+        kind: vrsdk_actuator_kind_t,
+    ) -> *const ::core::ffi::c_char;
     /** The identity rotation as a quaternion: `[0, 0, 0, 1]` in this SDK's
  `[x, y, z, w]` order.
 
@@ -3215,6 +4656,15 @@ unsafe extern "C" {
 
  `out` must point to writable storage for one `vrsdk_axis_basis_t`.*/
     pub fn vrsdk_axis_basis_fru(out: *mut vrsdk_axis_basis_t) -> vrsdk_err_t;
+    /** `"flu"` -- +x forward, +y left, +z up, the ROS body convention. Right-handed,
+ **every lidar's default frame**, and like `"fru"` a built-in with no
+ `vrsdk_axes_t` code: a scan in it carries `VRSDK_AXES_UNSPECIFIED` beside
+ `coord_frame_id = "flu"`.
+
+ # Safety
+
+ `out` must point to writable storage for one `vrsdk_axis_basis_t`.*/
+    pub fn vrsdk_axis_basis_flu(out: *mut vrsdk_axis_basis_t) -> vrsdk_err_t;
     /** `"cv"` -- +x right, +y down, +z forward, the OpenCV camera convention.
  Right-handed.
 
@@ -3252,7 +4702,7 @@ unsafe extern "C" {
         out: *mut vrsdk_axis_basis_t,
     ) -> vrsdk_err_t;
     /** The built-in registered under a `coord_frame_id`: `"unity"`, `"frd"`,
- `"fru"` or `"cv"`.
+ `"fru"`, `"flu"` or `"cv"`.
 
  A frame the scene registered at **runtime** is not here by definition --
  read its definition with `vrsdk_robot_frame_def` and use
@@ -3565,6 +5015,136 @@ unsafe extern "C" {
         to: vrsdk_axes_t,
         out_euler: *mut f64,
     ) -> vrsdk_err_t;
+    /** Subscribe to **every** robot's safety events. Needs no robot handle: the
+ stream opens a zenoh session of its own, closed when it is freed. Every
+ event carries its robot's `sys_id`.
+
+ `options` may be NULL for the defaults; only the connection settings are
+ used. A fresh session needs a moment of zenoh discovery, and an incident
+ inside that window is not seen. On the Community tier only the focused
+ robot's incidents arrive.
+
+ `VRSDK_ERR_SESSION` if zenoh will not open, `VRSDK_ERR_TIMEOUT` if it does
+ not open within `connect_timeout_s`, `VRSDK_ERR_CONFIG` for an unusable
+ router endpoint.
+
+ # Safety
+
+ `options`, if non-NULL, must be an initialised struct whose strings are
+ valid for the call; `out` must be writable.*/
+    pub fn vrsdk_subscribe_all_safety_events(
+        options: *const vrsdk_connect_options_t,
+        out: *mut *mut vrsdk_safety_stream_t,
+    ) -> vrsdk_err_t;
+    /** The oldest unread event, without waiting.
+
+ `*out_valid` receives false when the queue is empty, and `*out` is left
+ untouched.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle; `out` and `out_valid` must be
+ writable.*/
+    pub fn vrsdk_safety_try_next(
+        handle: *const vrsdk_safety_stream_t,
+        out: *mut vrsdk_safety_event_t,
+        out_valid: *mut bool,
+    ) -> vrsdk_err_t;
+    /** The oldest unread event, waiting up to `timeout_s` for one to arrive.
+
+ `*out_valid` false means nothing happened in that time -- on this topic the
+ normal answer, not a failure. It also comes back at once when the stream is
+ stopped and empty. A `timeout_s` of 0 does not wait: it is
+ `vrsdk_safety_try_next`. `VRSDK_ERR_INVALID_ARGUMENT` for a negative or
+ non-finite one.
+
+ # Safety
+
+ As `vrsdk_safety_try_next`.*/
+    pub fn vrsdk_safety_next_timeout(
+        handle: *const vrsdk_safety_stream_t,
+        timeout_s: f64,
+        out: *mut vrsdk_safety_event_t,
+        out_valid: *mut bool,
+    ) -> vrsdk_err_t;
+    /** How many events are waiting to be read.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle; `out` must be writable.*/
+    pub fn vrsdk_safety_pending(
+        handle: *const vrsdk_safety_stream_t,
+        out: *mut usize,
+    ) -> vrsdk_err_t;
+    /** Copy the subscriber's counters into `out`: on an aperiodic topic they are
+ the only way to know nothing was lost.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle; `out` must be writable.*/
+    pub fn vrsdk_safety_stats(
+        handle: *const vrsdk_safety_stream_t,
+        out: *mut vrsdk_safety_stats_t,
+    ) -> vrsdk_err_t;
+    /** Copy the key expression this stream reads: one robot's topic, or the
+ swarm-wide wildcard over every robot's `z/event/safety`.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle; `out_key`, if non-NULL, must
+ be writable for `key_cap` bytes.*/
+    pub fn vrsdk_safety_key(
+        handle: *const vrsdk_safety_stream_t,
+        out_key: *mut ::core::ffi::c_char,
+        key_cap: usize,
+    ) -> vrsdk_err_t;
+    /** The most recent decode failure on this stream, without raising it.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle; `out_code` must be writable;
+ `out_message`, if non-NULL, must be writable for `message_cap` bytes.*/
+    pub fn vrsdk_safety_last_error(
+        handle: *const vrsdk_safety_stream_t,
+        out_code: *mut vrsdk_err_t,
+        out_message: *mut ::core::ffi::c_char,
+        message_cap: usize,
+    ) -> vrsdk_err_t;
+    /** Whether the subscription is still declared: false after
+ `vrsdk_safety_stop`, and for a NULL handle.
+
+ # Safety
+
+ `handle` must be NULL or a live safety-stream handle.*/
+    pub fn vrsdk_safety_is_running(handle: *const vrsdk_safety_stream_t) -> bool;
+    /** Stop listening. Idempotent; `vrsdk_safety_free` does it too. Events already
+ queued stay readable, and a reader blocked in `vrsdk_safety_next_timeout`
+ wakes at once.
+
+ # Safety
+
+ `handle` must be a live safety-stream handle.*/
+    pub fn vrsdk_safety_stop(handle: *const vrsdk_safety_stream_t) -> vrsdk_err_t;
+    /** Release a safety-stream handle. Freeing NULL is a no-op.
+
+ # Safety
+
+ `handle` must be NULL or a handle that has not already been freed.*/
+    pub fn vrsdk_safety_free(handle: *mut vrsdk_safety_stream_t);
+    /** A short, stable name for a tier code: `"near_miss"`, `"contact"`,
+ `"strike"`, and `"unspecified"` for anything else. Never NULL.
+
+ The returned string is a static literal -- do not free it.*/
+    pub fn vrsdk_safety_tier_name(
+        tier: vrsdk_safety_tier_t,
+    ) -> *const ::core::ffi::c_char;
+    /** A short, stable name for an other-kind code: `"person"`, `"robot"`,
+ `"object"`, and `"unspecified"` for anything else. Never NULL.
+
+ The returned string is a static literal -- do not free it.*/
+    pub fn vrsdk_safety_other_kind_name(
+        kind: vrsdk_safety_other_kind_t,
+    ) -> *const ::core::ffi::c_char;
     /** The latest setpoint **if it is new since the last call**.
 
  `*out_valid` receives false when nothing new has arrived, and `*out` is left

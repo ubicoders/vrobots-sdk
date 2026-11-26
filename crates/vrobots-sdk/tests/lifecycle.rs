@@ -6,9 +6,11 @@
 use std::time::{Duration, Instant};
 
 use vrobots_sdk::{
-    Axes, CameraOptions, CameraStream, CartPoleConfig, CmdArgs, ConnectOptions, DriveConfig, Frame,
-    FramePixels, GpsNoise, GpsQuality, ImuNoise, MsdConfig, PhysicalParams, RobotType, RotorSpec,
-    SensorConfig, SetpointStream, VirtualRobot, VrError, DEFAULT_CLIENT_NAME,
+    read_properties_with, ArmConfig, Axes, CameraOptions, CameraStream, CartPoleConfig, CmdArgs,
+    ConnectOptions, DriveConfig, ForkliftConfig, Frame, FramePixels, GpsNoise, GpsQuality,
+    ImuNoise, LidarConfigEntry, LidarScan, LidarStream, MsdConfig, PalletRobotConfig,
+    PhysicalParams, RobotType, RotorSpec, SafetyEvent, SafetyEventStream, SensorConfig,
+    SetpointStream, SpawnPose, TurretConfig, VirtualRobot, VrError, DEFAULT_CLIENT_NAME,
     DEFAULT_COORD_FRAME_ID, DEFAULT_SRC_ID,
 };
 
@@ -58,6 +60,54 @@ fn bad_options_are_refused_before_any_network_access() {
 }
 
 #[test]
+fn a_handle_free_properties_read_refuses_bad_options_before_any_network_access() {
+    let started = Instant::now();
+    let err = read_properties_with(
+        3,
+        &ConnectOptions::default().with_router("tcp/\"10.0.0.1:7447"),
+    )
+    .expect_err("a quote in the endpoint");
+    assert!(matches!(err, VrError::Config(_)), "{err:?}");
+    let err = read_properties_with(
+        3,
+        &ConnectOptions::default().with_probe_timeout(Duration::ZERO),
+    )
+    .expect_err("a zero wait");
+    assert!(matches!(err, VrError::InvalidArgument(_)), "{err:?}");
+    assert!(started.elapsed() < Duration::from_secs(1));
+}
+
+#[test]
+fn reading_the_properties_of_a_robot_nobody_publishes_times_out() {
+    let probe = Duration::from_millis(800);
+    let options = ConnectOptions::default()
+        .with_connect_timeout(Duration::from_secs(5))
+        .with_probe_timeout(probe);
+    let started = Instant::now();
+    let err = read_properties_with(NOBODY, &options).expect_err("no simulator publishes this id");
+    assert!(matches!(err, VrError::Timeout(_)), "{err:?}");
+    assert!(err.detail().contains("properties"), "{err}");
+    assert!(started.elapsed() >= probe);
+    assert!(started.elapsed() < Duration::from_secs(30));
+}
+
+#[test]
+fn an_unusable_spawn_pose_is_refused_before_any_network_access() {
+    for pose in [
+        SpawnPose::new([f64::NAN, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0]),
+        SpawnPose::new([4.0, 0.0, 0.0], [0.0; 4]),
+    ] {
+        let options = ConnectOptions::default().with_initial_pose(pose);
+        let started = Instant::now();
+        // `None` creates, which is the only connection that reads the pose.
+        let err =
+            VirtualRobot::connect_with(RobotType::Forklift, None, options).expect_err("refused");
+        assert!(matches!(err, VrError::InvalidArgument(_)), "{err:?}");
+        assert!(started.elapsed() < Duration::from_secs(1), "{err}");
+    }
+}
+
+#[test]
 fn connect_options_start_from_the_library_defaults() {
     let o = ConnectOptions::default();
     assert_eq!(o.src_id, DEFAULT_SRC_ID);
@@ -71,6 +121,7 @@ fn connect_options_start_from_the_library_defaults() {
     assert!(o.start_active && o.activate_after_create);
     assert_eq!(o.coord_frame_id, DEFAULT_COORD_FRAME_ID);
     assert_eq!(o.axis_convention, Axes::UNITY);
+    assert_eq!(o.initial_pose, None, "no pose spawns at the world origin");
 
     let o = o
         .with_router("tcp/192.168.1.10:7447")
@@ -97,12 +148,25 @@ fn robot_types_round_trip_their_catalog_keys() {
         (RobotType::CartPole, "cartpole", false),
         (RobotType::HalfDrone, "halfdrone", false),
         (RobotType::GlobalHawk, "globalhawk", false),
+        (RobotType::Forklift, "forklift", true),
+        (RobotType::PalletRobot, "palletrobot", true),
+        (RobotType::RailArm, "kr210_rail", true),
+        (RobotType::TableArm, "tablearm", true),
+        (RobotType::Turret, "turret", true),
     ] {
         assert_eq!(kind.catalog_key(), key);
         assert_eq!(RobotType::from_catalog_key(key), Some(kind));
         assert_eq!(kind.is_in_sandbox_catalog(), sandbox);
     }
     assert_eq!(RobotType::from_catalog_key("Car"), Some(RobotType::Truck));
+    assert_eq!(
+        RobotType::from_catalog_key("rail_arm"),
+        Some(RobotType::RailArm)
+    );
+    assert_eq!(
+        RobotType::from_catalog_key("table_arm"),
+        Some(RobotType::TableArm)
+    );
     assert_eq!(RobotType::from_catalog_key("submarine"), None);
 }
 
@@ -135,6 +199,15 @@ fn request_types_start_from_the_library_defaults() {
     assert!(DriveConfig::default().is_empty());
     assert!(MsdConfig::default().is_empty());
     assert!(CartPoleConfig::default().is_empty());
+    assert!(TurretConfig::default().is_empty());
+    assert!(ForkliftConfig::default().is_empty());
+    assert!(!ForkliftConfig::default()
+        .with_initial_lift_us(1100)
+        .is_empty());
+    assert!(PalletRobotConfig::default().is_empty());
+    assert!(ArmConfig::default().is_empty());
+    assert!(!ArmConfig::default().with_self_collision(true).is_empty());
+    assert!(LidarConfigEntry::new("lidar").is_empty());
     assert_eq!(CmdArgs::default().int_arr, Vec::<i32>::new());
     assert_eq!(CmdArgs::ints(&[1500, 1600]).int_arr, vec![1500, 1600]);
 }
@@ -145,7 +218,11 @@ fn handles_may_be_shared_between_threads() {
     assert_send_sync::<VirtualRobot>();
     assert_send_sync::<CameraStream>();
     assert_send_sync::<SetpointStream>();
+    assert_send_sync::<LidarStream>();
+    assert_send_sync::<SafetyEventStream>();
     assert_send_sync::<Frame>();
     assert_send_sync::<FramePixels>();
+    assert_send_sync::<LidarScan>();
+    assert_send_sync::<SafetyEvent>();
     assert_send_sync::<vrobots_sdk::State>();
 }

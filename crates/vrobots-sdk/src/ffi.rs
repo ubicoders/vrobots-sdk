@@ -174,7 +174,7 @@ mod tests {
         assert_eq!(fixed_str(&four), "abc");
 
         // No NUL at all: the whole array is read.
-        let full = [c_char::from_ne_bytes([b'x']); 3];
+        let full = [c_char::from_ne_bytes(*b"x"); 3];
         assert_eq!(fixed_str(&full), "xxx");
     }
 

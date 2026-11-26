@@ -50,7 +50,8 @@ pub enum VrError {
     Publish(String),
     /// `VRSDK_ERR_SERVICE` (6): a service answered, and the answer was "no".
     /// Carries the simulator's own reason; see
-    /// [`set_skin`](crate::VirtualRobot::set_skin).
+    /// [`set_skin`](crate::VirtualRobot::set_skin) and
+    /// [`configure_lidars`](crate::VirtualRobot::configure_lidars).
     Service(String),
     /// `VRSDK_ERR_NO_RESPONDER` (7): nobody serves that key. Also the capability
     /// probe: asking a truck for `srv/rotors` lands here.
@@ -65,8 +66,9 @@ pub enum VrError {
     /// boundary. This is a bug in the SDK, not a condition to handle: the
     /// operation did not happen and the process is intact. Please report it.
     Panic(String),
-    /// `VRSDK_ERR_INVALID_HANDLE` (101): a freed or NULL handle reached the C
-    /// API. The safe wrapper never passes one, so this too indicates a bug.
+    /// `VRSDK_ERR_INVALID_HANDLE` (101). No C function returns it (a NULL
+    /// handle there is `InvalidArgument`); this crate raises it when the
+    /// library reports success but hands back no handle, a bug in the SDK.
     InvalidHandle(String),
     /// A non-zero code this version of the crate does not know, from a newer
     /// C library. Treat it as a failure and read the detail.

@@ -19,8 +19,8 @@ error, so nothing will tell you about it unless you ask.
 `version_info()` returns to a program:
 
 ```text
-vrobots-sdk 0.1.11
-  vrobots_msgs  v2.0.2-31-gac335c0 (schema_version 3)
+vrobots-sdk 3.0.2
+  vrobots_msgs  v2.0.2-37-gf01ddf2 (schema_version 3)
   flatbuffers   25.12.19
   zenoh         1.9.0
   iceoryx2      0.9.3

@@ -35,6 +35,14 @@ pub const ALL: &str = "vrobots/**";
 /// Wildcard matching every robot's state topic.
 pub const ALL_STATES: &str = "vrobots/*/z/state";
 
+/// Wildcard matching every robot's safety-event topic: what
+/// [`subscribe_all_safety_events`](crate::subscribe_all_safety_events) reads.
+pub const ALL_SAFETY_EVENTS: &str = "vrobots/*/z/event/safety";
+
+/// Wildcard matching every 2-D lidar on every robot. The 3-D lidars ride
+/// iceoryx2, which has no wildcard.
+pub const ALL_LIDARS_2D: &str = "vrobots/*/z/lidar/*";
+
 /// The full state, published by the simulator at 25 Hz: `vrobots/<id>/z/state`.
 #[must_use]
 pub fn state(sys_id: u32) -> String {
@@ -62,6 +70,23 @@ pub fn estimate(sys_id: u32) -> String {
 #[must_use]
 pub fn command(sys_id: u32) -> String {
     format!("vrobots/{sys_id}/z/cmd")
+}
+
+/// One robot's safety events, one sample per incident and nothing in between:
+/// `vrobots/<id>/z/event/safety`. See
+/// [`subscribe_safety_events`](crate::VirtualRobot::subscribe_safety_events).
+#[must_use]
+pub fn safety_events(sys_id: u32) -> String {
+    format!("vrobots/{sys_id}/z/event/safety")
+}
+
+/// What a robot is (mass, centre of gravity, inertia, actuator layout),
+/// published when its wire opens, on any change and at 1 Hz:
+/// `vrobots/<id>/z/properties`. Read with
+/// [`properties`](crate::VirtualRobot::properties).
+#[must_use]
+pub fn properties(sys_id: u32) -> String {
+    format!("vrobots/{sys_id}/z/properties")
 }
 
 /// Any per-robot service: `vrobots/<id>/z/srv/<segment>`.
@@ -103,8 +128,8 @@ pub fn srv_params(sys_id: u32) -> String {
     srv(sys_id, "params")
 }
 
-/// `srv/skin`: appearance, and the only service that ever answers "no". See
-/// [`set_skin`](crate::VirtualRobot::set_skin).
+/// `srv/skin`: appearance, and one of the two services that ever answer "no";
+/// [`srv_lidars`] is the other. See [`set_skin`](crate::VirtualRobot::set_skin).
 #[must_use]
 pub fn srv_skin(sys_id: u32) -> String {
     srv(sys_id, "skin")
@@ -159,6 +184,43 @@ pub fn srv_cameras(sys_id: u32) -> String {
     srv(sys_id, "cameras")
 }
 
+/// `srv/turret`: joint limits and rates, the laser's range, the stereo pair.
+/// Turret only. See [`configure_turret`](crate::VirtualRobot::configure_turret).
+#[must_use]
+pub fn srv_turret(sys_id: u32) -> String {
+    srv(sys_id, "turret")
+}
+
+/// `srv/forklift`: drive, rear steering and mast. Forklift only. See
+/// [`configure_forklift`](crate::VirtualRobot::configure_forklift).
+#[must_use]
+pub fn srv_forklift(sys_id: u32) -> String {
+    srv(sys_id, "forklift")
+}
+
+/// `srv/palletrobot`: pulse band, virtual mecanum geometry, drive and pad.
+/// PalletRobot only. See
+/// [`configure_palletrobot`](crate::VirtualRobot::configure_palletrobot).
+#[must_use]
+pub fn srv_palletrobot(sys_id: u32) -> String {
+    srv(sys_id, "palletrobot")
+}
+
+/// `srv/arm`: one key for the rail arm and the table arm. See
+/// [`configure_arm`](crate::VirtualRobot::configure_arm).
+#[must_use]
+pub fn srv_arm(sys_id: u32) -> String {
+    srv(sys_id, "arm")
+}
+
+/// `srv/lidars`: re-mount and retune a robot's lidars by name; every robot
+/// serves it, and on Community it answers "no". See
+/// [`configure_lidars`](crate::VirtualRobot::configure_lidars).
+#[must_use]
+pub fn srv_lidars(sys_id: u32) -> String {
+    srv(sys_id, "lidars")
+}
+
 /// The scene's frame service: a payload-less GET whose answer is the scene's
 /// active frame id. Scene scope. See
 /// [`scene_frame`](crate::VirtualRobot::scene_frame).
@@ -173,6 +235,21 @@ pub fn scene_srv_frame() -> String {
 #[must_use]
 pub fn camera(sys_id: u32, camera_name: &str, stream_segment: &str) -> String {
     format!("vrobots/{sys_id}/i/cam/{camera_name}/{stream_segment}")
+}
+
+/// A 3-D lidar's scans over iceoryx2, same host only:
+/// `vrobots/<id>/i/lidar/<name>`. See
+/// [`open_lidar_3d`](crate::VirtualRobot::open_lidar_3d).
+#[must_use]
+pub fn lidar_3d(sys_id: u32, lidar_name: &str) -> String {
+    format!("vrobots/{sys_id}/i/lidar/{lidar_name}")
+}
+
+/// A 2-D lidar's scans over zenoh: `vrobots/<id>/z/lidar/<name>`. See
+/// [`open_lidar_2d`](crate::VirtualRobot::open_lidar_2d).
+#[must_use]
+pub fn lidar_2d(sys_id: u32, lidar_name: &str) -> String {
+    format!("vrobots/{sys_id}/z/lidar/{lidar_name}")
 }
 
 /// The leading-slash form of a key, as `header.metadata.topic_full_name`
@@ -222,7 +299,14 @@ pub fn all(sys_id: u32) -> Vec<(&'static str, String)> {
         ("srv_rotors", srv_rotors(sys_id)),
         ("srv_msd", srv_msd(sys_id)),
         ("srv_cartpole", srv_cartpole(sys_id)),
+        ("srv_turret", srv_turret(sys_id)),
+        ("srv_forklift", srv_forklift(sys_id)),
+        ("srv_palletrobot", srv_palletrobot(sys_id)),
+        ("srv_arm", srv_arm(sys_id)),
+        ("srv_lidars", srv_lidars(sys_id)),
         ("frames", frames(sys_id)),
+        ("properties", properties(sys_id)),
+        ("safety_events", safety_events(sys_id)),
         ("manager_create", manager_srv_create()),
         ("manager_delete", manager_srv_delete()),
         ("scene_frame", scene_srv_frame()),

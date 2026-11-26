@@ -1,6 +1,6 @@
 [package]
 name = "vrobots-sdk-sys"
-version = "0.1.11"
+version = "3.0.2"
 edition = "2021"
 # zip 8.6 needs Rust 1.88; everything else here builds on 1.85 (checked).
 rust-version = "1.88"

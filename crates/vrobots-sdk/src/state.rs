@@ -180,7 +180,9 @@ pub struct Wrench {
 ///
 /// The three vectors are index-parallel: entry `i` is the same device in each.
 /// Each has its own length because the simulator does not have to report all
-/// three for every device.
+/// three for every device. What each entry is, and so its unit, is published
+/// on `z/properties` ([`properties`](crate::VirtualRobot::properties)); the
+/// readers in [`actuators`](crate::actuators) decode one robot type's report.
 #[derive(Debug, Clone, PartialEq, Default)]
 #[non_exhaustive]
 pub struct Actuator {
@@ -189,8 +191,8 @@ pub struct Actuator {
     pub pwm: Vec<u32>,
     /// The same command mapped to `[-1, 1]`.
     pub normalized: Vec<f64>,
-    /// What the device actually did: rotor rad/s, wheel rad/s, servo rad,
-    /// panel rad or engine newtons, depending on the robot.
+    /// What the device actually did: rotor rad/s, wheel rad/s, servo or joint
+    /// rad, linear axis m, panel rad or engine newtons, depending on the robot.
     pub measured: Vec<f64>,
     /// True when the robot reported more devices than the C API carries (16)
     /// and the vectors above were cut short.
@@ -209,6 +211,26 @@ impl Actuator {
             measured: prefix(&raw.measured, raw.measured_count),
             truncated: raw.truncated,
         }
+    }
+
+    /// The C struct for this report, for the library's decoders. Entries past
+    /// the C API's 16 are cut and flagged as truncated, as the library does.
+    pub(crate) fn to_raw(&self) -> sys::vrsdk_actuator_t {
+        /// Copies what fits and returns the count written.
+        fn fill<T: Copy>(slots: &mut [T], values: &[T]) -> (u32, bool) {
+            let used = values.len().min(slots.len());
+            slots[..used].copy_from_slice(&values[..used]);
+            (u32::try_from(used).unwrap_or(u32::MAX), used < values.len())
+        }
+        let mut raw = sys::vrsdk_actuator_t::default();
+        let (pwm, cut_pwm) = fill(&mut raw.pwm, &self.pwm);
+        let (normalized, cut_normalized) = fill(&mut raw.normalized, &self.normalized);
+        let (measured, cut_measured) = fill(&mut raw.measured, &self.measured);
+        raw.pwm_count = pwm;
+        raw.normalized_count = normalized;
+        raw.measured_count = measured;
+        raw.truncated = self.truncated || cut_pwm || cut_normalized || cut_measured;
+        raw
     }
 }
 
@@ -617,6 +639,31 @@ mod tests {
         let a = Actuator::from_raw(&raw);
         assert_eq!(a.pwm.len(), raw.pwm.len());
         assert!(a.truncated);
+    }
+
+    #[test]
+    fn an_actuator_report_round_trips_through_the_c_struct() {
+        let report = Actuator {
+            pwm: vec![1500, 1501],
+            normalized: vec![0.0, 0.5, 1.0],
+            measured: vec![2.5, -0.1, 0.448, 0.454],
+            truncated: false,
+        };
+        let raw = report.to_raw();
+        assert_eq!(
+            (raw.pwm_count, raw.normalized_count, raw.measured_count),
+            (2, 3, 4)
+        );
+        assert_eq!(Actuator::from_raw(&raw), report);
+
+        // More than the C API carries: cut and flagged, never written past.
+        let long = Actuator {
+            measured: vec![1.0; 40],
+            ..Actuator::default()
+        };
+        let raw = long.to_raw();
+        assert_eq!(raw.measured_count, 16);
+        assert!(raw.truncated);
     }
 
     #[test]

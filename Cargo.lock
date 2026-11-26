@@ -570,14 +570,14 @@ dependencies = [
 
 [[package]]
 name = "vrobots-sdk"
-version = "0.1.11"
+version = "3.0.2"
 dependencies = [
  "vrobots-sdk-sys",
 ]
 
 [[package]]
 name = "vrobots-sdk-sys"
-version = "0.1.11"
+version = "3.0.2"
 dependencies = [
  "flate2",
  "sha2",

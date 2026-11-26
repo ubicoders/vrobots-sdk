@@ -321,7 +321,7 @@ pub fn quat_to_euler(quat: [f64; 4], order: EulerOrder) -> [f64; 3] {
 /// The Euler order a built-in convention reports angles in: `Zxy` for
 /// [`Axes::UNITY`], `Zyx` for [`Axes::FRD`] and [`Axes::CV`], and `None` for a
 /// tag that names no frame, which includes [`Axes::UNSPECIFIED`] and therefore
-/// every robot in the default `"fru"` frame.
+/// every robot in the default `"fru"` frame and every lidar in `"flu"`.
 #[must_use]
 pub fn default_euler_order(axes: Axes) -> Option<EulerOrder> {
     let mut out = sys::VRSDK_EULER_UNSPECIFIED;
@@ -399,10 +399,19 @@ impl AxisBasis {
     }
 
     /// `"fru"`: +x forward, +y right, +z up. Left-handed, the scene default on a
-    /// fresh launch, and the one built-in with no [`Axes`] tag.
+    /// fresh launch, and like `"flu"` a built-in with no [`Axes`] tag.
     #[must_use]
     pub fn fru() -> AxisBasis {
         AxisBasis::built_in(sys::vrsdk_axis_basis_fru, "vrsdk_axis_basis_fru")
+    }
+
+    /// `"flu"`: +x forward, +y left, +z up, the ROS body convention.
+    /// Right-handed, **every lidar's default frame**, and like `"fru"` a
+    /// built-in with no [`Axes`] tag: a scan in it carries
+    /// [`Axes::UNSPECIFIED`] beside `coord_frame_id = "flu"`.
+    #[must_use]
+    pub fn flu() -> AxisBasis {
+        AxisBasis::built_in(sys::vrsdk_axis_basis_flu, "vrsdk_axis_basis_flu")
     }
 
     /// `"cv"`: +x right, +y down, +z forward, the OpenCV camera convention.
@@ -413,7 +422,7 @@ impl AxisBasis {
     }
 
     /// The built-in for an axis tag, or `None` for [`Axes::UNSPECIFIED`] and
-    /// anything unrecognised. There is no tag for `"fru"`; use
+    /// anything unrecognised. There is no tag for `"fru"` or `"flu"`; use
     /// [`from_frame_id`](Self::from_frame_id).
     #[must_use]
     pub fn from_axes(axes: Axes) -> Option<AxisBasis> {
@@ -424,7 +433,7 @@ impl AxisBasis {
     }
 
     /// The built-in registered under a `coord_frame_id`: `"unity"`, `"frd"`,
-    /// `"fru"` or `"cv"`, or `None` for any other name. A frame the scene
+    /// `"fru"`, `"flu"` or `"cv"`, or `None` for any other name. A frame the scene
     /// registered at run time is read with
     /// [`frame_def`](crate::VirtualRobot::frame_def) and converted with
     /// [`from_frame_def`](Self::from_frame_def) instead.
@@ -788,8 +797,9 @@ unsafe fn convert<const N: usize>(
 /// # Errors
 ///
 /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument) if either tag names no frame, which includes
-/// [`Axes::UNSPECIFIED`] and so the default `"fru"` frame. Use
-/// [`AxisBasis::from_frame_id`] and [`FrameTransform::between`] for that one.
+/// [`Axes::UNSPECIFIED`] and so the default `"fru"` frame and the lidar frame
+/// `"flu"`. Use [`AxisBasis::from_frame_id`] and [`FrameTransform::between`]
+/// for those.
 pub fn convert_vec3(v: [f64; 3], from: Axes, to: Axes) -> VrResult<[f64; 3]> {
     // SAFETY: `vrsdk_convert_vec3` reads 3 doubles and writes 3.
     unsafe { convert(sys::vrsdk_convert_vec3, v, from, to) }

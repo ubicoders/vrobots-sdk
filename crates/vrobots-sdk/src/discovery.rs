@@ -36,7 +36,7 @@ impl Transport {
         }
     }
 
-    fn from_code(code: sys::vrsdk_transport_t) -> Transport {
+    pub(crate) fn from_code(code: sys::vrsdk_transport_t) -> Transport {
         if code == sys::VRSDK_TRANSPORT_ICEORYX2 {
             Transport::Iceoryx2
         } else {
@@ -150,9 +150,9 @@ impl Drop for TopicList {
     }
 }
 
-/// Whether this build can enumerate both transports. False means camera
-/// streams will not appear in [`list_topics`] even when they are running;
-/// worth printing beside an empty result.
+/// Whether this build can enumerate both transports. False means camera and
+/// 3-D lidar streams will not appear in [`list_topics`] even when they are
+/// running; worth printing beside an empty result.
 #[must_use]
 pub fn discovery_covers_all_transports() -> bool {
     // SAFETY: takes no arguments and cannot fail.

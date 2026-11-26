@@ -158,7 +158,7 @@ fn gimbal_lock_pins_yaw_and_rebuilds_the_same_rotation() {
 }
 
 #[test]
-fn the_four_built_in_frames_match_the_table() {
+fn the_five_built_in_frames_match_the_table() {
     // (basis, handedness, order, north, east, down)
     let table = [
         (
@@ -193,6 +193,15 @@ fn the_four_built_in_frames_match_the_table() {
             [1.0, 0.0, 0.0],
             [0.0, 1.0, 0.0],
         ),
+        // Every lidar's default frame: north-west-up.
+        (
+            AxisBasis::flu(),
+            true,
+            EulerOrder::Zyx,
+            [1.0, 0.0, 0.0],
+            [0.0, -1.0, 0.0],
+            [0.0, 0.0, -1.0],
+        ),
     ];
     for (basis, right_handed, order, north, east, down) in table {
         assert_eq!(basis.is_right_handed(), right_handed, "{basis:?}");
@@ -204,6 +213,11 @@ fn the_four_built_in_frames_match_the_table() {
     }
     assert_eq!(AxisBasis::unity().rows, IDENTITY_ROTMAT);
     assert_eq!(AxisBasis::from_frame_id("fru"), Some(AxisBasis::fru()));
+    assert_eq!(AxisBasis::from_frame_id("flu"), Some(AxisBasis::flu()));
+    // flu and fru differ in the second axis only, and so in handedness.
+    let t = FrameTransform::between(AxisBasis::flu(), AxisBasis::fru());
+    assert_eq!(t.apply_vec3([1.0, 2.0, 3.0]), [1.0, -2.0, 3.0]);
+    assert!(t.flips_handedness());
     assert_eq!(AxisBasis::from_axes(Axes::FRD), Some(AxisBasis::frd()));
     assert_eq!(AxisBasis::from_axes(Axes::UNSPECIFIED), None);
     assert_eq!(AxisBasis::from_frame_id("ned"), None);

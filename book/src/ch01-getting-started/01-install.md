@@ -77,8 +77,8 @@ prebuilt library). For a project of your own, add `include/` to the include path
 `lib/libvrobots_sdk_capi.so` on Linux or `lib/vrobots_sdk_capi.dll.lib` on Windows, with
 the DLL beside the executable. A complete CMake setup is in
 [`examples/cpp/README.md`](https://github.com/ubicoders/vrobots-sdk/blob/main/examples/cpp/README.md).
-Without the script: this book documents SDK 0.1.11, whose two bundles sit on the
-[v0.1.11 Release](https://github.com/ubicoders/vrobots-sdk/releases/tag/v0.1.11).
+Without the script: this book documents SDK 3.0.2, whose two bundles sit on the
+[v3.0.2 Release](https://github.com/ubicoders/vrobots-sdk/releases/tag/v3.0.2).
 
 {{#endtab }}
 {{#endtabs }}
@@ -220,8 +220,8 @@ vrobots --version
 ```
 
 ```text
-vrobots-sdk 0.1.11
-  vrobots_msgs  v2.0.2-31-gac335c0 (schema_version 3)
+vrobots-sdk 3.0.2
+  vrobots_msgs  v2.0.2-37-gf01ddf2 (schema_version 3)
   flatbuffers   25.12.19
   zenoh         1.9.0
   iceoryx2      0.9.3

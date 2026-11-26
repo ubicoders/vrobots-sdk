@@ -4,7 +4,7 @@
 # unpack it where the C++ examples' CMake build finds it on its own.
 #
 #   bash scripts/get_cpp_bundle.sh            # the version of this checkout
-#   bash scripts/get_cpp_bundle.sh 0.1.11     # a specific version
+#   bash scripts/get_cpp_bundle.sh 3.0.2     # a specific version
 #
 # What it does:
 #   1. reads the SDK version from crates/vrobots-sdk-sys/Cargo.toml (or takes

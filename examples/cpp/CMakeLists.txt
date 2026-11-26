@@ -198,12 +198,17 @@ endif()
 # plain loop. Settings live in the constants at the top of each file, and a
 # permutation worth showing is its own file rather than a flag.
 #
-# The one exception is the sys_id of a SCENE-AUTHORED robot: those robots are not
-# in any spawn catalog, their ids are handed out at scene load and keep
-# incrementing, so no file can hard-code one. It is always a single positional
+# The one exception is the sys_id of a SCENE-AUTHORED robot: the cart-pole, the
+# half-drone and the Global Hawk are in no spawn catalog, their ids are handed out
+# at scene load and keep incrementing, so no file can hard-code one. It is always a single positional
 # argument -- still no flags anywhere -- and it is REQUIRED by ex29-ex33 and ex35 (whose
 # robots can only be attached to) and OPTIONAL for ex21, ex22 and ex27 (which
 # create their own multirotor when it is left off).
+#
+# ex37-ex44 take it optionally: the warehouse and table-arm scenes pin their
+# robots' ids, so those pins are the defaults (ex42 takes two, ex41 searches for
+# the unpinned turret when given none, ex43 takes none).
+#     ex42_lidar 0 1
 #
 # Add a name here and CMake picks up `<name>.cpp` beside this file.
 set(VROBOTS_EXAMPLES
@@ -242,6 +247,14 @@ set(VROBOTS_EXAMPLES
     ex33_fw_est_source
     ex35_publish_estimate
     ex36_rotations
+    ex37_hello_forklift
+    ex38_hello_palletrobot
+    ex39_rail_arm
+    ex40_table_arm
+    ex41_hello_turret
+    ex42_lidar
+    ex43_safety_events
+    ex44_robot_properties
 )
 
 foreach(example IN LISTS VROBOTS_EXAMPLES)

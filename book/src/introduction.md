@@ -183,7 +183,7 @@ from the type stubs that pip installs with the package, such as `vrsdk/_vrsdk.py
 
 ## Versions
 
-This book documents SDK 0.1.11 against simulator v3.0.1. The IPC pins that release speaks are
+This book documents SDK 3.0.2 against simulator v3.0.2. The IPC pins that release speaks are
 flatbuffers 25.12.19, iceoryx2 0.9.3 and zenoh 1.9.0, and `vrobots --version` prints the set
 your installed SDK actually carries. The pins are exact on purpose:
 [Versions and pins](ch08-tooling/03-version-and-pins.md) explains what a caret pin one patch

@@ -95,7 +95,10 @@ impl VirtualRobot {
     ///
     /// Attaching never touches the create service, so it works for any robot
     /// the scene contains, including the scene-authored kinds the spawn catalog
-    /// refuses to create. `vrobots topic list` shows the ids that exist.
+    /// refuses to create. `vrobots topic list` shows the ids that exist. A
+    /// created robot spawns at
+    /// [`ConnectOptions::initial_pose`](crate::ConnectOptions::initial_pose),
+    /// in raw Unity world coordinates, or at the world origin without one.
     ///
     /// # Errors
     ///
@@ -128,8 +131,10 @@ impl VirtualRobot {
     /// # Errors
     ///
     /// As [`connect`](Self::connect), plus [`VrError::InvalidArgument`] for a
-    /// zero `src_id`, a zero timeout or a string containing a NUL byte, and
-    /// [`VrError::Config`] for an unusable router endpoint.
+    /// zero `src_id`, a zero timeout, a string containing a NUL byte or, when
+    /// creating, an [`initial_pose`](crate::ConnectOptions::initial_pose) with
+    /// a non-finite value or a zero-length rotation, and [`VrError::Config`]
+    /// for an unusable router endpoint.
     pub fn connect_with(
         robot_type: RobotType,
         sys_id: Option<u32>,
@@ -381,6 +386,11 @@ mod tests {
             (RobotType::Multirotor, Some(1)),
             (RobotType::Truck, None),
             (RobotType::GlobalHawk, Some(u32::MAX)),
+            (RobotType::Forklift, Some(0)),
+            (RobotType::PalletRobot, Some(1)),
+            (RobotType::RailArm, Some(2)),
+            (RobotType::TableArm, None),
+            (RobotType::Turret, None),
         ] {
             let raw = RawRobot::new(kind, id, &options).expect("construction touches nothing");
             // SAFETY: `raw` is live for this block.

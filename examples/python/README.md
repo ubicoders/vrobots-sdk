@@ -1,6 +1,6 @@
 # Python examples
 
-Thirty-six complete programs, in book order, against the `ubicoders-vrsdk`
+Forty-four complete programs, in book order, against the `ubicoders-vrsdk`
 wheel. Each is a short, flat script with no `main()` function and no
 `__main__` guard, in the **STM32 shape**: setup at the top of the file, then a
 plain loop. No base class, no runner, no update callback: the loop is yours,
@@ -11,9 +11,10 @@ module-level constant or a literal at the call, and a permutation worth showing
 is its own file rather than a flag. That is why ex14, ex15, ex16 and ex17 exist
 instead of `--save`, `--resolution`, `--camera` and `--pose` on ex03.
 
-The one exception is the **`sys_id` of a scene-authored robot**. Those robots are
-not in any spawn catalog, their ids are handed out at scene load and keep
-incrementing, so no file can hard-code one; they read it from `sys.argv[1]` — one
+The one exception is the **`sys_id` of a scene-authored robot**. The cart-pole,
+the half-drone and the Global Hawk are in no spawn catalog, their ids are handed
+out at scene load and keep incrementing, so no file can hard-code one; they read
+it from `sys.argv[1]` — one
 positional argument, still no flags and still no `argparse`. It is **required** by
 ex29–ex33 and ex35, and **optional** for ex21, ex22 and ex27, which create
 their own multirotor when it is left off:
@@ -21,6 +22,12 @@ their own multirotor when it is left off:
 ```bash
 python examples/python/ex31_globalhawk_direct.py 15
 ```
+
+ex37–ex44 take it optionally too, defaulting to the ids their scenes pin
+(warehouse: forklift 0, pallet robot 1, rail arm 2; table-arm scene: UR10 0).
+ex42 takes two, the forklift's and the pallet robot's; ex41, given none,
+searches the wire for the sandbox scene's turret, whose id is not pinned; ex43
+takes none.
 
 | Example | What it teaches |
 |---|---|
@@ -60,6 +67,14 @@ python examples/python/ex31_globalhawk_direct.py 15
 | `ex34_camera_view.py` | `front_left` in an OpenCV window: RGBA to BGR, one `imshow` per frame; needs `opencv-python` |
 | `ex35_publish_estimate.py` | `publish_estimate`: the onboard loop flies your attitude, and your 5 deg lie with it |
 | `ex36_rotations.py` | `vrsdk.rotations`: convert a live truck's state between frames, polar vs axial |
+| `ex37_hello_forklift.py` | `SET_FORKLIFT`: forks up and out, confirmed by `forklift_actuators`, not the echo; a short drive, the bottom-anchored brake, all put back |
+| `ex38_hello_palletrobot.py` | `SET_PALLETROBOT`: no twist command, so the mecanum mix is yours — strafe, turn on the spot, lift the pad |
+| `ex39_rail_arm.py` | `SET_ARM_JOINTS` + `SET_ARM_VACUUM`: seven joints converge or stop short, and VACUUM / CONTACT say which |
+| `ex40_table_arm.py` | six joints and `SET_ARM_GRIPPER` in metres, not millimetres; GRIPPER, HOLD and CONTACT |
+| `ex41_hello_turret.py` | find the unpinned turret by its layout; a rate vs a target, the laser's range, `srv/turret` limits clamp a latched target |
+| `ex42_lidar.py` | `open_lidar_3d` / `open_lidar_2d`: ranges plus layout, `+inf` is no return, and absent means not found or not Pro |
+| `ex43_safety_events.py` | `subscribe_all_safety_events`: every incident once, oldest first, and silence is the normal state |
+| `ex44_robot_properties.py` | `z/properties`: what each actuator index is; `srv/forklift` measured and restored, and the other new `configure_*` |
 
 ## Running them
 
@@ -95,7 +110,11 @@ really there.
 
 The service and type examples (ex23–ex26, ex28) do not use those ids at all: they
 **create** their own robot and delete it on the way out, so they leave the scene
-as they found it. ex29–ex33 and ex35 do the opposite — their robots are
+as they found it. Creating needs the **Pro** plan, and the scene's spawn catalog
+says what can be created: in the sandbox, eight keys — `multirotor`, `truck`,
+`msd`, `forklift`, `palletrobot`, `kr210_rail`, `tablearm` and `turret`; a
+refused create names the ones the scene knows. ex29–ex33 and ex35 do the
+opposite — their robots are
 scene-authored, so they attach to the `sys_id` you pass and never delete anything. ex21, ex22 and
 ex27 do either, depending on whether you pass one. When you do, **ex22 and ex27
 leave their configuration on that robot until the scene is reloaded**, since

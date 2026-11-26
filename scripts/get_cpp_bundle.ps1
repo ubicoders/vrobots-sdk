@@ -7,7 +7,7 @@
     Windows x86-64 (MSVC) counterpart of scripts/get_cpp_bundle.sh.
 
       pwsh scripts/get_cpp_bundle.ps1            # the version of this checkout
-      pwsh scripts/get_cpp_bundle.ps1 0.1.11     # a specific version
+      pwsh scripts/get_cpp_bundle.ps1 3.0.2     # a specific version
 
     Reads the SDK version from crates/vrobots-sdk-sys/Cargo.toml unless one is
     given, downloads vrobots_sdk-cpp-<version>-windows-x86_64.zip and SHA256SUMS

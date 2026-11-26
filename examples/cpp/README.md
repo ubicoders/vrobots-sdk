@@ -1,6 +1,6 @@
 # C++ examples
 
-Thirty-six complete programs, the same progression as `examples/python`, plus a
+Forty-four complete programs, the same progression as `examples/python`, plus a
 sim-less smoke test. Each is an ordinary `int main`:
 setup, then a plain loop. **The SDK never calls your code** — no base class, no
 runner, no `update()` callback.
@@ -10,15 +10,22 @@ a permutation worth showing is its own file rather than a flag — which is why
 ex14, ex15, ex16 and ex17 exist instead of `--save`, `--resolution`, `--camera`
 and `--pose` on ex03.
 
-The one exception is the **`sys_id` of a scene-authored robot**. Those robots are
-not in any spawn catalog, their ids are handed out at scene load and keep
-incrementing, so no file can hard-code one. It is a single positional argument —
+The one exception is the **`sys_id` of a scene-authored robot**. The cart-pole,
+the half-drone and the Global Hawk are in no spawn catalog, their ids are handed
+out at scene load and keep incrementing, so no file can hard-code one. It is a
+single positional argument —
 **required** by ex29–ex33 and ex35, and **optional** for ex21, ex22 and ex27,
 which create their own multirotor when it is left off:
 
 ```powershell
 target\cpp-build\Release\ex31_globalhawk_direct.exe 15
 ```
+
+ex37–ex44 take it optionally too, defaulting to the ids their scenes pin
+(warehouse: forklift 0, pallet robot 1, rail arm 2; table-arm scene: UR10 0).
+ex42 takes two, the forklift's and the pallet robot's; ex41, given none,
+searches the wire for the sandbox scene's turret, whose id is not pinned; ex43
+takes none.
 
 | Example | What it teaches |
 |---|---|
@@ -58,6 +65,14 @@ target\cpp-build\Release\ex31_globalhawk_direct.exe 15
 | `ex34_camera_view` | `front_left` in an OpenCV window: RGBA to BGR, one `imshow` per frame; needs `find_package(OpenCV)` |
 | `ex35_publish_estimate` | `publish_estimate`: the onboard loop flies your attitude, and your 5 deg lie with it |
 | `ex36_rotations` | `vrsdk::rotations`: convert a live truck's state between frames, polar vs axial |
+| `ex37_hello_forklift` | `SET_FORKLIFT`: forks up and out, confirmed by `forklift_actuators`, not the echo; a short drive, the bottom-anchored brake, all put back |
+| `ex38_hello_palletrobot` | `SET_PALLETROBOT`: no twist command, so the mecanum mix is yours — strafe, turn on the spot, lift the pad |
+| `ex39_rail_arm` | `SET_ARM_JOINTS` + `SET_ARM_VACUUM`: seven joints converge or stop short, and VACUUM / CONTACT say which |
+| `ex40_table_arm` | six joints and `SET_ARM_GRIPPER` in metres, not millimetres; GRIPPER, HOLD and CONTACT |
+| `ex41_hello_turret` | find the unpinned turret by its layout; a rate vs a target, the laser's range, `srv/turret` limits clamp a latched target |
+| `ex42_lidar` | `open_lidar_3d` / `open_lidar_2d`: ranges plus layout, `+inf` is no return, and absent means not found or not Pro |
+| `ex43_safety_events` | `subscribe_all_safety_events`: every incident once, oldest first, and silence is the normal state |
+| `ex44_robot_properties` | `z/properties`: what each actuator index is; `srv/forklift` measured and restored, and the other new `configure_*` |
 | `smoke_test` | no simulator needed: linkage, ABI version, defaults, error mapping, RAII |
 
 ## Scene ids
@@ -66,6 +81,12 @@ Sys ids are **allocated at scene load and keep incrementing across scene loads
 in one sim session** — on a fresh boot straight into the Flatworld scene the
 truck is `0` and the multirotor `1`, but never rely on that. `vrobots topic
 list` (or `ex11_topic_discovery`) shows what is actually publishing.
+
+A created robot gets a fresh id from the manager. Creating needs the **Pro**
+plan, and the scene's spawn catalog says what can be created: in the sandbox,
+eight keys — `multirotor`, `truck`, `msd`, `forklift`, `palletrobot`,
+`kr210_rail`, `tablearm` and `turret` (`vrsdk::to_string(RobotType)`); a
+refused create names the ones the scene knows.
 
 ## Build
 
@@ -209,13 +230,20 @@ surface does not. None is a blocker; each costs a line:
   `constexpr`s.)
 - **No topic-name builder.** Python's `vrsdk.topics(sys_id)` returns every topic
   and service key of one robot; here `ex04_hello_service`, `ex23_skins`,
-  `ex25_frames` and `ex26_drive_config` compose the keys inline.
+  `ex25_frames`, `ex26_drive_config`, `ex41_hello_turret` and
+  `ex43_safety_events` compose the keys inline.
 - **No accessor for the options in effect.** Python reads them back from
   `robot.options`; here `ex07_body_wrench` names the default send frame rather
-  than reading it back, and `ex32_fw_rate_controller` sets its own `src_id`
+  than reading it back, `ex32_fw_rate_controller` sets its own `src_id`
   explicitly rather than reading the default back (it has to recognise its own
-  traffic on the command bus).
+  traffic on the command bus), and `ex42_lidar` prints the 2-D open's wait from
+  `vrsdk_options_default`, the defaults its handle was built with.
 
-The numeric `axis_convention` tag does have a label helper,
-`vrsdk::rotations::axes_name` (`vrsdk_axes_name` in C), but the examples print
-the frame id string every snapshot carries, which is the authoritative name.
+The rest has a C++ spelling: `vrsdk::rotations::axes_name` names the numeric
+`axis_convention` tag (the examples print the frame id string every snapshot
+carries, which is the authoritative name), `vrsdk::to_string(RobotType)` gives a
+type's catalog key, `vrsdk::forklift_actuator::KINDS` and its siblings are the
+per-robot actuator layouts (a `RobotProperties::actuator_types` compares with
+one using `==`), `vrsdk::read_properties(sys_id)` reads a robot's properties
+with no handle, and `set_arm_joints` takes a decoded report's `std::array`
+joints.

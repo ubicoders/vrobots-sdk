@@ -1,6 +1,6 @@
 [package]
 name = "vrobots-sdk"
-version = "0.1.11"
+version = "3.0.2"
 edition = "2021"
 # The `-sys` crate's minimum: its build script needs Rust 1.88.
 rust-version = "1.88"
@@ -22,7 +22,7 @@ static = ["vrobots-sdk-sys/static"]
 [dependencies]
 # Exact pin: the bindings are shared with the C library by layout, so the wrapper
 # and the `-sys` crate always release together, at the same version.
-vrobots-sdk-sys = { path = "../vrobots-sdk-sys", version = "=0.1.11" }
+vrobots-sdk-sys = { path = "../vrobots-sdk-sys", version = "=3.0.2" }
 
 # docs.rs builds without network access and sets DOCS_RS, under which the
 # vrobots-sdk-sys build script uses its shipped copy of the bindings and links

@@ -21,6 +21,11 @@ publish = false
 # handed out at scene load and keep incrementing, so no `const` in the file
 # could stay true), and optional for ex21, ex22 and ex27.
 #     cargo run -p vrobots-examples --bin ex31_globalhawk_direct -- 15
+#
+# ex37-ex44 take it optionally: the warehouse and table-arm scenes pin their
+# robots' ids, so those pins are the defaults (ex42 takes two, ex41 searches for
+# the unpinned turret when given none, ex43 takes none).
+#     cargo run -p vrobots-examples --bin ex42_lidar -- 0 1
 
 [features]
 # Link the static C library instead of the shared one, so that the examples
@@ -189,3 +194,35 @@ path = "src/bin/ex35_publish_estimate.rs"
 [[bin]]
 name = "ex36_rotations"
 path = "src/bin/ex36_rotations.rs"
+
+[[bin]]
+name = "ex37_hello_forklift"
+path = "src/bin/ex37_hello_forklift.rs"
+
+[[bin]]
+name = "ex38_hello_palletrobot"
+path = "src/bin/ex38_hello_palletrobot.rs"
+
+[[bin]]
+name = "ex39_rail_arm"
+path = "src/bin/ex39_rail_arm.rs"
+
+[[bin]]
+name = "ex40_table_arm"
+path = "src/bin/ex40_table_arm.rs"
+
+[[bin]]
+name = "ex41_hello_turret"
+path = "src/bin/ex41_hello_turret.rs"
+
+[[bin]]
+name = "ex42_lidar"
+path = "src/bin/ex42_lidar.rs"
+
+[[bin]]
+name = "ex43_safety_events"
+path = "src/bin/ex43_safety_events.rs"
+
+[[bin]]
+name = "ex44_robot_properties"
+path = "src/bin/ex44_robot_properties.rs"

@@ -4,7 +4,7 @@
 //! services make sense and is never read back off the wire. [`ConnectOptions`]
 //! holds every timeout, the router endpoint and this client's identity, with
 //! the library's own defaults, so nothing about a connection is a hidden
-//! constant.
+//! constant. [`SpawnPose`] places a robot the connection creates.
 
 use std::ffi::CString;
 use std::ptr;
@@ -14,6 +14,7 @@ use vrobots_sdk_sys as sys;
 
 use crate::error::VrResult;
 use crate::ffi;
+use crate::rotations::IDENTITY_QUAT;
 use crate::state::Axes;
 
 /// The `src_id` this SDK stamps on every outbound header by default.
@@ -42,16 +43,19 @@ pub const DEFAULT_CLIENT_NAME: &str = "vrobots-sdk";
 ///
 /// The spawn catalog belongs to the scene. A key the running scene does not
 /// know is refused with [`VrError::Service`](crate::VrError::Service), whose
-/// message lists every key it does know:
-///
-/// ```text
-/// unknown type 'globalhawk' (known: multirotor, truck, msd)
-/// ```
+/// message names the key you asked for and lists every key the scene does
+/// know. The sandbox scene knows eight: `multirotor`, `truck`, `msd`,
+/// `forklift`, `palletrobot`, `kr210_rail`, `tablearm` and `turret`. Look for
+/// a key in that list by name; do not rely on the order the message gives
+/// them in.
 ///
 /// [`CartPole`](Self::CartPole), [`HalfDrone`](Self::HalfDrone) and
-/// [`GlobalHawk`](Self::GlobalHawk) exist as scene-authored robots in the
+/// [`GlobalHawk`](Self::GlobalHawk) exist only as scene-authored robots in the
 /// shipped scenes: attach to those with an explicit `sys_id`, which never
-/// touches the create service.
+/// touches the create service. [`Forklift`](Self::Forklift) through
+/// [`Turret`](Self::Turret) are in the spawner's catalog too, **not yet
+/// verified on a live simulator**, and a runtime create needs the **Pro**
+/// tier; the warehouse and table-arm scenes also carry them at pinned ids.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum RobotType {
@@ -81,11 +85,52 @@ pub enum RobotType {
     /// [`set_fw_ctrl_mode`](crate::VirtualRobot::set_fw_ctrl_mode).
     /// Scene-authored.
     GlobalHawk,
+    /// Counterbalance forklift: the front pair drives, the rear pair steers,
+    /// and the mast carries a lift and a fork-width servo. Driven with
+    /// [`set_forklift`](crate::VirtualRobot::set_forklift); serves
+    /// [`configure_forklift`](crate::VirtualRobot::configure_forklift); read
+    /// with [`forklift_actuators`](crate::VirtualRobot::forklift_actuators).
+    /// Carries one 3-D lidar. Pinned at `sys_id` 0 in the warehouse scene.
+    Forklift,
+    /// Mecanum pallet robot with a lifting, turning pad. Driven with
+    /// [`set_palletrobot`](crate::VirtualRobot::set_palletrobot), and the wheel
+    /// mixing is yours; serves
+    /// [`configure_palletrobot`](crate::VirtualRobot::configure_palletrobot);
+    /// read with
+    /// [`palletrobot_actuators`](crate::VirtualRobot::palletrobot_actuators).
+    /// Carries two 2-D lidars. Pinned at `sys_id` 1 in the warehouse scene.
+    PalletRobot,
+    /// KUKA KR210 on a linear rail with a vacuum pad: seven joints on
+    /// [`set_arm_joints`](crate::VirtualRobot::set_arm_joints), the pad on
+    /// [`set_arm_vacuum`](crate::VirtualRobot::set_arm_vacuum); serves
+    /// [`configure_arm`](crate::VirtualRobot::configure_arm); read with
+    /// [`rail_arm_actuators`](crate::VirtualRobot::rail_arm_actuators). Pinned
+    /// at `sys_id` 2 in the warehouse scene; `kr210_rail` in the spawn catalog.
+    RailArm,
+    /// UR10 with a two-finger gripper: six joints on
+    /// [`set_arm_joints`](crate::VirtualRobot::set_arm_joints), the gripper on
+    /// [`set_arm_gripper`](crate::VirtualRobot::set_arm_gripper); serves
+    /// [`configure_arm`](crate::VirtualRobot::configure_arm); read with
+    /// [`table_arm_actuators`](crate::VirtualRobot::table_arm_actuators).
+    /// Pinned at `sys_id` 0 in the table-arm scene.
+    TableArm,
+    /// Pan-tilt turret with a laser and a stereo camera pair. Driven with
+    /// [`set_turret_rates`](crate::VirtualRobot::set_turret_rates),
+    /// [`set_turret_joints`](crate::VirtualRobot::set_turret_joints) and
+    /// [`set_turret_laser`](crate::VirtualRobot::set_turret_laser); serves
+    /// [`configure_turret`](crate::VirtualRobot::configure_turret); read with
+    /// [`turret_actuators`](crate::VirtualRobot::turret_actuators).
+    /// Scene-authored in the sandbox scene with no pinned id: find it with
+    /// [`list_topics`](crate::list_topics).
+    Turret,
 }
 
 impl RobotType {
     /// The spawn-catalog key: `"multirotor"`, `"truck"`, `"msd"`, `"cartpole"`,
-    /// `"halfdrone"` or `"globalhawk"`.
+    /// `"halfdrone"`, `"globalhawk"`, `"forklift"`, `"palletrobot"`,
+    /// `"kr210_rail"`, `"tablearm"` or `"turret"`.
+    ///
+    /// Matched exactly and case-sensitively by the simulator's manager.
     #[must_use]
     pub fn catalog_key(self) -> &'static str {
         match self {
@@ -95,17 +140,36 @@ impl RobotType {
             RobotType::CartPole => "cartpole",
             RobotType::HalfDrone => "halfdrone",
             RobotType::GlobalHawk => "globalhawk",
+            RobotType::Forklift => "forklift",
+            RobotType::PalletRobot => "palletrobot",
+            RobotType::RailArm => "kr210_rail",
+            RobotType::TableArm => "tablearm",
+            RobotType::Turret => "turret",
         }
     }
 
-    /// Whether the sandbox scene's spawn catalog knows this kind, so that
+    /// Whether the simulator's spawn catalog knows this kind, so that
     /// [`VirtualRobot::connect`](crate::VirtualRobot::connect) with `None` can
-    /// create one there. True for the multirotor, the truck and the MSD.
+    /// create one.
+    ///
+    /// True for the multirotor, the truck and the MSD, which are verified
+    /// against the sandbox scene, and for the forklift, pallet robot, rail
+    /// arm, table arm and turret, which are in the spawner's catalog but **not
+    /// yet verified on a live simulator**. True is not a promise that a create
+    /// succeeds: a runtime create needs the Pro tier, and on Community every
+    /// create is refused.
     #[must_use]
     pub fn is_in_sandbox_catalog(self) -> bool {
         matches!(
             self,
-            RobotType::Multirotor | RobotType::Truck | RobotType::Msd
+            RobotType::Multirotor
+                | RobotType::Truck
+                | RobotType::Msd
+                | RobotType::Forklift
+                | RobotType::PalletRobot
+                | RobotType::RailArm
+                | RobotType::TableArm
+                | RobotType::Turret
         )
     }
 
@@ -113,7 +177,8 @@ impl RobotType {
     ///
     /// Accepts the synonyms the simulator's own UI uses as well: `"car"`,
     /// `"cart_pole"`, `"invpen"`, `"mass_spring_damper"`, `"half_drone"`,
-    /// `"global_hawk"` and `"rq4b"`.
+    /// `"global_hawk"`, `"rq4b"`, `"pallet_robot"`, `"railarm"`, `"rail_arm"`,
+    /// `"kuka_kr210_rail"` (the rail arm's wire name) and `"table_arm"`.
     #[must_use]
     pub fn from_catalog_key(key: &str) -> Option<RobotType> {
         match key.trim().to_ascii_lowercase().as_str() {
@@ -123,6 +188,11 @@ impl RobotType {
             "cartpole" | "cart_pole" | "invpen" => Some(RobotType::CartPole),
             "halfdrone" | "half_drone" => Some(RobotType::HalfDrone),
             "globalhawk" | "global_hawk" | "rq4b" => Some(RobotType::GlobalHawk),
+            "forklift" => Some(RobotType::Forklift),
+            "palletrobot" | "pallet_robot" => Some(RobotType::PalletRobot),
+            "kr210_rail" | "railarm" | "rail_arm" | "kuka_kr210_rail" => Some(RobotType::RailArm),
+            "tablearm" | "table_arm" => Some(RobotType::TableArm),
+            "turret" => Some(RobotType::Turret),
             _ => None,
         }
     }
@@ -136,6 +206,11 @@ impl RobotType {
             RobotType::CartPole => sys::VRSDK_ROBOT_CARTPOLE,
             RobotType::HalfDrone => sys::VRSDK_ROBOT_HALFDRONE,
             RobotType::GlobalHawk => sys::VRSDK_ROBOT_GLOBALHAWK,
+            RobotType::Forklift => sys::VRSDK_ROBOT_FORKLIFT,
+            RobotType::PalletRobot => sys::VRSDK_ROBOT_PALLETROBOT,
+            RobotType::RailArm => sys::VRSDK_ROBOT_RAILARM,
+            RobotType::TableArm => sys::VRSDK_ROBOT_TABLEARM,
+            RobotType::Turret => sys::VRSDK_ROBOT_TURRET,
         }
     }
 
@@ -148,8 +223,63 @@ impl RobotType {
             sys::VRSDK_ROBOT_CARTPOLE => Some(RobotType::CartPole),
             sys::VRSDK_ROBOT_HALFDRONE => Some(RobotType::HalfDrone),
             sys::VRSDK_ROBOT_GLOBALHAWK => Some(RobotType::GlobalHawk),
+            sys::VRSDK_ROBOT_FORKLIFT => Some(RobotType::Forklift),
+            sys::VRSDK_ROBOT_PALLETROBOT => Some(RobotType::PalletRobot),
+            sys::VRSDK_ROBOT_RAILARM => Some(RobotType::RailArm),
+            sys::VRSDK_ROBOT_TABLEARM => Some(RobotType::TableArm),
+            sys::VRSDK_ROBOT_TURRET => Some(RobotType::Turret),
             _ => None,
         }
+    }
+}
+
+/// Where a created robot appears, in **raw Unity world coordinates**: the
+/// [`ConnectOptions::initial_pose`] of a connection that creates one.
+///
+/// The simulator applies the pose exactly as sent and **ignores the frame
+/// pair** of [`ConnectOptions::with_frame`], so nothing here is converted.
+/// Unity's world is left-handed, in metres: +x right, +y up, +z forward. The
+/// rotation is a Unity quaternion `[x, y, z, w]`, normalized before sending; a
+/// heading of `yaw` radians about the up axis is
+/// `[0, sin(yaw / 2), 0, cos(yaw / 2)]`, and a positive `yaw` turns +z toward
+/// +x, clockwise seen from above.
+///
+/// It is also the robot's home, the pose [`reset`](crate::VirtualRobot::reset)
+/// returns it to. Without one a created robot spawns at the world origin,
+/// unrotated, so two robots created that way overlap.
+///
+/// ```
+/// use vrobots_sdk::{ConnectOptions, SpawnPose};
+///
+/// // 4 m right of the origin, turned a quarter turn clockwise seen from above.
+/// let half = std::f64::consts::FRAC_PI_4;
+/// let options = ConnectOptions::default()
+///     .with_initial_pose(SpawnPose::new([4.0, 0.0, 0.0], [0.0, half.sin(), 0.0, half.cos()]));
+/// assert!(options.initial_pose.is_some());
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
+pub struct SpawnPose {
+    /// Unity world position, metres: +x right, +y up, +z forward.
+    pub position: [f64; 3],
+    /// Unity world rotation, quaternion `[x, y, z, w]`.
+    pub orientation: [f64; 4],
+}
+
+impl SpawnPose {
+    /// A Unity world position and rotation.
+    #[must_use]
+    pub fn new(position: [f64; 3], orientation: [f64; 4]) -> SpawnPose {
+        SpawnPose {
+            position,
+            orientation,
+        }
+    }
+
+    /// A Unity world position with the identity rotation.
+    #[must_use]
+    pub fn at(position: [f64; 3]) -> SpawnPose {
+        SpawnPose::new(position, IDENTITY_QUAT)
     }
 }
 
@@ -194,6 +324,10 @@ pub struct ConnectOptions {
     /// Wire name for a robot this connection creates. `None` uses the catalog
     /// type's default. Ignored when attaching to an existing id.
     pub robot_name: Option<String>,
+    /// Where a robot this connection creates spawns, in raw Unity world
+    /// coordinates: see [`SpawnPose`]. `None` (the default) spawns it at the
+    /// world origin, unrotated. Ignored when attaching to an existing id.
+    pub initial_pose: Option<SpawnPose>,
     /// The `header.name` stamped on outbound messages, naming this client.
     /// Defaults to [`DEFAULT_CLIENT_NAME`].
     pub client_name: String,
@@ -215,8 +349,8 @@ pub struct ConnectOptions {
 
 impl Default for ConnectOptions {
     /// The C library's defaults (`vrsdk_options_default`): `src_id` 122,
-    /// timeouts of 5, 15, 8 and 5 seconds, start active, activate after
-    /// create, and the `"unity"` frame.
+    /// timeouts of 5, 15, 8 and 5 seconds, no spawn pose, start active,
+    /// activate after create, and the `"unity"` frame.
     fn default() -> ConnectOptions {
         let mut raw = sys::vrsdk_connect_options_t::default();
         // SAFETY: `raw` is writable storage for one `vrsdk_connect_options_t`,
@@ -230,6 +364,9 @@ impl Default for ConnectOptions {
             service_timeout: duration_from_seconds(raw.service_timeout_s),
             camera_timeout: duration_from_seconds(raw.camera_timeout_s),
             robot_name: None,
+            initial_pose: raw
+                .has_initial_pose
+                .then(|| SpawnPose::new(raw.initial_position, raw.initial_orientation)),
             client_name: DEFAULT_CLIENT_NAME.to_string(),
             start_active: raw.start_active,
             activate_after_create: raw.activate_after_create,
@@ -286,6 +423,13 @@ impl ConnectOptions {
     #[must_use]
     pub fn with_robot_name(mut self, name: impl Into<String>) -> Self {
         self.robot_name = Some(name.into());
+        self
+    }
+
+    /// See [`initial_pose`](Self::initial_pose).
+    #[must_use]
+    pub fn with_initial_pose(mut self, pose: SpawnPose) -> Self {
+        self.initial_pose = Some(pose);
         self
     }
 
@@ -349,6 +493,11 @@ impl ConnectOptions {
         raw.service_timeout_s = ffi::seconds(self.service_timeout);
         raw.camera_timeout_s = ffi::seconds(self.camera_timeout);
         raw.robot_name = robot_name.as_ref().map_or(ptr::null(), |s| s.as_ptr());
+        if let Some(pose) = self.initial_pose {
+            raw.has_initial_pose = true;
+            raw.initial_position = pose.position;
+            raw.initial_orientation = pose.orientation;
+        }
         raw.client_name = client_name.as_ptr();
         raw.start_active = self.start_active;
         raw.activate_after_create = self.activate_after_create;
@@ -397,6 +546,11 @@ mod tests {
             RobotType::CartPole,
             RobotType::HalfDrone,
             RobotType::GlobalHawk,
+            RobotType::Forklift,
+            RobotType::PalletRobot,
+            RobotType::RailArm,
+            RobotType::TableArm,
+            RobotType::Turret,
         ] {
             assert_eq!(RobotType::from_catalog_key(kind.catalog_key()), Some(kind));
             assert_eq!(RobotType::from_code(kind.code()), Some(kind));
@@ -406,8 +560,36 @@ mod tests {
             RobotType::from_catalog_key("rq4b"),
             Some(RobotType::GlobalHawk)
         );
+        assert_eq!(
+            RobotType::from_catalog_key("kuka_kr210_rail"),
+            Some(RobotType::RailArm)
+        );
+        assert_eq!(
+            RobotType::from_catalog_key("Pallet_Robot"),
+            Some(RobotType::PalletRobot)
+        );
         assert_eq!(RobotType::from_catalog_key("submarine"), None);
         assert_eq!(RobotType::from_code(99), None);
+    }
+
+    #[test]
+    fn a_spawn_pose_reaches_the_c_struct_only_when_set() {
+        let c = ConnectOptions::default().to_c().expect("no NUL bytes");
+        // SAFETY: `as_ptr` points at the struct owned by `c`, alive here.
+        let raw = unsafe { &*c.as_ptr() };
+        assert!(!raw.has_initial_pose);
+
+        let pose = SpawnPose::new([4.0, 0.5, -2.0], [0.0, 0.5, 0.0, 0.75]);
+        let c = ConnectOptions::default()
+            .with_initial_pose(pose)
+            .to_c()
+            .expect("no NUL bytes");
+        // SAFETY: as above.
+        let raw = unsafe { &*c.as_ptr() };
+        assert!(raw.has_initial_pose);
+        assert_eq!(raw.initial_position, [4.0, 0.5, -2.0]);
+        assert_eq!(raw.initial_orientation, [0.0, 0.5, 0.0, 0.75]);
+        assert_eq!(SpawnPose::at([1.0, 2.0, 3.0]).orientation, IDENTITY_QUAT);
     }
 
     #[test]

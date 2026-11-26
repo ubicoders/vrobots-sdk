@@ -35,8 +35,8 @@
 //!   value. A subscriber inside the library keeps it fresh; you read at your
 //!   own rate.
 //! - Every snapshot carries `t_ns` (simulator capture time, unix nanoseconds)
-//!   and `elapsed` (seconds since the robot's first sample). State and camera
-//!   streams are independent and never paired by the SDK: compare `t_ns`.
+//!   and `elapsed` (seconds since the robot's first sample). State, camera and
+//!   lidar streams are independent and never paired by the SDK: compare `t_ns`.
 //! - Robots outlive the process. Dropping a [`VirtualRobot`] closes the session
 //!   and leaves the robot running; [`VirtualRobot::delete`] is the only verb
 //!   that removes one.
@@ -51,11 +51,15 @@
 //! | Module | What it holds |
 //! |---|---|
 //! | [`robot`] | [`VirtualRobot`]: connect, read state, pace a loop, delete |
-//! | [`options`] | [`RobotType`] and [`ConnectOptions`] |
+//! | [`options`] | [`RobotType`], [`ConnectOptions`] and [`SpawnPose`] |
 //! | [`state`] | [`State`] and its blocks, the [`Axes`] and wire [`EulerOrder`] tags |
 //! | [`commands`] | the command methods, the [`cmd`] ids and [`CmdArgs`] |
+//! | [`actuators`] | actuator reports decoded per robot type, and their layouts |
+//! | [`properties`] | [`RobotProperties`] and [`ActuatorKind`]: what a robot is |
 //! | [`setpoint`] | reading other clients' commands: [`SetpointStream`] |
 //! | [`camera`] | [`CameraStream`], [`Frame`] and the camera options |
+//! | [`lidar`] | [`LidarStream`], [`LidarScan`] and lidar re-mounting |
+//! | [`safety`] | [`SafetyEventStream`] and [`SafetyEvent`]: near misses, contacts, strikes |
 //! | [`services`] | reset, activate and the configuration requests |
 //! | [`topics`] | every wire name, built in one place |
 //! | [`discovery`] | [`list_topics`] and [`measure_rate`] |
@@ -66,17 +70,18 @@
 //!
 //! # Threads
 //!
-//! [`VirtualRobot`], [`CameraStream`], [`SetpointStream`] and [`Frame`] are
-//! `Send` and `Sync`, so one handle can be shared between threads by reference
-//! or through an `Arc`. The C library documents its handles as safe to use from
-//! several threads at once: its header states that two threads racing on one
-//! camera or setpoint stream cannot both receive the same value and keeps the
-//! error detail of each failing call per thread, and the C++ header shipped
-//! beside it states that the robot and camera handles may be used from several
-//! threads. The one rule the library leaves to the caller, never to free a
-//! handle while another thread is using it, is enforced here by ownership: each
-//! handle is freed only in `Drop`, which cannot run while a borrow is alive.
-//! A [`Frame`] is immutable once handed out.
+//! [`VirtualRobot`], [`CameraStream`], [`SetpointStream`], [`LidarStream`],
+//! [`SafetyEventStream`] and [`Frame`] are `Send` and `Sync`, so one handle can
+//! be shared between threads by reference or through an `Arc`. The C library
+//! documents its handles as safe to use from several threads at once: its
+//! header states that two threads racing on one camera, setpoint or lidar
+//! stream cannot both receive the same value and keeps the error detail of
+//! each failing call per thread, and the C++ header shipped beside it states
+//! that the robot and stream handles may be used from several threads. The one
+//! rule the library leaves to the caller, never to free a handle while another
+//! thread is using it, is enforced here by ownership: each handle is freed only
+//! in `Drop`, which cannot run while a borrow is alive. A [`Frame`] is
+//! immutable once handed out.
 //!
 //! # Linking and running
 //!
@@ -108,20 +113,29 @@ pub use vrobots_sdk_sys as sys;
 
 mod ffi;
 
+pub mod actuators;
 pub mod camera;
 pub mod commands;
 pub mod discovery;
 pub mod error;
+pub mod lidar;
 pub mod logging;
 pub mod options;
+pub mod properties;
 pub mod robot;
 pub mod rotations;
+pub mod safety;
 pub mod services;
 pub mod setpoint;
 pub mod state;
 pub mod topics;
 pub mod version;
 
+pub use actuators::{
+    forklift_actuator, forklift_channel, palletrobot_channel, rail_arm, table_arm, turret_actuator,
+    ArmContact, ForkliftActuators, PalletRobotActuators, RailArmActuators, TableArmActuators,
+    TurretActuators,
+};
 pub use camera::{
     CameraOptions, CameraSpec, CameraStats, CameraStream, Frame, FramePixels, Intrinsics,
     MountPose, PixelFormat, Resolution,
@@ -132,21 +146,29 @@ pub use discovery::{
     measure_rate_with, RateReport, TopicInfo, Transport,
 };
 pub use error::{err, VrError, VrResult};
+pub use lidar::{LidarConfigEntry, LidarMount, LidarParams, LidarScan, LidarStats, LidarStream};
 pub use logging::{
     clear_log_callback, init_logging, set_log_callback, set_log_level, LogEvent, LogLevel,
 };
 pub use options::{
-    ConnectOptions, RobotType, DEFAULT_CLIENT_NAME, DEFAULT_COORD_FRAME_ID, DEFAULT_SRC_ID,
+    ConnectOptions, RobotType, SpawnPose, DEFAULT_CLIENT_NAME, DEFAULT_COORD_FRAME_ID,
+    DEFAULT_SRC_ID,
 };
+pub use properties::{read_properties, read_properties_with, ActuatorKind, RobotProperties};
 pub use robot::VirtualRobot;
 // The rotation functions keep their own module namespace, as in the other SDK
 // languages: `rotations::quat_to_euler` reads better at a call site than a bare
 // `quat_to_euler`. `rotations::EulerOrder` is deliberately not lifted to the
 // root, where `state::EulerOrder` (the wire tag) already owns the name.
 pub use rotations::{AxisBasis, FrameTransform};
+pub use safety::{
+    subscribe_all_safety_events, subscribe_all_safety_events_with, SafetyEvent, SafetyEventStats,
+    SafetyEventStream, SafetyOtherKind, SafetyTier, SAFETY_EVENT_QUEUE_CAPACITY,
+};
 pub use services::{
-    device, CartPoleConfig, DeviceFrame, DriveConfig, GpsNoise, GpsQuality, ImuNoise, MsdConfig,
-    PhysicalParams, PwmBand, RotorSpec, SceneFrame, SensorConfig, INHERIT_FRAME,
+    device, ArmConfig, CartPoleConfig, DeviceFrame, DriveConfig, ForkliftConfig, GpsNoise,
+    GpsQuality, ImuNoise, MsdConfig, PalletRobotConfig, PhysicalParams, PwmBand, RotorSpec,
+    SceneFrame, SensorConfig, TurretConfig, INHERIT_FRAME,
 };
 pub use setpoint::{Setpoint, SetpointStats, SetpointStream};
 pub use state::{

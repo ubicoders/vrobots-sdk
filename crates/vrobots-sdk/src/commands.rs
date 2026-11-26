@@ -93,6 +93,34 @@ pub mod cmd {
     /// **Live (fixed wing).** Attitude source in `int_val`: [`FW_EST_TRUTH`] or
     /// [`FW_EST_OBSERVER`].
     pub const SET_FW_EST_SOURCE: u32 = sys::VRSDK_CMD_SET_FW_EST_SOURCE as u32;
+    /// **Live (forklift).** `[steer, throttle, lift, fork_width]` in `int_arr`,
+    /// microseconds, with an optional fifth `brake`; the positions are
+    /// [`forklift_channel`](crate::forklift_channel). Four or five entries, or
+    /// the command is ignored.
+    pub const SET_FORKLIFT: u32 = sys::VRSDK_CMD_SET_FORKLIFT as u32;
+    /// **Live (pallet robot).** Exactly six microsecond values in `int_arr`,
+    /// `[fl, fr, rl, rr, pad_lift, pad_turn]`: see
+    /// [`palletrobot_channel`](crate::palletrobot_channel). 313, between this
+    /// and [`SET_FORKLIFT`], is held for a reach lift the schema does not
+    /// define.
+    pub const SET_PALLETROBOT: u32 = sys::VRSDK_CMD_SET_PALLETROBOT as u32;
+    /// **Live (rail arm, table arm).** One joint setpoint per joint in
+    /// `float_arr`, SI, in actuator order: 7 on the rail arm, 6 on the table
+    /// arm, or the whole command is ignored.
+    pub const SET_ARM_JOINTS: u32 = sys::VRSDK_CMD_SET_ARM_JOINTS as u32;
+    /// **Live (rail arm).** The suction pad in `int_val`: 0 off (release), 1 on.
+    pub const SET_ARM_VACUUM: u32 = sys::VRSDK_CMD_SET_ARM_VACUUM as u32;
+    /// **Live (turret).** `[heading_rate, pitch_rate]` in `float_arr`, rad/s.
+    /// Shares one latch with [`SET_TURRET_JOINTS`].
+    pub const SET_TURRET_RATES: u32 = sys::VRSDK_CMD_SET_TURRET_RATES as u32;
+    /// **Live (turret).** `[heading, pitch]` joint targets in `float_arr`, rad.
+    /// Shares one latch with [`SET_TURRET_RATES`].
+    pub const SET_TURRET_JOINTS: u32 = sys::VRSDK_CMD_SET_TURRET_JOINTS as u32;
+    /// **Live (turret).** The laser in `int_val`: 0 off, 1 on.
+    pub const SET_TURRET_LASER: u32 = sys::VRSDK_CMD_SET_TURRET_LASER as u32;
+    /// **Live (table arm).** The gripper opening in `float_val`, metres,
+    /// clamped to the 0.085 m stroke.
+    pub const SET_ARM_GRIPPER: u32 = sys::VRSDK_CMD_SET_ARM_GRIPPER as u32;
 
     /// [`SET_FW_CTRL_MODE`]: the aircraft flies itself, tracking `SET_ANGVEL` on
     /// its onboard rate loop with airspeed hold. The default, and what a reset
@@ -143,6 +171,14 @@ pub mod cmd {
             SET_FW_THRUST_BIAS => "SET_FW_THRUST_BIAS",
             SET_FW_CTRL_MODE => "SET_FW_CTRL_MODE",
             SET_FW_EST_SOURCE => "SET_FW_EST_SOURCE",
+            SET_FORKLIFT => "SET_FORKLIFT",
+            SET_PALLETROBOT => "SET_PALLETROBOT",
+            SET_ARM_JOINTS => "SET_ARM_JOINTS",
+            SET_ARM_VACUUM => "SET_ARM_VACUUM",
+            SET_TURRET_RATES => "SET_TURRET_RATES",
+            SET_TURRET_JOINTS => "SET_TURRET_JOINTS",
+            SET_TURRET_LASER => "SET_TURRET_LASER",
+            SET_ARM_GRIPPER => "SET_ARM_GRIPPER",
             _ => "",
         }
     }
@@ -627,6 +663,325 @@ impl VirtualRobot {
             )
         })
     }
+
+    /// `SET_FORKLIFT`: drive, steer and position the forks, microseconds.
+    ///
+    /// | Channel | 1100 | 1500 | 1900 |
+    /// |---|---|---|---|
+    /// | `steer_us` | full left | straight | full right (45 deg) |
+    /// | `throttle_us` | full reverse | stop (idle brake) | full forward (~5 m/s unloaded) |
+    /// | `lift_us` | -0.215 m | 0.448 m | 1.11 m |
+    /// | `fork_width_us` | 0.158 m | 0.746 m | 1.334 m |
+    ///
+    /// The front pair drives and the **rear pair steers**, so the tail swings
+    /// out in a turn. Lift and fork width are **position servos that slew**,
+    /// the lift at 0.5 m/s and the width at 0.1 m/s: `actuator.pwm` echoes the
+    /// new pulse while the forks are still travelling, and the move is done
+    /// when [`forklift_actuators`](Self::forklift_actuators) says so.
+    ///
+    /// ```no_run
+    /// # use vrobots_sdk::{RobotType, VirtualRobot};
+    /// // The warehouse scene pins the forklift at sys_id 0.
+    /// let forklift = VirtualRobot::connect(RobotType::Forklift, Some(0))?;
+    /// // Straight and stopped, forks to the top at the reset width.
+    /// forklift.set_forklift(1500.0, 1500.0, 1900.0, 1301.0)?;
+    /// while forklift.forklift_actuators()?.lift_height < 1.10 {
+    ///     forklift.rate(20.0);
+    /// }
+    /// # Ok::<(), vrobots_sdk::VrError>(())
+    /// ```
+    ///
+    /// This is the four-channel frame, and it **releases the brake**; see
+    /// [`set_forklift_with_brake`](Self::set_forklift_with_brake). It latches
+    /// like every command, and nothing is frame-converted.
+    /// [`reset`](Self::reset) re-latches `[1500, 1500, 1100, 1301]` and snaps
+    /// the mast there.
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument) for a value
+    /// outside the 1100 to 2000 band; [`VrError::Deleted`](crate::VrError::Deleted);
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_forklift(
+        &self,
+        steer_us: f64,
+        throttle_us: f64,
+        lift_us: f64,
+        fork_width_us: f64,
+    ) -> VrResult<()> {
+        // SAFETY: the robot handle is live; a NULL brake sends the four-channel
+        // frame.
+        check(unsafe {
+            sys::vrsdk_robot_set_forklift(
+                self.raw(),
+                steer_us,
+                throttle_us,
+                lift_us,
+                fork_width_us,
+                ptr::null(),
+            )
+        })
+    }
+
+    /// `SET_FORKLIFT` with its optional fifth channel: everything
+    /// [`set_forklift`](Self::set_forklift) sends, plus the brake.
+    ///
+    /// `brake_us` is **bottom-anchored**, unlike the other four: 1100 is
+    /// released, 1500 half, 1900 full. It brakes all four wheels whatever the
+    /// throttle says, and latches with the rest of the frame, so the brake
+    /// stays on until a later frame lowers it; any
+    /// [`set_forklift`](Self::set_forklift) releases it. The actuator report
+    /// has no brake entry: the proof is
+    /// [`ForkliftActuators::drive_speed`](crate::ForkliftActuators::drive_speed)
+    /// falling.
+    ///
+    /// # Errors
+    ///
+    /// As [`set_forklift`](Self::set_forklift).
+    pub fn set_forklift_with_brake(
+        &self,
+        steer_us: f64,
+        throttle_us: f64,
+        lift_us: f64,
+        fork_width_us: f64,
+        brake_us: f64,
+    ) -> VrResult<()> {
+        // SAFETY: the robot handle is live and the brake pointer targets
+        // `brake_us`, one double alive for the call.
+        check(unsafe {
+            sys::vrsdk_robot_set_forklift(
+                self.raw(),
+                steer_us,
+                throttle_us,
+                lift_us,
+                fork_width_us,
+                &brake_us,
+            )
+        })
+    }
+
+    /// `SET_PALLETROBOT`: four mecanum wheel ESCs and the lift pad,
+    /// microseconds.
+    ///
+    /// | Channel | 1100 | 1500 | 1900 |
+    /// |---|---|---|---|
+    /// | `fl_us`, `fr_us`, `rl_us`, `rr_us` | -28 rad/s | stop | +28 rad/s (forward) |
+    /// | `pad_lift_us` | 0 m (down) | 0.03 m | 0.06 m (top) |
+    /// | `pad_turn_us` | -90 deg/s | hold | +90 deg/s (clockwise from above) |
+    ///
+    /// The robot takes no twist, so **the mixing is yours**. For `vx` forward
+    /// and `vy` right in m/s and `wz` clockwise from above in rad/s, with wheel
+    /// radius R = 0.054 m and lx + ly = 0.65 m:
+    ///
+    /// ```text
+    /// FL = (vx + vy + 0.65 wz) / R        FR = (vx - vy - 0.65 wz) / R
+    /// RL = (vx - vy + 0.65 wz) / R        RR = (vx + vy - 0.65 wz) / R
+    /// us = 1500 + 400 * w / 28            for each wheel speed w in rad/s
+    /// ```
+    ///
+    /// If any |w| exceeds 28 rad/s, scale all four by the same factor: clipping
+    /// one alone changes the direction of travel. Latches; the wheels ramp at
+    /// 60 rad/s^2 and the pad climbs at 0.03 m/s, so confirm a move with
+    /// [`palletrobot_actuators`](Self::palletrobot_actuators).
+    /// [`reset`](Self::reset) re-latches `[1500, 1500, 1500, 1500, 1100, 1500]`.
+    ///
+    /// ```no_run
+    /// # use vrobots_sdk::{RobotType, VirtualRobot};
+    /// // The warehouse scene pins the pallet robot at sys_id 1.
+    /// let robot = VirtualRobot::connect(RobotType::PalletRobot, Some(1))?;
+    /// // Strafe right at 0.3 m/s with the pad down: FL and RR forward, FR and RL back.
+    /// robot.set_palletrobot(1580.0, 1420.0, 1420.0, 1580.0, 1100.0, 1500.0)?;
+    /// # Ok::<(), vrobots_sdk::VrError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument) for a value
+    /// outside the 1100 to 2000 band; [`VrError::Deleted`](crate::VrError::Deleted);
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_palletrobot(
+        &self,
+        fl_us: f64,
+        fr_us: f64,
+        rl_us: f64,
+        rr_us: f64,
+        pad_lift_us: f64,
+        pad_turn_us: f64,
+    ) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe {
+            sys::vrsdk_robot_set_palletrobot(
+                self.raw(),
+                fl_us,
+                fr_us,
+                rl_us,
+                rr_us,
+                pad_lift_us,
+                pad_turn_us,
+            )
+        })
+    }
+
+    /// `SET_ARM_JOINTS`: one position setpoint per joint, SI, in actuator
+    /// order.
+    ///
+    /// Seven on the rail arm ([`rail_arm::JOINT_COUNT`](crate::rail_arm::JOINT_COUNT)):
+    /// the rail in metres, then A1 to A6 in radians. Six on the table arm
+    /// ([`table_arm::JOINT_COUNT`](crate::table_arm::JOINT_COUNT)): A1 to A6 in
+    /// radians. Joint values carry no axes, so nothing is frame-converted.
+    ///
+    /// A **latch**: each joint is clamped to its range and driven toward its
+    /// setpoint at its own top speed, with no ramp and no coordination, so the
+    /// joints of one far setpoint arrive at different times; stream
+    /// intermediate setpoints for a smooth path. A step into anything is
+    /// refused with the setpoint still latched, which
+    /// [`ArmContact`](crate::ArmContact) reports. Nothing replies: the decoded
+    /// actuator report is the proof, and both directions cross the wire as
+    /// `f32`, so compare with a tolerance.
+    ///
+    /// ```no_run
+    /// # use vrobots_sdk::{RobotType, VirtualRobot};
+    /// // The table-arm scene pins the UR10 at sys_id 0.
+    /// let arm = VirtualRobot::connect(RobotType::TableArm, Some(0))?;
+    /// let mut joints = arm.table_arm_actuators()?.joints;
+    /// joints[0] += 0.5; // swing the base half a radian
+    /// arm.set_arm_joints(&joints)?;
+    /// # Ok::<(), vrobots_sdk::VrError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument), before
+    /// anything is sent, for an empty slice, an entry that is not finite or
+    /// beyond `f32` range, or, on a handle connected as a rail or table arm,
+    /// the wrong joint count: the simulator would drop any of those whole and
+    /// say nothing. [`VrError::Deleted`](crate::VrError::Deleted);
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_arm_joints(&self, setpoints: &[f64]) -> VrResult<()> {
+        // SAFETY: the robot handle is live and `setpoints` is readable for
+        // `setpoints.len()` doubles; an empty slice passes a dangling but
+        // aligned, non-null pointer with a zero count, which the library
+        // refuses without reading.
+        check(unsafe {
+            sys::vrsdk_robot_set_arm_joints(self.raw(), setpoints.as_ptr(), setpoints.len())
+        })
+    }
+
+    /// `SET_ARM_VACUUM`: the rail arm's suction pad, on or off.
+    ///
+    /// A latch. While on and empty, the pad grips the loose object under it
+    /// once it is within reach of the object's top (1 cm), square to it
+    /// (15 deg) and within its rating (400 N, about 40 kg), so switching on
+    /// before the descent is fine. Off releases the load. Only loose objects
+    /// are gripped, never fixed scenery, a robot or a person.
+    /// [`RailArmActuators::vacuum_on`](crate::RailArmActuators::vacuum_on)
+    /// echoes the latch and `held_mass_kg` turns non-zero on a grip.
+    /// [`reset`](Self::reset) lets go of the load and switches the vacuum off.
+    /// The table arm ignores this; it is not refused.
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::Deleted`](crate::VrError::Deleted),
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_arm_vacuum(&self, on: bool) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe { sys::vrsdk_robot_set_arm_vacuum(self.raw(), on) })
+    }
+
+    /// `SET_ARM_GRIPPER`: the table arm's two-finger gripper, as the gap
+    /// between its pads in **metres**.
+    ///
+    /// A latch, clamped by the simulator to 0 to
+    /// [`table_arm::GRIPPER_STROKE_M`](crate::table_arm::GRIPPER_STROKE_M)
+    /// (85 mm) instead of refused: 0 closes fully, and a millimetre figure such
+    /// as `40.0` silently opens fully. Closing on a loose object within the
+    /// payload (5 kg by default) holds it until the opening is commanded at
+    /// least 2 mm wider than it.
+    /// [`TableArmActuators`](crate::TableArmActuators) reports the latch, the
+    /// gap now and whether it holds. The rail arm ignores this; it is not
+    /// refused.
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument) for an
+    /// opening that is not finite or beyond `f32` range;
+    /// [`VrError::Deleted`](crate::VrError::Deleted);
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_arm_gripper(&self, opening_m: f64) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe { sys::vrsdk_robot_set_arm_gripper(self.raw(), opening_m) })
+    }
+
+    /// `SET_TURRET_RATES`: turn the joints at a rate, **rad/s**.
+    ///
+    /// Positive `heading_rate` turns right seen from above, positive
+    /// `pitch_rate` raises the barrel; joint rates carry no axes, so nothing is
+    /// frame-converted. Each is clamped to its joint's max rate, a joint that
+    /// reaches a limit stops there, and `(0, 0)` holds the pose: the command
+    /// for closing an aiming loop, sent every iteration.
+    ///
+    /// **Shares one latch with [`set_turret_joints`](Self::set_turret_joints)**:
+    /// whichever arrived last is in charge, and a controller that stops sending
+    /// leaves the turret slewing to its limits.
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::InvalidArgument`](crate::VrError::InvalidArgument) for a rate
+    /// that is not finite; [`VrError::Deleted`](crate::VrError::Deleted);
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_turret_rates(&self, heading_rate: f64, pitch_rate: f64) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe { sys::vrsdk_robot_set_turret_rates(self.raw(), heading_rate, pitch_rate) })
+    }
+
+    /// `SET_TURRET_JOINTS`: aim at joint targets, **radians**.
+    ///
+    /// Signs as [`set_turret_rates`](Self::set_turret_rates); `(0, 0)` is the
+    /// rest pose, the barrel level along the base's forward axis. Each target
+    /// is clamped to its joint's limits and reached at that joint's max rate,
+    /// then held until the next motion command; the last of this and
+    /// `set_turret_rates` wins. [`reset`](Self::reset) puts both joints back
+    /// at 0. Nothing replies: [`turret_actuators`](Self::turret_actuators) is
+    /// the proof.
+    ///
+    /// ```no_run
+    /// # use vrobots_sdk::{RobotType, VirtualRobot};
+    /// # let turret_id = 3;
+    /// let turret = VirtualRobot::connect(RobotType::Turret, Some(turret_id))?;
+    /// turret.set_turret_joints(0.5, 0.1)?; // right and slightly up
+    /// turret.set_turret_laser(true)?;
+    /// let t = turret.turret_actuators()?;
+    /// println!("heading {:+.3} rad, laser {:.2} m", t.heading, t.laser_range);
+    /// # Ok::<(), vrobots_sdk::VrError>(())
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// As [`set_turret_rates`](Self::set_turret_rates), for an angle that is
+    /// not finite.
+    pub fn set_turret_joints(&self, heading: f64, pitch: f64) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe { sys::vrsdk_robot_set_turret_joints(self.raw(), heading, pitch) })
+    }
+
+    /// `SET_TURRET_LASER`: switch the laser on or off.
+    ///
+    /// The beam leaves the muzzle along the barrel, so it follows both joints.
+    /// While it is on,
+    /// [`TurretActuators::laser_range`](crate::TurretActuators::laser_range) is
+    /// the distance to the first thing it hits within its max range (200 m by
+    /// default, set with [`configure_turret`](Self::configure_turret)). A latch
+    /// of its own, untouched by the motion commands; [`reset`](Self::reset)
+    /// switches it off.
+    ///
+    /// # Errors
+    ///
+    /// [`VrError::Deleted`](crate::VrError::Deleted),
+    /// [`VrError::Publish`](crate::VrError::Publish).
+    pub fn set_turret_laser(&self, on: bool) -> VrResult<()> {
+        // SAFETY: the robot handle is live.
+        check(unsafe { sys::vrsdk_robot_set_turret_laser(self.raw(), on) })
+    }
 }
 
 #[cfg(test)]
@@ -643,6 +998,25 @@ mod tests {
             (cmd::SET_MR_PWM, cmd::SET_CAR, cmd::SET_INVPEN),
             (300, 304, 306)
         );
+    }
+
+    #[test]
+    fn the_warehouse_arm_and_turret_ids_match_the_schema() {
+        for (id, wire, name) in [
+            (cmd::SET_FORKLIFT, 312, "SET_FORKLIFT"),
+            (cmd::SET_PALLETROBOT, 314, "SET_PALLETROBOT"),
+            (cmd::SET_ARM_JOINTS, 315, "SET_ARM_JOINTS"),
+            (cmd::SET_ARM_VACUUM, 316, "SET_ARM_VACUUM"),
+            (cmd::SET_TURRET_RATES, 317, "SET_TURRET_RATES"),
+            (cmd::SET_TURRET_JOINTS, 318, "SET_TURRET_JOINTS"),
+            (cmd::SET_TURRET_LASER, 319, "SET_TURRET_LASER"),
+            (cmd::SET_ARM_GRIPPER, 320, "SET_ARM_GRIPPER"),
+        ] {
+            assert_eq!(id, wire, "{name}");
+            assert_eq!(cmd::name(id), name);
+        }
+        // 313 is held for a reach lift the schema does not define.
+        assert_eq!(cmd::name(313), "");
     }
 
     #[test]
