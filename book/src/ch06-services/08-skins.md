@@ -318,6 +318,6 @@ with `e.detail()` in Rust, `e.code()` with `e.what()` in C++, and the attributes
 empty key -> [<code>] <message>
 ```
 
-**Next:** [Supported virtual robots](../ch07-robots/00-intro.md)
+**Next:** [Forklift and pallet robot configuration](09-warehouse-config.md)
 
 **See also:** [Truck](../ch07-robots/02-truck.md), [Actuators](../ch03-reading-state/05-actuator.md), [Appendix C: Error reference](../appendix-c-errors.md)

@@ -12,7 +12,7 @@ python examples/python/ex25_frames.py
 
 Changing a frame does not move the robot one millimetre differently. The numbers describing it
 are permuted, and depending on the pair one of them changes sign. Registered ids are `unity`,
-`frd`, `fru` and `cv`, plus anything the scene registers at runtime, which is why
+`frd`, `fru`, `flu` and `cv`, plus anything the scene registers at runtime, which is why
 `coord_frame_id` (a string) is authoritative and `axis_convention` (an enum tag) is the
 convenience beside it.
 
@@ -27,11 +27,12 @@ robot default     (truck: fru, multirotor: frd, globalhawk: frd -- regardless of
 scene frame       (scene_frame(); every launch starts at fru)
 ```
 
-The three robot defaults in that row were measured live against simulator v3.0.0. The
-remaining robot types are unconfirmed, and no per-robot default exists anywhere in the SDK
-source, so read `State::coord_frame_id` off the snapshot rather than assuming a default
-for them.
-<!-- VERIFY: the "robot default" row of that ladder for the robot types other than truck, multirotor and Global Hawk. Those three are live-verified (truck fru, multirotor frd, Global Hawk frd as of 2026-08-09, sim v3.0.0); no per-robot default exists anywhere in the SDK source. -->
+The three robot defaults in that row were measured live against simulator v3.0.0. Five more
+have been measured since: the forklift, the pallet robot, the rail arm and the table arm
+report `fru`, and the turret reports `cv`. The mass spring damper, the cart pole and the
+half drone are unconfirmed, and no per-robot default exists anywhere in the SDK source, so
+read `State::coord_frame_id` off the snapshot rather than assuming a default for them.
+<!-- VERIFY: the "robot default" row of that ladder for the mass spring damper, the cart pole and the half drone. Truck fru, multirotor frd and Global Hawk frd are live-verified as of 2026-08-09, sim v3.0.0; forklift, pallet robot, rail arm and table arm fru and turret cv are live-verified since; no per-robot default exists anywhere in the SDK source. -->
 
 `srv/frames` writes the top two levels. The bottom one is read-only from the SDK.
 
@@ -128,6 +129,7 @@ Device names are matched exactly, case included, and live in the `device` module
 | `device::GPS` | `gps` |
 | `device::OPTICAL_FLOW` | `optical_flow` |
 | `device::camera(name)` | `camera/<name>` |
+| `device::lidar(name)` | `lidar/<name>` |
 
 > **Gotcha.** The device the frames service matches is `gps`, while the block it moves is
 > called `gnss` in the state message. Use the constants rather than a literal.
@@ -216,6 +218,24 @@ rotor list, where a single bad entry drops everything, and it is why a typo in o
 is invisible: the other entries land, the ack says `ok`, and the only symptom is one block
 still reporting in the old frame.
 
+## Lidars start in their own frame
+
+A lidar is the device `lidar/<name>`, where the name is the one the lidar is mounted under
+and the last segment of its topic. `device::lidar(name)` in Rust,
+`vrsdk::device::lidar(name)` in C++ and `device.lidar(name)` in Python build the string.
+
+Every other device inherits the robot's frame until you override it. A lidar does not: it
+starts in `flu` (+x forward, +y left, +z up) on every robot, because that is the frame its
+points are defined in. An override re-labels the points; the ranges and their order in a
+scan never change. Passing `INHERIT_FRAME` for a lidar makes it follow its robot's frame,
+and to put it back afterwards you send `flu` explicitly.
+
+`flu` has no value in the `axis_convention` enum, so a lidar's header carries the
+unspecified tag beside the string `"flu"`, and the string is the only thing that identifies
+the frame. [Points and frames](../ch09-lidar/03-points-and-frames.md) covers what that does
+to a point cloud. This service chooses the frame a lidar is labelled in; moving the lidar on
+the robot is [Lidar configuration](12-lidar-config.md).
+
 ## Clearing an override
 
 Passing `INHERIT_FRAME` at both levels puts everything back where it started.
@@ -292,4 +312,4 @@ basis matrix included, on change and then at 1 Hz.
 
 **Next:** [The truck drivetrain](05-drive-config.md)
 
-**See also:** [Frames, axes and units](../ch02-concepts/07-frames-and-units.md), [Sensor noise](03-sensor-config.md), [Appendix A: Topic reference](../appendix-a-topics.md)
+**See also:** [Frames, axes and units](../ch02-concepts/07-frames-and-units.md), [Sensor noise](03-sensor-config.md), [Lidar configuration](12-lidar-config.md), [Appendix A: Topic reference](../appendix-a-topics.md)

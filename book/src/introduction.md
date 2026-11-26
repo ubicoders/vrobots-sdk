@@ -129,12 +129,12 @@ to you rather than to the SDK.
 | Part | Chapters | What it gives you |
 |---|---|---|
 | Tutorial | [1](ch01-getting-started/00-intro.md), [2](ch02-concepts/00-intro.md) | A robot moving, then the model that explains why it moved. |
-| The API in four slices | [3](ch03-reading-state/00-intro.md) read, [4](ch04-commands/00-intro.md) write, [5](ch05-cameras/00-intro.md) image, [6](ch06-services/00-intro.md) configure | One slice of the surface per chapter, in the order you meet them. |
-| Reference | [7](ch07-robots/00-intro.md) | Per-robot pages: identity, physical model, commands, services, quirks. |
-| Diagnostics | [8](ch08-tooling/00-intro.md) | The `vrobots` command, discovery, rates, logging, testing with the simulator closed. |
+| The API in six slices | [3](ch03-reading-state/00-intro.md) read, [4](ch04-commands/00-intro.md) write, [5](ch05-cameras/00-intro.md) image, [6](ch09-lidar/00-intro.md) range, [7](ch10-events/00-safety-events.md) incidents, [8](ch06-services/00-intro.md) configure | One slice of the surface per chapter, in the order you meet them. |
+| Reference | [9](ch07-robots/00-intro.md) | Per-robot pages: identity, physical model, commands, services, quirks. |
+| Diagnostics | [10](ch08-tooling/00-intro.md) | The `vrobots` command, discovery, rates, logging, testing with the simulator closed. |
 | Appendices | [A](appendix-a-topics.md), [B](appendix-b-commands.md), [C](appendix-c-errors.md), [D](appendix-d-glossary.md) | Lookup tables: topics, command ids, error codes, vocabulary. |
 
-Chapters 3 to 6 are independent of each other. Read chapter 2 before any of them, because
+Chapters 3 to 8 are independent of each other. Read chapter 2 before any of them, because
 they all lean on the five rules it sets out.
 
 ## Reading paths
@@ -143,11 +143,11 @@ they all lean on the five rules it sets out.
 |---|---|
 | A robot moving in ten minutes | [Chapter 1, Getting started](ch01-getting-started/00-intro.md) |
 | To understand what you are doing | [Chapter 2, Concepts](ch02-concepts/00-intro.md) |
-| Something is broken | [Chapter 8, Tooling and diagnostics](ch08-tooling/00-intro.md), then [When nothing happens](ch01-getting-started/08-troubleshooting.md) |
+| Something is broken | [Chapter 10, Tooling and diagnostics](ch08-tooling/00-intro.md), then [When nothing happens](ch01-getting-started/08-troubleshooting.md) |
 
 ## Examples
 
-Thirty-six complete programs live under `examples/rust/`, `examples/cpp/` and
+Forty-four complete programs live under `examples/rust/`, `examples/cpp/` and
 `examples/python/`, the same programs under the same names in all three languages. Each is a
 whole program rather than a snippet, with its settings written in the file, as constants at
 the top or as literals at the call. The Python programs are short, flat scripts with no

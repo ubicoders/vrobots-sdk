@@ -60,10 +60,16 @@ and that is correct behaviour rather than a fault.
 | `CartPole` | `"cartpole"` | `SET_INVPEN` | [Single degree of freedom plants](04-single-dof.md) |
 | `HalfDrone` | `"halfdrone"` | `SET_MR_PWM` with exactly 2 values | [Driving a multirotor](02-multirotor.md) |
 | `GlobalHawk` | `"globalhawk"` | `SET_ANGVEL` tracking, or direct surfaces | [Fixed wing control](05-fixed-wing.md) |
+| `Forklift` | `"forklift"` | `SET_FORKLIFT` | [Driving the forklift](11-forklift.md) |
+| `PalletRobot` | `"palletrobot"` | `SET_PALLETROBOT` | [Driving the pallet robot](12-palletrobot.md) |
+| `RailArm` | `"kr210_rail"` | `SET_ARM_JOINTS` with 7 values, and `SET_ARM_VACUUM` | [Arm joints and tools](13-arms.md) |
+| `TableArm` | `"tablearm"` | `SET_ARM_JOINTS` with 6 values, and `SET_ARM_GRIPPER` | [Arm joints and tools](13-arms.md) |
+| `Turret` | `"turret"` | `SET_TURRET_RATES` or `SET_TURRET_JOINTS`, and `SET_TURRET_LASER` | [Aiming the turret](14-turret.md) |
 
 Only `catalog_key()` is ever put on the wire. `RobotType::from_catalog_key` is
 case-insensitive and accepts synonyms (`"car"`, `"cart_pole"`, `"invpen"`,
-`"mass_spring_damper"`, `"half_drone"`, `"global_hawk"`, `"rq4b"`), which matters when a
+`"mass_spring_damper"`, `"half_drone"`, `"global_hawk"`, `"rq4b"`, `"pallet_robot"`,
+`"railarm"`, `"rail_arm"`, `"kuka_kr210_rail"`, `"table_arm"`), which matters when a
 robot type comes from a configuration file rather than from Rust.
 
 ## Floats narrow on the way out
@@ -71,7 +77,11 @@ robot type comes from a configuration file rather than from Rust.
 The API is `f64` everywhere, for the same reason the snapshots are: one float type across
 Rust, C++ and Python. The wire's `float_val`, `float_arr`, `Vec3` and `Vec4` are `f32`, so
 every float you send narrows once on the way out. Integer channels such as pulse widths do
-not: they are `i32` on the wire and the SDK rounds into them.
+not narrow: they are `i32` on the wire. The SDK rounds a fractional pulse width to the
+nearest whole microsecond as it converts, after it has checked the value against the band.
+Compute whole pulses in your own code all the same, so that the number you print is the
+number that goes out, as
+[Driving the pallet robot](12-palletrobot.md#send-whole-microseconds) shows.
 
 ## Every vector carries a frame
 
@@ -79,8 +89,9 @@ Commands whose payload is a vector (`vec3` or `vec4`) are stamped with the
 `coord_frame_id` and `axis_convention` from your `ConnectOptions`, and the robot converts
 them into its own axes using the physically correct rule for that command. A force and a
 torque convert differently, because a torque is a pseudovector and carries the handedness
-sign. Array payloads such as `SET_MR_PWM` and `SET_FW_SURFACES` carry no frame at all: they
-are per-channel numbers, and nothing is re-expressed.
+sign. Array payloads such as `SET_MR_PWM`, `SET_FW_SURFACES`, `SET_FORKLIFT`,
+`SET_ARM_JOINTS` and `SET_TURRET_JOINTS` carry no frame at all: they are per-channel or
+per-joint numbers, and nothing is re-expressed.
 
 **Next:** [Commands latch](01-latching.md)
 

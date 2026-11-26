@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 540" width="600" height="540" role="img" aria-label="Top view of the turret: base, head with the two cameras 0.8 m apart on its top face, barrel and muzzle, and the head also drawn at heading plus 30 degrees with the cameras and their view wedges turning with it">
+<title>Top view of the turret: base, head with the two cameras 0.8 m apart on its top face, barrel and muzzle, and the head also drawn at heading plus 30 degrees with the cameras and their view wedges turning with it</title>
+<style>
+:root{--bg:#f4f6f6;--panel:#ffffff;--ink:#1c2329;--muted:#5d6870;--line:#cfd6d9;--grid:#e4e9ea;--pivot:#d9480f;--left:#1864ab;--right:#a61e4d;--muzzle:#2b8a3e;--metal:#8a959c;--metal-2:#c3cbcf;--mono:ui-monospace, "JetBrains Mono", "Cascadia Mono", Consolas, Menlo, monospace}
+@media (prefers-color-scheme: dark){:root{--bg:#12171b;--panel:#1a2126;--ink:#e3e8eb;--muted:#97a3ab;--line:#34404a;--grid:#222b31;--pivot:#ff8a4c;--left:#74b4f0;--right:#f07fa6;--muzzle:#69db7c;--metal:#6f7b83;--metal-2:#3f484e}}
+svg text{font-family: var(--mono); font-size: 12px; fill: var(--ink);}
+svg .t-muted{fill: var(--muted);}
+svg .t-pivot{fill: var(--pivot); font-weight: 600;}
+svg .t-left{fill: var(--left); font-weight: 600;}
+svg .t-right{fill: var(--right); font-weight: 600;}
+svg .t-muzzle{fill: var(--muzzle); font-weight: 600;}
+.base{fill: var(--metal-2); stroke: var(--metal); stroke-width: 1.2;}
+.head{fill: var(--metal-2); stroke: var(--metal); stroke-width: 1.5;}
+.barrel{fill: var(--metal);}
+.ghost{opacity: .38;}
+.ghost .head,.ghost .barrel{stroke: var(--muzzle); stroke-width: 1.5; stroke-dasharray: 4 3;}
+.pivot{fill: var(--pivot);}
+.ring-p{fill: none; stroke: var(--pivot); stroke-width: 1.4;}
+.muzzle{fill: var(--muzzle);}
+.ring-m{fill: none; stroke: var(--muzzle); stroke-width: 1.6;}
+.launch{stroke: var(--muzzle); stroke-width: 2.2; fill: none;}
+.cam-l{fill: var(--left);}
+.cam-r{fill: var(--right);}
+.fov-l{fill: var(--left); fill-opacity: .09; stroke: var(--left); stroke-opacity: .5; stroke-width: 1;}
+.fov-r{fill: var(--right); fill-opacity: .09; stroke: var(--right); stroke-opacity: .5; stroke-width: 1;}
+.dim{stroke: var(--muted); stroke-width: 1; fill: none;}
+.lead{stroke: var(--muted); stroke-width: .8; stroke-dasharray: 2 3; fill: none;}
+.limit{stroke: var(--pivot); stroke-width: 1.1; stroke-dasharray: 5 5; fill: none;}
+.ah-m{fill: var(--muted);}
+.ah-g{fill: var(--muzzle);}
+</style>
+<rect x="0.5" y="0.5" width="599" height="539" style="fill:var(--panel);stroke:var(--line);stroke-width:1"/>
+<defs>
+            <marker id="tM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-m"/></marker>
+            <marker id="tG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-g"/></marker>
+          </defs>
+          <!-- scale 100 px/m ; X = 300 + 100 x ; Y = 330 − 100 z -->
+          <rect class="base" x="132.5" y="162.5" width="335" height="335" rx="2" fill-opacity=".6"/>
+          <path class="fov-l" d="M260,290 L110.3,149.6 L409.7,149.6 Z"/>
+          <path class="fov-r" d="M340,290 L190.3,149.6 L489.7,149.6 Z"/>
+          <path class="limit" d="M110,330 A190,190 0 0 1 490,330"/>
+          <text x="66" y="334" class="t-pivot">−90°</text>
+          <text x="496" y="334" class="t-pivot">+90°</text>
+          <text x="40" y="352" class="t-pivot">heading limit</text>
+          <!-- ghost: heading +30 — head, barrel and cameras turn together (wedges omitted for clarity) -->
+          <g class="ghost" transform="rotate(30 300 330)">
+            <rect class="head" x="252.7" y="285.1" width="94.4" height="124.2" rx="10"/>
+            <rect class="barrel" x="290.2" y="148.75" width="19.6" height="181.25" rx="3"/>
+            <rect x="252" y="283" width="16" height="14" rx="2" class="cam-l"/>
+            <rect x="332" y="283" width="16" height="14" rx="2" class="cam-r"/>
+          </g>
+          <!-- rest head + barrel -->
+          <rect class="head" x="252.7" y="285.1" width="94.4" height="124.2" rx="10" fill-opacity=".85"/>
+          <rect class="barrel" x="290.2" y="148.75" width="19.6" height="181.25" rx="3"/>
+          <!-- cameras on the head's top face, 0.40 ahead of P -->
+          <rect x="252" y="283" width="16" height="14" rx="2" class="cam-l"/>
+          <rect x="332" y="283" width="16" height="14" rx="2" class="cam-r"/>
+          <text x="212" y="294" class="t-left">left</text>
+          <text x="354" y="294" class="t-right">right</text>
+          <!-- pivot -->
+          <circle cx="300" cy="330" r="5" class="pivot"/><circle cx="300" cy="330" r="9" class="ring-p"/>
+          <text x="312" y="346" class="t-pivot">P, O below</text>
+          <!-- muzzles + launch directions -->
+          <circle cx="300" cy="148.75" r="4.5" class="muzzle"/><circle cx="300" cy="148.75" r="8" class="ring-m"/>
+          <line class="launch" x1="300" y1="140" x2="300" y2="96" marker-end="url(#tG)"/>
+          <text x="232" y="92" class="t-muzzle">M0</text>
+          <circle cx="390.6" cy="173" r="4.5" class="muzzle"/><circle cx="390.6" cy="173" r="8" class="ring-m"/>
+          <line class="launch" x1="395" y1="165.4" x2="417" y2="127.3" marker-end="url(#tG)"/>
+          <text x="404" y="190" class="t-muzzle">heading +30° → M</text>
+          <!-- baseline -->
+          <line class="lead" x1="260" y1="297" x2="260" y2="428"/>
+          <line class="lead" x1="340" y1="297" x2="340" y2="428"/>
+          <line class="dim" x1="260" y1="422" x2="340" y2="422" marker-start="url(#tM)" marker-end="url(#tM)"/>
+          <text x="268" y="440" class="t-muted">B = 0.80</text>
+          <!-- forward offset 0.40 -->
+          <line class="lead" x1="252" y1="290" x2="220" y2="290"/>
+          <line class="lead" x1="252" y1="330" x2="220" y2="330"/>
+          <line class="dim" x1="226" y1="290" x2="226" y2="330" marker-start="url(#tM)" marker-end="url(#tM)"/>
+          <text x="184" y="316" class="t-muted">0.40</text>
+          <!-- L -->
+          <line class="lead" x1="310" y1="148.75" x2="530" y2="148.75"/>
+          <line class="lead" x1="348" y1="330" x2="530" y2="330"/>
+          <line class="dim" x1="524" y1="148.75" x2="524" y2="330" marker-start="url(#tM)" marker-end="url(#tM)"/>
+          <text x="530" y="244" class="t-muted">1.8125</text>
+          <!-- axes -->
+          <line class="dim" x1="40" y1="500" x2="90" y2="500" marker-end="url(#tM)"/>
+          <line class="dim" x1="40" y1="500" x2="40" y2="450" marker-end="url(#tM)"/>
+          <text x="96" y="504">x</text><text x="34" y="442">z</text>
+          <text x="20" y="530" class="t-muted">viewed from above · y into the page · wedges: 93.7° FOV, turn with the head</text>
+</svg>

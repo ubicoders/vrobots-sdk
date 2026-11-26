@@ -5,7 +5,7 @@ The three index-parallel arrays that carry your last command back to you beside 
 ## Command in, motion out
 
 `State::actuator` is the only block in a snapshot that is neither truth, measurement nor
-belief. Two of its arrays are an echo of the command you sent, and the third is the
+belief. Two of its arrays report the command the robot is holding, and the third is the
 physical response of the devices. It is published on every state sample, at the state
 rate, whether or not you ever send a command.
 
@@ -15,19 +15,26 @@ mapping from index to physical device comes from the robot type, not from the sn
 
 | Field | Type | Units | Default | Notes |
 |---|---|---|---|---|
-| `pwm` | `Vec<u32>` | µs | empty | commanded pulse widths, your last command echoed back |
-| `normalized` | `Vec<f64>` | | empty | the same command mapped to [-1, 1] |
+| `pwm` | `Vec<u32>` | µs | empty | commanded pulse widths, your last command echoed back, on robots commanded in pulse widths |
+| `normalized` | `Vec<f64>` | | empty | the command as a fraction of its range, [-1, 1] or [0, 1] by device |
 | `measured` | `Vec<f64>` | varies by device | empty | what the device actually did |
 
 `measured` is the array to read carefully, because its unit is a property of the device
 at that index rather than of the array: a rotor reports rad/s, a wheel reports rad/s,
-and a servo reports rad. Nothing in the snapshot tells you which, so the robot type
-decides. Chapter 7 gives the per-robot layouts.
+a servo reports rad, and a linear actuator such as a lift or a rail reports metres. Some
+entries are not motion at all: a held mass in kilograms, a laser range in metres, a
+stop code. Nothing in the snapshot tells you which, so the robot type decides, and the
+robot publishes the answer on a topic of its own, described on
+[Actuator layouts and typed readers](10-actuator-layouts.md#the-layout-is-published).
 
-> **Note.** All three arrays default to empty rather than to a fixed length. A robot
-> that has never been commanded, or a nested table missing from the wire, decodes to
-> empty vectors. Index them with `get`, or check the length, before assuming a rotor
-> count.
+> **Note.** All three arrays default to empty rather than to a fixed length, and each
+> has its own length, because the simulator does not have to report all three for
+> every device. Index them with `get`, or check the length, before assuming a rotor
+> count. Empty is not what "never commanded" looks like, though. Read before any
+> command, the Warehouse forklift reports `pwm` as `[1500, 1500, 1100, 1301]`, its
+> rest frame, with `measured` as `[0, 0, -0.215, 0.4535]`; each arm reports nine
+> entries with `pwm` all 0 and its joint positions in `measured`; the turret reports
+> three zeros.
 
 ## The echo is the only proof a command landed
 
@@ -35,8 +42,9 @@ Commands are fire and forget. They latch, they get no reply, and publishing to a
 nobody is subscribed to is not an error in zenoh, so a command sent while the simulator
 is closed still returns `Ok`. There is no acknowledgement anywhere in the command path.
 
-That leaves exactly one way to confirm that a robot received what you sent: read
-`actuator.pwm` in the next state sample and compare it with what you commanded. The
+That leaves exactly one way to confirm that a robot received what you sent: read the
+actuator block of the next state sample and compare it with what you commanded. On a
+robot commanded in pulse widths that is `actuator.pwm`. The
 robust-loop example makes the point by printing the echo beside the sequence number in
 its status line.
 
@@ -127,16 +135,22 @@ seq=<n> t=<seconds>s pos=(<x>,<y>,<z>) echo=[1501, 1501, 1501, 1501] received=<n
 
 An echo that does not match what you sent is informative in itself. Values that stay at
 their previous setting across several samples mean your command did not reach the
-robot. An empty array means the robot has never been commanded at all. Values that
-differ from yours but do change when you change yours mean the robot received the
-command and did something to it, which is a question for the command chapter rather
-than this one.
+robot. An empty array says only that the robot reported no entries in that sample, not
+that nobody has commanded it yet, so check the length before you compare. Values that differ from yours but do change when
+you change yours mean the robot received the command and did something to it, which is
+a question for the command chapter rather than this one.
+
+> **Gotcha.** The echo is in `pwm` only on robots commanded in pulse widths. The two
+> arms and the turret take SI setpoints, their `pwm` entries are not an echo, and on
+> the arms they are 0 throughout. There the proof is `normalized` and `measured`:
+> the latched tool command comes back in `normalized`, and the joints arrive in
+> `measured`.
 
 ## Three arrays, three questions
 
 | Array | Answers | Use it when |
 |---|---|---|
-| `pwm` | what did I command, in the units I commanded it | confirming a command landed, and comparing against your own setpoint |
+| `pwm` | what did I command, in the units I commanded it | confirming a pulse-width command landed, and comparing against your own setpoint |
 | `normalized` | what fraction of the range was that | logging or plotting across robots with different pulse-width ranges |
 | `measured` | what did the hardware do | detecting saturation, lag between command and response, and stalled devices |
 
@@ -146,19 +160,13 @@ because those two are the command, while `measured` can only follow as fast as t
 modelled device does. Diffing the two over a step is how you observe that behaviour
 without instrumenting the simulator.
 
-## Where the shape differs: the Global Hawk
+## Where the index mapping comes from
 
-The three-array layout is uniform, but what the indices mean is not, and the fixed-wing
-Global Hawk is the case that breaks a naive reading.
-
-| Index | Device | Units in `measured` |
-|---|---|---|
-| 0 to 5 | control panels | deflection in radians |
-| 6 | engine | thrust in newtons |
-
-Code that assumes `measured` is a homogeneous array of rotor speeds produces a thrust
-figure in the wrong units at index 6 and silently mixes radians with newtons in any
-aggregate. Read the robot type first.
+Every robot publishes the kind of device behind each index, on a topic of its own, so the
+mapping does not have to be memorised.
+[Actuator layouts and typed readers](10-actuator-layouts.md) covers that published layout,
+the fixed layouts of each robot type, and the readers that decode a report into named
+fields so that your code never indexes the arrays.
 
 > **Gotcha.** Index-parallel does not mean equal length in general. Read the length of
 > the array you are about to index rather than the length of `pwm`, particularly on
@@ -166,4 +174,4 @@ aggregate. Read the robot type first.
 
 **Next:** [Timestamps and sequence numbers](06-timestamps.md)
 
-**See also:** [Commands latch](../ch04-commands/01-latching.md), [Global Hawk](../ch07-robots/06-globalhawk.md), [Rotors and thrust curves](../ch06-services/06-rotor-config.md)
+**See also:** [Actuator layouts and typed readers](10-actuator-layouts.md), [Commands latch](../ch04-commands/01-latching.md), [Robot properties](../ch06-services/13-properties.md), [Rotors and thrust curves](../ch06-services/06-rotor-config.md)

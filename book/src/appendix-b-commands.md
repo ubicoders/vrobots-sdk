@@ -44,12 +44,28 @@ constant name for logging, returning `""` for an unknown id.
 | `SET_FW_THRUST_BIAS` | 309 | `float_val` | N, signed trim; ignored in `FW_DIRECT_SURFACE` | `set_fw_thrust_bias` | GlobalHawk | **live** |
 | `SET_FW_CTRL_MODE` | 310 | `int_val` | `FW_ONBOARD_RATE` or `FW_DIRECT_SURFACE` | `set_fw_ctrl_mode` | GlobalHawk | **live** |
 | `SET_FW_EST_SOURCE` | 311 | `int_val` | `FW_EST_TRUTH` or `FW_EST_OBSERVER` | `set_fw_est_source` | GlobalHawk | **live** |
+| `SET_FORKLIFT` | 312 | `int_arr`, `[steer, throttle, lift, fork width]` or the same with `brake` as a fifth entry | µs, 1100 to 2000 checked client-side; the forklift's band is 1100/1500/1900. Lift and fork width are positions, and the brake is bottom-anchored | `set_forklift`; with the brake, `set_forklift_with_brake` in Rust and the optional `brake_us` argument in C++ and Python | Forklift | **live** |
+| (reserved) | 313 | | | none; the SDK defines no constant | nothing | absent |
+| `SET_PALLETROBOT` | 314 | `int_arr`, exactly six: `[FL, FR, RL, RR, pad lift, pad turn]` | µs, 1100 to 2000 checked client-side, clamped to 1100 to 1900 by the robot. Wheels are speeds, pad lift a position, pad turn a rate | `set_palletrobot` | PalletRobot | **live** |
+| `SET_ARM_JOINTS` | 315 | `float_arr`, one setpoint per joint: 7 on the rail arm, 6 on the table arm | m for the rail, rad for A1 to A6; each clamped to its joint range | `set_arm_joints` | RailArm, TableArm | **live** |
+| `SET_ARM_VACUUM` | 316 | `int_val` | 1 on, 0 off | `set_arm_vacuum` | RailArm; the table arm ignores it | **live** |
+| `SET_TURRET_RATES` | 317 | `float_arr`, `[heading rate, pitch rate]` | rad/s, clamped to each joint's max rate | `set_turret_rates` | Turret | **live** |
+| `SET_TURRET_JOINTS` | 318 | `float_arr`, `[heading, pitch]` | rad, clamped to each joint's limits | `set_turret_joints` | Turret | **live** |
+| `SET_TURRET_LASER` | 319 | `int_val` | 1 on, 0 off | `set_turret_laser` | Turret | **live** |
+| `SET_ARM_GRIPPER` | 320 | `float_val` | m, the gap between the pads, clamped to 0 to 0.085 | `set_arm_gripper` | TableArm; the rail arm ignores it | **live** |
 
 Where the `CmdArgs` field says "not documented", the SDK ships no typed method for that id
 and the source does not name the field it reads, so the payload shape has to come from the
 simulator before you build on it. The units given for those ids follow from the SDK's
 everything-is-SI rule and the constant's name rather than from a statement in the source.
 <!-- VERIFY: units for the not-yet-acted-on ids (1, 2, 3, 50, 52, 53, 54, 100, 101, 102, 203, 204, 205) are inferred from the SI rule plus the constant name; nothing in the repo states them. -->
+
+Ids 312 to 320 carry per-channel or per-joint numbers with no axes, so none of them is
+frame-converted. A frame of the wrong length is dropped whole by the robot without a reply;
+for `SET_ARM_JOINTS` the SDK refuses a wrong count with `InvalidArgument` on a handle
+connected as a rail arm or a table arm. `SET_TURRET_RATES` and `SET_TURRET_JOINTS` share one
+latch, so whichever arrived last is in charge. Id 313 is reserved in the numbering for a robot
+type that is not in the simulator.
 
 The `CmdArgs` field for `SET_ANGVEL` is `vec3`, verifiable from both ends: `set_angvel`
 builds `CmdArgs::vector(rates)`, and on the way back `subscribe_command` yields a
@@ -154,10 +170,10 @@ The struct is `#[non_exhaustive]`, so it cannot be built with a struct literal. 
 
 | Builder | Sets | Typical use |
 |---|---|---|
-| `CmdArgs::ints(&[i32])` | `int_arr` | `SET_MR_PWM`, `SET_CAR` |
-| `CmdArgs::floats(&[f64])` | `float_arr` | `SET_FW_SURFACES` |
+| `CmdArgs::ints(&[i32])` | `int_arr` | `SET_MR_PWM`, `SET_CAR`, `SET_FORKLIFT`, `SET_PALLETROBOT` |
+| `CmdArgs::floats(&[f64])` | `float_arr` | `SET_FW_SURFACES`, `SET_ARM_JOINTS`, `SET_TURRET_RATES`, `SET_TURRET_JOINTS` |
 | `CmdArgs::vector([f64;3])` | `vec3` | `SET_BODY_FORCE` |
-| `with_int_val`, `with_float_val` | `int_val`, `float_val` | `SET_FW_CTRL_MODE`, `SET_MSD` |
+| `with_int_val`, `with_float_val` | `int_val`, `float_val` | `SET_FW_CTRL_MODE`, `SET_ARM_VACUUM`, `SET_TURRET_LASER`; `SET_MSD`, `SET_ARM_GRIPPER` |
 | `with_int_arr`, `with_float_arr` | `int_arr`, `float_arr` | |
 | `with_vec3`, `with_vec4` | `vec3`, `vec4` | |
 | `with_vec3_arr`, `with_vec4_arr` | `vec3_arr`, `vec4_arr` | `SET_BODY_FT`'s torque half |
@@ -173,4 +189,4 @@ acted on the id.
 
 **Next:** [Appendix C: Error reference](appendix-c-errors.md)
 
-**See also:** [The generic command](ch04-commands/06-generic-cmd.md), [Commands latch](ch04-commands/01-latching.md)
+**See also:** [The generic command](ch04-commands/06-generic-cmd.md), [Commands latch](ch04-commands/01-latching.md), [Driving the forklift](ch04-commands/11-forklift.md), [Driving the pallet robot](ch04-commands/12-palletrobot.md), [Arm joints and tools](ch04-commands/13-arms.md), [Aiming the turret](ch04-commands/14-turret.md)

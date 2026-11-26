@@ -28,7 +28,7 @@
 
 ---
 
-# The API in four slices
+# The API in six slices
 
 - [Reading state](ch03-reading-state/00-intro.md)
     - [Truth, measured and believed](ch03-reading-state/01-truth-measured-believed.md)
@@ -40,6 +40,7 @@
     - [Pacing your loop](ch03-reading-state/07-pacing.md)
     - [Stream health](ch03-reading-state/08-health.md)
     - [A tour of the whole snapshot](ch03-reading-state/09-sensors-tour.md)
+    - [Actuator layouts and typed readers](ch03-reading-state/10-actuator-layouts.md)
 
 - [Sending commands](ch04-commands/00-intro.md)
     - [Commands latch](ch04-commands/01-latching.md)
@@ -52,6 +53,10 @@
     - [Reading someone else's commands](ch04-commands/08-reading-commands.md)
     - [Publishing estimates](ch04-commands/09-publishing-estimates.md)
     - [The showcase attitude estimator](ch04-commands/10-showcase-estimator.md)
+    - [Driving the forklift](ch04-commands/11-forklift.md)
+    - [Driving the pallet robot](ch04-commands/12-palletrobot.md)
+    - [Arm joints and tools](ch04-commands/13-arms.md)
+    - [Aiming the turret](ch04-commands/14-turret.md)
 
 - [Cameras and images](ch05-cameras/00-intro.md)
     - [Mount, open and unmount](ch05-cameras/01-mount-open-unmount.md)
@@ -63,6 +68,14 @@
     - [Saving a frame](ch05-cameras/07-saving-frames.md)
     - [Showing frames in a window](ch05-cameras/08-showing-frames.md)
 
+- [Lidar](ch09-lidar/00-intro.md)
+    - [Opening a lidar stream](ch09-lidar/01-opening.md)
+    - [Inside a scan](ch09-lidar/02-scan-layout.md)
+    - [Points and frames](ch09-lidar/03-points-and-frames.md)
+    - [Configuring a lidar](ch09-lidar/04-configuring.md)
+
+- [Safety events](ch10-events/00-safety-events.md)
+
 - [Services and configuration](ch06-services/00-intro.md)
     - [Robot lifecycle](ch06-services/01-lifecycle.md)
     - [Mass and inertia](ch06-services/02-physical-params.md)
@@ -72,6 +85,11 @@
     - [Rotors and thrust curves](ch06-services/06-rotor-config.md)
     - [Mass spring damper and cart pole](ch06-services/07-msd-cartpole-config.md)
     - [Skins](ch06-services/08-skins.md)
+    - [Forklift and pallet robot configuration](ch06-services/09-warehouse-config.md)
+    - [Arm configuration](ch06-services/10-arm-config.md)
+    - [Turret configuration](ch06-services/11-turret-config.md)
+    - [Lidar configuration](ch06-services/12-lidar-config.md)
+    - [Robot properties](ch06-services/13-properties.md)
 
 ---
 
@@ -84,6 +102,11 @@
     - [Cart pole](ch07-robots/04-cartpole.md)
     - [Half drone](ch07-robots/05-halfdrone.md)
     - [Global Hawk](ch07-robots/06-globalhawk.md)
+    - [Forklift](ch07-robots/08-forklift.md)
+    - [Pallet robot](ch07-robots/09-palletrobot.md)
+    - [Rail arm](ch07-robots/10-rail-arm.md)
+    - [Table arm](ch07-robots/11-table-arm.md)
+    - [Turret](ch07-robots/12-turret.md)
     - [Known simulator issues](ch07-robots/07-known-issues.md)
 
 - [Tooling and diagnostics](ch08-tooling/00-intro.md)

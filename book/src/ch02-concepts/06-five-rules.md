@@ -92,7 +92,8 @@ physics thread, at a point in the step where applying it is safe. Waiting for th
 before replying would put a physics frame of latency into every service call.
 
 **How you detect the failure.** By measuring, because the ack will not tell you.
-**Only `srv/skin` ever answers `ok = false`.** A wrong rotor count, an unknown frame
+**Only `srv/skin` and `srv/lidars` ever answer `ok = false`**, each for a plan refusal. A
+wrong rotor count, an unknown frame
 id, a `drive_mode` that is not 2 or 4: all acked `ok` and refused by a simulator log
 line no client can see. The SDK refuses what it can before sending, which is what
 every `VrError::InvalidArgument` from a configuration call is. For the rest, read the

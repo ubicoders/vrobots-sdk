@@ -183,6 +183,7 @@ State t=12.520 pos=(0.032,0.85,-1.21)
 | [Pacing your loop](07-pacing.md) | Free-running against sample-paced loops |
 | [Stream health](08-health.md) | Counters, `last_error`, stalls and restarts |
 | [A tour of the whole snapshot](09-sensors-tour.md) | One program that prints all of it at once |
+| [Actuator layouts and typed readers](10-actuator-layouts.md) | What each actuator index is on each robot, and the readers that decode it |
 
 **Next:** [Truth, measured and believed](01-truth-measured-believed.md)
 

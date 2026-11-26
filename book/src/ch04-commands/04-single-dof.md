@@ -86,7 +86,7 @@ robot.reset()
 
 The three spell the optional configuration fields differently, and the difference is worth
 noticing because it is the pattern for every service in
-[chapter 6](../ch06-services/00-intro.md). Rust chains `with_*` setters on a default; Python
+[Services and configuration](../ch06-services/00-intro.md). Rust chains `with_*` setters on a default; Python
 takes keyword arguments and omits what it does not set; C++ builds the plain C struct from
 `vrsdk::msd_config()` and sets a `has_*` flag beside each value. Forgetting the `has_*` flag
 in C++ means the field is silently not applied.

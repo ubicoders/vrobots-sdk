@@ -178,7 +178,8 @@ Every example so far attached by id, which is `Some(SYS_ID)` in Rust. This one p
 `robot.sys_id()` is the only way to learn it.
 
 Creating is limited by the scene's catalog, not the SDK's. The sandbox scene registers
-`multirotor`, `truck` and `msd`; any other key is refused with a message naming the ones it
+eight keys (`multirotor`, `truck`, `msd`, `forklift`, `palletrobot`, `kr210_rail`,
+`tablearm` and `turret`); any other key is refused with a message naming the ones it
 does know, which is also the only live way to enumerate the catalog. Robot types that are
 scene-authored only, such as the cart pole and the Global Hawk, can be attached to but
 never created.

@@ -7,7 +7,8 @@ Which vector is in which frame, what coord_frame_id decides, and the conventions
 Metres, seconds, kilograms, newtons, radians, pascals, degrees Celsius. There are no
 scaled integers anywhere in the state stream: this SDK publishes physical units
 directly, so a gyroscope reading is rad/s rather than a count to be divided by
-something.
+something. Joints follow the same rule: a revolute joint is in radians and a linear
+one, such as a forklift's lift or an arm's rail, is in metres.
 
 Three places break the pattern, and each is called out where it appears:
 `mount_euler_deg` on a camera and `initial_pole_angle_deg` on a cart-pole are in
@@ -103,7 +104,8 @@ convenience tag beside it for the cases where a numeric comparison is easier.
 
 `"fru"` is a registered id with no `Axes` constant, and it is the scene default on a
 fresh launch, which makes this concrete rather than theoretical: a robot can publish
-a frame whose `Axes` tag is `UNSPECIFIED` and whose string is meaningful.
+a frame whose `Axes` tag is `UNSPECIFIED` and whose string is meaningful. `"flu"` is
+the second such id, and every lidar scan carries it.
 
 Frames are set at three levels, scene, robot and device, and **the most specific
 wins**. `scene_frame()` reads the scene level; `srv/frames` sets the robot and device
@@ -111,10 +113,11 @@ levels. [Coordinate frames](../ch06-services/04-frames-config.md) is the whole
 picture.
 
 The robots do not agree with each other. The truck publishes `"fru"`, while the
-multirotor and the Global Hawk publish `"frd"` (the Global Hawk verified live on
-2026-08-09 against simulator v3.0.0), so the third component is up for one and down
-for the others, and altitude on the multirotor is minus that component.
-<!-- VERIFY: the frames of the robot types other than truck, multirotor and Global Hawk. No per-robot frame default exists in the SDK source, and those three are live-verified (truck fru, multirotor frd, Global Hawk frd); the rest still need a live sim. -->
+multirotor and the Global Hawk publish `"frd"`, so the third component is up for one
+and down for the others, and altitude on the multirotor is minus that component. The
+forklift, the pallet robot and both arms publish `"fru"` as the truck does, with the
+`Axes` tag reading `UNSPECIFIED`, and the turret publishes `"cv"` with `Axes::CV`.
+<!-- VERIFY: the default frames of the mass spring damper, cart pole and half drone still need a live sim. Truck fru, multirotor frd, Global Hawk frd, forklift fru, pallet robot fru, rail arm fru, table arm fru and turret cv are live-verified. -->
 
 > **Gotcha.** Two handles in one process is the program where this bites hardest,
 > because a distance between two positions in different frames is silently wrong
@@ -122,6 +125,69 @@ for the others, and altitude on the multirotor is minus that component.
 > before combining. `examples/rust/src/bin/ex18_multi_robot.rs` prints the tag beside
 > each position and marks its own separation calculation as wrong when the two
 > disagree.
+
+## FLU, the frame a lidar reports in
+
+`"flu"` is forward-left-up: +x forward, +y left, +z up, right-handed, the body
+convention ROS uses. It is a built-in frame like the other four, so `srv/frames`
+accepts it for a robot or a device, and no `Axes` constant exists for it. A header in
+FLU carries `Axes::UNSPECIFIED` beside `coord_frame_id = "flu"`, and the string is
+the only way to recognize it. It differs from `"fru"` in the second axis alone, and
+that one sign changes the handedness:
+[Rotation conversions](08-rotation-conversions.md) covers what follows from that.
+
+Every lidar starts in FLU **whatever frame its robot reports in**, because the beam
+layout of a scan is defined in FLU. That makes a lidar the exception to the
+three-level rule above: a device normally inherits its robot's frame until you
+override it, and a lidar does not.
+
+You override one lidar by naming it as a device, `lidar/` followed by the unit's
+name, and a helper builds that name:
+
+{{#tabs global="lang" }}
+{{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/services.rs`, in the module `device`:
+
+```rust
+pub fn lidar(name: &str) -> String
+```
+
+{{#endtab }}
+{{#tab name="C++" }}
+
+`include/vrobots_sdk.hpp`, in namespace `vrsdk::device`:
+
+```cpp
+inline std::string lidar(const std::string& name) { return "lidar/" + name; }
+```
+
+{{#endtab }}
+{{#tab name="Python" }}
+
+`vrsdk/_vrsdk.pyi`:
+
+```python
+class device:
+    @staticmethod
+    def lidar(name: str) -> str: ...
+```
+
+{{#endtab }}
+{{#endtabs }}
+
+That is a helper rather than a program, so there is no output: for the forklift's
+unit named `lidar` it returns `"lidar/lidar"`. Pass the result to `set_frames` as the
+device of an override, exactly as you would a camera's.
+
+An override re-labels the **points** a scan converts to. It never changes the ranges
+or their order, because a range is a distance along a beam and has no axes.
+
+> **Gotcha.** Clearing a lidar's override with `"inherit"` does not return it to
+> FLU. It makes the lidar follow its robot's frame, as any other device does. To get
+> FLU back, set the override to `"flu"`.
+
+[Points and frames](../ch09-lidar/03-points-and-frames.md) covers a scan's points.
 
 ## Your frame and the robot's frame are different questions
 
@@ -169,4 +235,4 @@ works through what that means for each field.
 
 **Next:** [Rotation conversions](08-rotation-conversions.md)
 
-**See also:** [Coordinate frames](../ch06-services/04-frames-config.md), [Kinematics](../ch03-reading-state/02-kinematics.md), [More than one robot](../ch08-tooling/06-multi-robot.md)
+**See also:** [Coordinate frames](../ch06-services/04-frames-config.md), [Kinematics](../ch03-reading-state/02-kinematics.md), [Lidar](../ch09-lidar/00-intro.md), [More than one robot](../ch08-tooling/06-multi-robot.md)

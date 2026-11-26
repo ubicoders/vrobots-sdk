@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -60 720 470" width="720" height="470" role="img" aria-label="Side view of the turret with the stereo pair on top of the head: floor, robot origin, base, pylon, pivot, head with cameras, barrel and muzzle, and the head also drawn pitched up 20 degrees with the cameras riding along">
+<title>Side view of the turret with the stereo pair on top of the head: floor, robot origin, base, pylon, pivot, head with cameras, barrel and muzzle, and the head also drawn pitched up 20 degrees with the cameras riding along</title>
+<style>
+:root{--bg:#f4f6f6;--panel:#ffffff;--ink:#1c2329;--muted:#5d6870;--line:#cfd6d9;--grid:#e4e9ea;--pivot:#d9480f;--left:#1864ab;--right:#a61e4d;--muzzle:#2b8a3e;--metal:#8a959c;--metal-2:#c3cbcf;--mono:ui-monospace, "JetBrains Mono", "Cascadia Mono", Consolas, Menlo, monospace}
+@media (prefers-color-scheme: dark){:root{--bg:#12171b;--panel:#1a2126;--ink:#e3e8eb;--muted:#97a3ab;--line:#34404a;--grid:#222b31;--pivot:#ff8a4c;--left:#74b4f0;--right:#f07fa6;--muzzle:#69db7c;--metal:#6f7b83;--metal-2:#3f484e}}
+svg text{font-family: var(--mono); font-size: 12px; fill: var(--ink);}
+svg .t-muted{fill: var(--muted);}
+svg .t-pivot{fill: var(--pivot); font-weight: 600;}
+svg .t-left{fill: var(--left); font-weight: 600;}
+svg .t-muzzle{fill: var(--muzzle); font-weight: 600;}
+.floor{stroke: var(--muted); stroke-width: 1.5;}
+.hatch{stroke: var(--line); stroke-width: 1;}
+.base{fill: var(--metal-2); stroke: var(--metal); stroke-width: 1.2;}
+.pylon{fill: var(--metal);}
+.head{fill: var(--metal-2); stroke: var(--metal); stroke-width: 1.5;}
+.barrel{fill: var(--metal);}
+.ghost{opacity: .38;}
+.ghost .head,.ghost .barrel{stroke: var(--muzzle); stroke-width: 1.5; stroke-dasharray: 4 3;}
+.axis{stroke: var(--pivot); stroke-width: 1.2; stroke-dasharray: 6 4; fill: none;}
+.pivot{fill: var(--pivot);}
+.ring-p{fill: none; stroke: var(--pivot); stroke-width: 1.4;}
+.origin{fill: var(--panel); stroke: var(--ink); stroke-width: 1.6;}
+.muzzle{fill: var(--muzzle);}
+.ring-m{fill: none; stroke: var(--muzzle); stroke-width: 1.6;}
+.launch{stroke: var(--muzzle); stroke-width: 2.2; fill: none;}
+.cam-l{fill: var(--left);}
+.mount{fill: var(--muted);}
+.fov-l{fill: var(--left); fill-opacity: .09; stroke: var(--left); stroke-opacity: .5; stroke-width: 1;}
+.ray-l{stroke: var(--left); stroke-width: 2; fill: none;}
+.ray-y{stroke: var(--left); stroke-width: 1.5; fill: none; stroke-dasharray: 3 3;}
+.dim{stroke: var(--muted); stroke-width: 1; fill: none;}
+.lead{stroke: var(--muted); stroke-width: .8; stroke-dasharray: 2 3; fill: none;}
+.ah-l{fill: var(--left);}
+.ah-m{fill: var(--muted);}
+.ah-g{fill: var(--muzzle);}
+</style>
+<rect x="0.5" y="-59.5" width="719" height="469" style="fill:var(--panel);stroke:var(--line);stroke-width:1"/>
+<defs>
+            <marker id="sL" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-l"/></marker>
+            <marker id="sM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-m"/></marker>
+            <marker id="sG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-g"/></marker>
+          </defs>
+          <!-- scale 120 px/m ; X = 240 + 120 z ; Y = 360 − 120 h  (h = −y) -->
+          <line class="floor" x1="20" y1="369.2" x2="560" y2="369.2"/>
+          <g class="hatch"><line x1="40" y1="369" x2="30" y2="379"/><line x1="80" y1="369" x2="70" y2="379"/><line x1="120" y1="369" x2="110" y2="379"/><line x1="160" y1="369" x2="150" y2="379"/><line x1="200" y1="369" x2="190" y2="379"/><line x1="240" y1="369" x2="230" y2="379"/><line x1="280" y1="369" x2="270" y2="379"/><line x1="320" y1="369" x2="310" y2="379"/><line x1="360" y1="369" x2="350" y2="379"/><line x1="400" y1="369" x2="390" y2="379"/><line x1="440" y1="369" x2="430" y2="379"/><line x1="480" y1="369" x2="470" y2="379"/><line x1="520" y1="369" x2="510" y2="379"/><line x1="560" y1="369" x2="550" y2="379"/></g>
+          <!-- base, base element, pylon, pylon element -->
+          <rect class="base" x="39" y="309" width="402" height="60.2" rx="2"/>
+          <rect class="base" x="168.7" y="289.1" width="142.6" height="36.4" rx="2"/>
+          <rect class="pylon" x="207.6" y="130.3" width="64.8" height="158.8"/>
+          <rect class="pylon" x="197.4" y="232.2" width="85.2" height="43.1" rx="3"/>
+          <line class="axis" x1="240" y1="-20" x2="240" y2="388"/>
+          <!-- camera view at rest: 61.9° vertical FOV about an optical axis parallel to the barrel -->
+          <path class="fov-l" d="M288,65.2 L438,-24.8 L438,155.2 Z"/>
+          <!-- ghost pose: pitch +20 deg about P — head, barrel and the cameras on it -->
+          <g class="ghost" transform="rotate(-20 240 107.2)">
+            <rect class="head" x="144.8" y="76.9" width="149.1" height="60.5" rx="10"/>
+            <rect class="barrel" x="240.3" y="88.7" width="217.2" height="22.5" rx="3"/>
+            <rect class="mount" x="276" y="69.2" width="24" height="7.7"/>
+            <rect x="279" y="58.2" width="18" height="14" rx="2" class="cam-l"/>
+            <line class="ray-y" x1="297" y1="65.2" x2="392" y2="65.2"/>
+          </g>
+          <!-- rest pose head + barrel -->
+          <rect class="head" x="144.8" y="76.9" width="149.1" height="60.5" rx="10"/>
+          <rect class="barrel" x="240.3" y="88.7" width="217.2" height="22.5" rx="3"/>
+          <!-- stereo pair on the head's top face: optical centre 0.35 above P, 0.40 ahead -->
+          <rect class="mount" x="276" y="69.2" width="24" height="7.7"/>
+          <rect x="279" y="58.2" width="18" height="14" rx="2" class="cam-l"/>
+          <line class="ray-l" x1="297" y1="65.2" x2="378" y2="65.2" marker-end="url(#sL)"/>
+          <text x="384" y="69" class="t-left">z_cam</text>
+          <line class="lead" x1="292" y1="57" x2="318" y2="-34"/>
+          <text x="300" y="-40" class="t-left">L/R cameras on the head, 0° tilt</text>
+          <!-- pivot P -->
+          <circle cx="240" cy="107.2" r="5" class="pivot"/><circle cx="240" cy="107.2" r="9" class="ring-p"/>
+          <text x="180" y="100" class="t-pivot">P pivot</text>
+          <!-- muzzle at rest + launch direction -->
+          <circle cx="457.5" cy="100" r="4.5" class="muzzle"/><circle cx="457.5" cy="100" r="8" class="ring-m"/>
+          <line class="launch" x1="466" y1="100" x2="520" y2="100" marker-end="url(#sG)"/>
+          <text x="420" y="132" class="t-muzzle">M0 launch point</text>
+          <!-- muzzle at pitch +20 -->
+          <circle cx="441.9" cy="26" r="4.5" class="muzzle"/><circle cx="441.9" cy="26" r="8" class="ring-m"/>
+          <line class="launch" x1="450" y1="23.1" x2="496" y2="6.4" marker-end="url(#sG)"/>
+          <text x="500" y="32" class="t-muzzle">pitch +20°</text>
+          <!-- L dimension -->
+          <line class="lead" x1="457.5" y1="110" x2="457.5" y2="186"/>
+          <line class="dim" x1="240" y1="180" x2="457.5" y2="180" marker-start="url(#sM)" marker-end="url(#sM)"/>
+          <text x="330" y="174" class="t-muted">1.8125</text>
+          <!-- camera offsets from P: 0.40 forward, 0.350 up -->
+          <line class="lead" x1="288" y1="56" x2="288" y2="22"/>
+          <line class="dim" x1="240" y1="28" x2="288" y2="28" marker-start="url(#sM)" marker-end="url(#sM)"/>
+          <text x="244" y="20" class="t-muted">0.40</text>
+          <line class="lead" x1="144" y1="107.2" x2="112" y2="107.2"/>
+          <line class="lead" x1="278" y1="65.2" x2="112" y2="65.2"/>
+          <line class="dim" x1="118" y1="65.2" x2="118" y2="107.2" marker-start="url(#sM)" marker-end="url(#sM)"/>
+          <text x="66" y="90" class="t-muted">0.350</text>
+          <!-- robot origin -->
+          <circle cx="240" cy="360" r="5.5" class="origin"/>
+          <text x="252" y="356">O robot origin</text>
+          <!-- height ruler -->
+          <line class="dim" x1="580" y1="65.2" x2="580" y2="369.2"/>
+          <line class="lead" x1="444" y1="65.2" x2="580" y2="65.2"/>
+          <line class="lead" x1="527" y1="100" x2="580" y2="100"/>
+          <line class="lead" x1="250" y1="107.2" x2="580" y2="107.2"/>
+          <line class="lead" x1="273" y1="130.3" x2="580" y2="130.3"/>
+          <line class="lead" x1="312" y1="289.1" x2="580" y2="289.1"/>
+          <line class="lead" x1="442" y1="309" x2="580" y2="309"/>
+          <line class="lead" x1="246" y1="360" x2="580" y2="360"/>
+          <g class="dim"><line x1="574" y1="65.2" x2="586" y2="65.2"/><line x1="574" y1="100" x2="586" y2="100"/><line x1="574" y1="107.2" x2="586" y2="107.2"/><line x1="574" y1="130.3" x2="586" y2="130.3"/><line x1="574" y1="289.1" x2="586" y2="289.1"/><line x1="574" y1="309" x2="586" y2="309"/><line x1="574" y1="360" x2="586" y2="360"/><line x1="574" y1="369.2" x2="586" y2="369.2"/></g>
+          <text x="592" y="69" class="t-left">cameras 2.457</text>
+          <text x="592" y="97" class="t-muzzle">muzzle 2.167</text>
+          <text x="592" y="117" class="t-pivot">P pivot 2.107</text>
+          <text x="592" y="136" class="t-muted">pylon top 1.914</text>
+          <text x="592" y="290">pylon origin 0.591</text>
+          <text x="592" y="313" class="t-muted">base top 0.425</text>
+          <text x="592" y="358">O 0.000</text>
+          <text x="592" y="378" class="t-muted">floor −0.076</text>
+          <text x="20" y="402" class="t-muted">viewed from the turret's right side · x out of the page · left and right cameras overlap</text>
+</svg>

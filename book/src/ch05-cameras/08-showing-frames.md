@@ -224,6 +224,6 @@ so a gap between them means frames arrived while the loop was inside `cvtColor` 
 `imshow`. `seq_gaps` is the different and more serious number: it counts frames the
 publisher sent that never arrived at all.
 
-**Next:** [Services and configuration](../ch06-services/00-intro.md)
+**Next:** [Lidar](../ch09-lidar/00-intro.md)
 
 **See also:** [Inside a frame](03-frames.md), [Freshness](04-freshness.md), [Saving a frame](07-saving-frames.md)

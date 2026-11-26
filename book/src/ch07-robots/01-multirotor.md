@@ -37,11 +37,10 @@ it, do not assume four.
 Nothing sits between your pulse widths and those curves. There is no attitude
 stabilisation and no rate damping, so you are the flight controller.
 
-The prefab's default mass and inertia are not documented in the SDK; confirm against a live
-simulator. The only documented behaviour is that a mass of zero or less leaves the prefab's
-value in place, and that an inertia triple which is not strictly positive on all three axes
-leaves Unity's collider-derived tensor in place.
-<!-- VERIFY: default prefab mass and moments of inertia for the multirotor. Not present anywhere in the repository. -->
+The airframe weighs 1 kg by default, and its inertia is the one the simulator computes from
+its collision shapes. A mass of zero or less sent through `set_physical_params` leaves the
+default in place, and an inertia triple which is not strictly positive on all three axes
+leaves the computed tensor in place. The full list is under [Hardware](#hardware).
 
 ## Commands accepted
 
@@ -65,7 +64,7 @@ there is no watchdog, and no command is ever acknowledged: proof that one landed
 
 ## Services
 
-The common seven plus `srv/rotors`, which carries the whole rotor list. The list is
+The common eight plus `srv/rotors`, which carries the whole rotor list. The list is
 replaced rather than merged, so the slice you send must describe every rotor in index
 order; a wrong-length slice makes the simulator drop the entire request and acknowledge
 `ok` anyway. There is no read-back and no per-field flags inside an entry, so
@@ -91,10 +90,107 @@ The simulator substitutes 1100 to 2000 if the band is not strictly increasing. A
 control authority.
 
 Skins are available: `blue`, `desert`, `gold`, `green`, `mono`, `pink`, `snow`, `white`.
-`srv/skin` is the only service that ever answers `ok = false`, and it does so because the
-catalog is tier-gated, which is why a refusal must not be retried.
+`srv/skin` answers `ok = false` only because the catalog is tier-gated, which is why a
+refusal must not be retried.
 
-## Frame and units
+## Hardware
+
+The drawings are to scale, on a 0.1 m grid, and every position is measured from the robot
+origin O. The outline is the blue airframe, which the gold, green and white skins share.
+The labels read as you see them, up and forward; the tables below give the same mounts in
+the robot's `frd` frame, where z points down, so a height of 0.35 m is z = -0.35.
+
+[![Multirotor side view: two cameras under the front of the airframe and a 3-D lidar on a short mast](images/multirotor-side.svg)](images/multirotor-side.svg)
+
+*Side view, forward to the right. The green wedges are the lidar's ring fan, 15 degrees
+above and below level, drawn 0.24 m long. The dashed lines are the rotor discs, whose tops
+are 0.200 m above O, and the lowest ring passes over them. Both cameras share one position
+in this view.*
+
+[![Multirotor top view: the stereo pair 0.20 m either side of the centreline and the lidar at the centre](images/multirotor-top.svg)](images/multirotor-top.svg)
+
+*Top view, forward to the right and the robot's left up. The four small dashed circles are
+the rotor discs, 0.121 m in radius. The large dashed circle marks the lidar's 360 degree
+sweep, and the camera wedges are the 56.1 degree horizontal field of view.*
+
+[![Multirotor rear view: both cameras immediately below the airframe and the lidar above the body](images/multirotor-rear.svg)](images/multirotor-rear.svg)
+
+*Rear view, looking forward, the robot's left on the left. The cameras sit immediately below the
+airframe's lowest point, which is 0.108 m above O, and the lidar stands on a short mast
+above the body.*
+
+### Actuators
+
+One entry per rotor, in rotor order. The shipped airframe has four.
+
+| # | Device | Kind | Driven by | `measured` | Range and rate limit |
+|---|---|---|---|---|---|
+| 0 to n-1 | rotor | rotor | the `SET_MR_PWM` entry of the same index | rotor speed, rad/s | 1100 to 2000 µs. No slew: thrust, torque and speed follow the pulse on the next physics step |
+
+With the default curves a rotor gives no thrust at 1100 µs and about 8.8 N at 2000 µs, where
+it turns at 1193 rad/s. `actuator.pwm` echoes the pulse each rotor is acting on, which is
+the only receipt a command has. Where each rotor sits is part of the airframe model and is
+not published; `srv/rotors` replaces the whole list.
+<!-- VERIFY: the shipped rotor positions and spin directions. They come from the airframe model and nothing in the sources lists them. -->
+
+### Sensors
+
+The standard five are fitted, all at the robot origin. Naming a sensor the robot does not
+carry in a sensor config request is skipped with a simulator log line and still
+acknowledged `ok`.
+
+| Sensor | Measures | Units | Rate | Mount | Frame | What to know |
+|---|---|---|---|---|---|---|
+| Accelerometer | specific force on the body axes | m/s² | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | +1 g at rest and 0 in free fall; clips without warning at ±2 g (19.61 m/s²); resolution about 0.0006 m/s²; white noise, a turn-on bias and a slowly drifting bias |
+| Gyroscope | body rates | rad/s | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | clips at ±250 deg/s (4.36 rad/s); resolution about 0.00013 rad/s; a turn-on bias of about 0.3 deg/s, one sigma, plus drift |
+| Magnetometer | ambient magnetic field on the body axes | gauss | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | clips at ±49.1 G; resolution 0.0015 G; a fixed turn-on offset of about 0.05 G, one sigma |
+| Barometer | static pressure, and the pressure altitude computed from it | Pa, m | every state sample | robot origin | none: the readings are scalars | pressure noise of 3 Pa, about 0.25 m near sea level; the altitude is computed from the noisy pressure |
+| GNSS | geodetic position and velocity | deg, deg, m and m/s | every state sample | robot origin, no antenna offset | geographic in every frame: latitude, longitude, altitude, and velocity as north, east, down | position noise of 1.5 m horizontal and 3.0 m vertical, velocity noise of 0.05 m/s horizontal and 0.08 m/s vertical, one sigma |
+| Optical flow | horizontal ground velocity on the body axes | m/s | every state sample, once fitted | robot origin | the robot's, `frd` | **not fitted by default**; fit it through sensor config; noise of 0.05 m/s per axis |
+
+The noise figures are the simulator's defaults, and every one of them is settable: see
+[Sensor noise](../ch06-services/03-sensor-config.md). The fields each device publishes are on
+[Sensors](../ch03-reading-state/03-sensors.md). A device keeps the robot's frame unless you
+give it one of its own through [Coordinate frames](../ch06-services/04-frames-config.md).
+<!-- VERIFY: GNSS update rate. The Sensors page describes a receiver at about 5 Hz; the simulator's notes describe a fresh fix on every physics step. -->
+
+### Cameras
+
+A forward stereo pair slung under the front of the airframe, 0.40 m apart.
+
+| Name | Mount in `frd`, m | Orientation | Stream | Focal lengths | Field of view | Clip | Rate | Plan |
+|---|---|---|---|---|---|---|---|---|
+| `front_left` | (0.20, -0.20, -0.10) | straight ahead along +x, no tilt | 720p rgba8, 1280 by 720 | fx 1200 px, fy 900 px | 56.1 by 43.6 degrees | 0.1 to 1000 m | every rendered frame, about 60 per second | Community and Pro |
+| `front_right` | (0.20, 0.20, -0.10) | straight ahead along +x, no tilt | 720p rgba8, 1280 by 720 | fx 1200 px, fy 900 px | 56.1 by 43.6 degrees | 0.1 to 1000 m | every rendered frame, about 60 per second | Pro |
+
+`open_camera` attaches to either; mount more with `mount_camera` when that pair cannot
+serve. On the Community plan only the first camera of the focused robot streams. Each frame
+carries the intrinsics and the mount pose it was rendered with, so read them from
+`Frame::intrinsics` and do not hard-code the table. See
+[Cameras and images](../ch05-cameras/00-intro.md).
+
+### Lidars
+
+| Name | Kind | Mount in `frd`, m | Orientation | Beam layout | Range | Rate | Points frame | Plan |
+|---|---|---|---|---|---|---|---|---|
+| `lidar` | 3-D | (0, 0, -0.35) | spin axis up, no rotation | 16 rings from -15 to +15 degrees, 2 degrees apart; 900 columns per revolution, 0.4 degrees apart; 14 400 ranges a scan | 0.4 to 100 m | 20 scans a second | `flu`, whatever the robot's frame | Pro |
+
+Open it with `open_lidar_3d("lidar")`; it streams over iceoryx2. The robot's own body is
+looked through, and a beam with no return reads `+infinity`. See
+[Lidar](../ch09-lidar/00-intro.md).
+
+### Body and frame
+
+| Property | Value |
+|---|---|
+| Mass | 1 kg |
+| Centre of mass | at the robot origin |
+| Inertia | computed by the simulator from the airframe's collision shapes; not documented |
+| Robot origin | 0.108 m below the airframe's lowest point |
+| Rotor discs | 0.121 m in radius, tops 0.200 m above the origin |
+| Default frame | `frd`: x forward, y right, z down |
+
+<!-- VERIFY: default moments of inertia for the multirotor. `properties()` reads the live values. -->
 
 Everything is SI. Within `Kinematics`, pose (`lin_pos`, `quat`) is world frame while twist
 and acceleration (`lin_vel`, `ang_vel`, `lin_acc`, `ang_acc`) are body frame, in both the
@@ -102,26 +198,9 @@ truth block and the estimate block. Quaternions are ordered `[x, y, z, w]`.
 
 Rotor positions and moments of inertia are read in **your** header frame, the one you set
 through `ConnectOptions::coord_frame_id` (default `"unity"`), and permuted into the robot's
-own. Read `State::coord_frame_id` for the frame the robot publishes in; it is
-authoritative.
-
-The multirotor publishes `frd`, measured live. No per-robot-type native `coord_frame_id`
-exists in the SDK source, so the tag on the snapshot is the authority: read
+own. The multirotor publishes `frd`, measured live. No per-robot-type native
+`coord_frame_id` exists in the SDK source, so the tag on the snapshot is the authority: read
 `State::coord_frame_id` in code.
-
-Which sensors this airframe carries is not documented in the SDK; confirm against a live
-simulator. `SensorConfig` only guarantees that naming a sensor the robot does not carry is
-skipped with a simulator log line and still acknowledged `ok`.
-<!-- VERIFY: sensor availability matrix for the multirotor. Nothing in the repository enumerates it. -->
-
-## Cameras
-
-Nothing is camera-specific to this robot type. Like every vrobot it ships `front_left` and
-`front_right` at 720p rgba8, which is what `open_camera` attaches to; mount more with
-`mount_camera` when that pair cannot serve. Per-robot camera intrinsics are not documented
-in the SDK; intrinsics are whatever `CameraOptions` requested, read back through
-`Frame::intrinsics`. See [Cameras and images](../ch05-cameras/00-intro.md).
-<!-- VERIFY: whether the scene-authored multirotor ships the same two default cameras as every other robot in the test scene. -->
 
 ## Known quirks
 

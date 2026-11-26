@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" width="960" height="430" role="img" aria-label="Rail arm block schematic, not to scale: an 8 m rail carrying a carriage, six revolute joints A1 to A6 in series, a vacuum tool on the flange, a fixed overhead camera and a wrist camera on the tool">
+<title>Rail arm block schematic, not to scale</title>
+<style>
+:root{--panel:#ffffff;--ink:#1c2329;--muted:#5d6870;--line:#cfd6d9;--left:#1864ab;--right:#a61e4d;--lidar:#2b8a3e;--metal:#8a959c;--metal-2:#c3cbcf;--mono:ui-monospace, "JetBrains Mono", "Cascadia Mono", Consolas, Menlo, monospace}
+@media (prefers-color-scheme: dark){:root{--panel:#1a2126;--ink:#e3e8eb;--muted:#97a3ab;--line:#34404a;--left:#74b4f0;--right:#f07fa6;--lidar:#69db7c;--metal:#6f7b83;--metal-2:#3f484e}}
+text{font-family:var(--mono);font-size:12px;fill:var(--ink)}
+.t-muted{fill:var(--muted)}
+.t-head{font-weight:600;font-size:13px}
+.t-left{fill:var(--left);font-weight:600}
+.t-right{fill:var(--right);font-weight:600}
+.t-tool{fill:var(--lidar);font-weight:600}
+.body{fill:var(--metal-2);stroke:var(--metal);stroke-width:1.2}
+.box{fill:none;stroke:var(--metal);stroke-width:1.4}
+.cam-l{fill:var(--left);fill-opacity:.10;stroke:var(--left);stroke-width:1.4}
+.cam-r{fill:var(--right);fill-opacity:.10;stroke:var(--right);stroke-width:1.4}
+.tool{fill:var(--lidar);fill-opacity:.10;stroke:var(--lidar);stroke-width:1.4}
+.link{stroke:var(--ink);stroke-width:1.4;fill:none}
+.lead{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;fill:none}
+.ah{fill:var(--ink)}
+</style>
+<rect x="0.5" y="0.5" width="959" height="429" style="fill:var(--panel);stroke:var(--line);stroke-width:1"/>
+<text class="t-muted" x="20" y="26">block schematic · not to scale · boxes show order and limits, not geometry</text>
+<rect class="cam-l" x="62" y="56" width="296" height="78" rx="4"/>
+<text class="t-left" x="74" y="78">overhead camera</text>
+<text x="74" y="98">fixed to the base, looks straight down</text>
+<text class="t-muted" x="74" y="118">720p rgba8 · stream "overhead"</text>
+<rect class="cam-r" x="392" y="56" width="216" height="78" rx="4"/>
+<text class="t-right" x="404" y="78">wrist camera</text>
+<text x="404" y="98">rides the vacuum tool</text>
+<text class="t-muted" x="404" y="118">720p rgba8 · stream "wrist"</text>
+<rect class="tool" x="668" y="56" width="230" height="78" rx="4"/>
+<text class="t-tool" x="680" y="78">vacuum tool (actuator 7)</text>
+<text x="680" y="98">foam pad 400 × 300 mm</text>
+<text class="t-muted" x="680" y="118">on / off · holds up to 400 N</text>
+<line class="lead" x1="608" y1="95" x2="668" y2="95"/>
+<rect class="body" x="62" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="72" y="212">A1 · revolute</text>
+<text x="72" y="234">±185°</text>
+<text class="t-muted" x="72" y="254">up to 105°/s</text>
+<line class="link" x1="192" y1="229.0" x2="201" y2="229.0"/>
+<polygon class="ah" points="206,229.0 200,225.0 200,233.0"/>
+<rect class="body" x="206" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="216" y="212">A2 · revolute</text>
+<text x="216" y="234">−140° … −5°</text>
+<text class="t-muted" x="216" y="254">up to 94°/s</text>
+<line class="link" x1="336" y1="229.0" x2="345" y2="229.0"/>
+<polygon class="ah" points="350,229.0 344,225.0 344,233.0"/>
+<rect class="body" x="350" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="360" y="212">A3 · revolute</text>
+<text x="360" y="234">−120° … +168°</text>
+<text class="t-muted" x="360" y="254">up to 100°/s</text>
+<line class="link" x1="480" y1="229.0" x2="489" y2="229.0"/>
+<polygon class="ah" points="494,229.0 488,225.0 488,233.0"/>
+<rect class="body" x="494" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="504" y="212">A4 · revolute</text>
+<text x="504" y="234">±350°</text>
+<text class="t-muted" x="504" y="254">up to 136°/s</text>
+<line class="link" x1="624" y1="229.0" x2="633" y2="229.0"/>
+<polygon class="ah" points="638,229.0 632,225.0 632,233.0"/>
+<rect class="body" x="638" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="648" y="212">A5 · revolute</text>
+<text x="648" y="234">±122.5°</text>
+<text class="t-muted" x="648" y="254">up to 129°/s</text>
+<line class="link" x1="768" y1="229.0" x2="777" y2="229.0"/>
+<polygon class="ah" points="782,229.0 776,225.0 776,233.0"/>
+<rect class="body" x="782" y="190" width="130" height="78" rx="4"/>
+<text class="t-head" x="792" y="212">A6 · revolute</text>
+<text x="792" y="234">±350°</text>
+<text class="t-muted" x="792" y="254">up to 206°/s</text>
+<line class="link" x1="847.0" y1="190" x2="847.0" y2="140"/>
+<polygon class="ah" points="847.0,134 843.0,141 851.0,141"/>
+<text class="t-muted" x="857.0" y="166">flange</text>
+<rect class="body" x="62" y="306" width="130" height="40" rx="3"/>
+<text class="t-head" x="72" y="331">carriage</text>
+<line class="link" x1="127.0" y1="306" x2="127.0" y2="274"/>
+<polygon class="ah" points="127.0,268 123.0,275 131.0,275"/>
+<rect class="box" x="62" y="352" width="836" height="14"/>
+<line class="link" x1="62" y1="346" x2="62" y2="374"/><line class="link" x1="898" y1="346" x2="898" y2="374"/>
+<line class="lead" x1="480" y1="346" x2="480" y2="374"/>
+<text class="t-muted" x="62" y="392">0 m</text><text class="t-muted" x="480" y="392" text-anchor="middle">home 4 m</text><text class="t-muted" x="898" y="392" text-anchor="end">8 m</text>
+<text class="t-head" x="210" y="331">rail (actuator 0) · linear</text>
+<text x="436" y="331">0 … 8 m, up to 1.2 m/s</text>
+<text class="t-muted" x="62" y="414">actuators 1 to 6 are A1 to A6 · actuator 8 is the contact code · camera positions are not drawn</text>
+</svg>

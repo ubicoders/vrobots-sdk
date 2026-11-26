@@ -35,10 +35,9 @@ period       2*pi*sqrt(m/k)     seconds
 damping      c / (2*sqrt(k*m))  below 1 rings, near 1 slides home, above 1 crawls
 ```
 
-A freshly created plant spawns with `k = 20` N/m and `c = 1` N·s/m. Its mass comes from
-`set_physical_params` like any other robot's, and the default is not documented in the SDK;
-confirm against a live simulator, or pin it yourself before predicting anything.
-<!-- VERIFY: the default mass of a freshly created Msd. ex28 pins it to 1.0 kg rather than reading it. -->
+A freshly created plant spawns with `k = 20` N/m, `c = 1` N·s/m and a mass of 1 kg. The
+mass is set through `set_physical_params` like any other robot's; pin it yourself before
+predicting anything, as ex28 does.
 
 ## Commands accepted
 
@@ -56,7 +55,7 @@ rather than merely stopping the loop.
 
 ## Services
 
-The common seven plus `srv/msd`, which carries two optional fields:
+The common eight plus `srv/msd`, which carries two optional fields:
 
 | Field | Type | Units | Notes |
 |---|---|---|---|
@@ -75,36 +74,69 @@ cart pole, where the type-specific service owns the mass.
 `srv/skin` is served, as it is on every robot, but this type ships no skin catalog, so every
 skin request is a no-op.
 
-## Frame and units
+## Hardware
 
-Everything is SI. The plant publishes in the identity `"unity"` frame, so `kin.lin_pos[0]`
-is the position you watch in the editor and `kin.lin_vel[0]` is `x'`. The other two
-components never move.
+The simulator's sources hold no layout drawing for this plant, and it needs none: it is one
+block on one axis, with every device at the block's origin.
 
-The actuator block carries the plant's own arithmetic rather than a pulse width:
+### Actuators
 
-| Channel | Meaning |
-|---|---|
-| `actuator.measured[0]` | the **total** force on the mass, `F - k*x - c*x'`, in newtons |
-| `actuator.measured[1]` | displacement from equilibrium, in metres |
+Two entries. Neither is a device with a kind of its own, so both read `unspecified` in the
+[published layout](../ch03-reading-state/10-actuator-layouts.md).
+
+| # | Device | Kind | Driven by | `measured` | Range and rate limit |
+|---|---|---|---|---|---|
+| 0 | the force on the mass | unspecified | `SET_MSD` | the **total** force, `F - k*x - c*x'`, N | the commanded part is clamped to the plant's `max_force`, 100 N; applied on the next physics step |
+| 1 | the mass | unspecified | nothing: it is a reading | displacement from equilibrium, m | none |
 
 `measured[0]` is not the force you sent. It is what the spring and the damper left of it,
 which is why it crosses zero at every peak.
 
-Which sensors a mass spring damper carries is not documented in the SDK; confirm against a
-live simulator. As on every robot, naming a sensor it does not carry is skipped with a
-simulator log line and still acknowledged `ok`.
-<!-- VERIFY: sensor availability for the Msd. Nothing in the repository enumerates it. -->
+### Sensors
 
-## Cameras
+The standard five are fitted, all at the block's origin. Naming a sensor the robot does not
+carry in a sensor config request is skipped with a simulator log line and still
+acknowledged `ok`.
 
-Nothing is camera-specific to this robot type. Where a robot carries the default pair,
-`front_left` and `front_right` at 720p rgba8, `open_camera` attaches to either without
-changing anything; this one may carry none, and a robot you created yourself carries
-whatever its prefab does, so `mount_camera` may be the only way to get pixels off it.
-`vrobots topic list` is the authority. See
+| Sensor | Measures | Units | Rate | Mount | Frame | What to know |
+|---|---|---|---|---|---|---|
+| Accelerometer | specific force on the body axes | m/s² | every state sample | robot origin, no offset, no rotation | the robot's, `unity` | +1 g at rest and 0 in free fall; clips without warning at ±2 g (19.61 m/s²); resolution about 0.0006 m/s²; white noise, a turn-on bias and a slowly drifting bias |
+| Gyroscope | body rates | rad/s | every state sample | robot origin, no offset, no rotation | the robot's, `unity` | clips at ±250 deg/s (4.36 rad/s); resolution about 0.00013 rad/s; a turn-on bias of about 0.3 deg/s, one sigma, plus drift |
+| Magnetometer | ambient magnetic field on the body axes | gauss | every state sample | robot origin, no offset, no rotation | the robot's, `unity` | clips at ±49.1 G; resolution 0.0015 G; a fixed turn-on offset of about 0.05 G, one sigma |
+| Barometer | static pressure, and the pressure altitude computed from it | Pa, m | every state sample | robot origin | none: the readings are scalars | pressure noise of 3 Pa, about 0.25 m near sea level; the altitude is computed from the noisy pressure |
+| GNSS | geodetic position and velocity | deg, deg, m and m/s | every state sample | robot origin, no antenna offset | geographic in every frame: latitude, longitude, altitude, and velocity as north, east, down | position noise of 1.5 m horizontal and 3.0 m vertical, velocity noise of 0.05 m/s horizontal and 0.08 m/s vertical, one sigma |
+| Optical flow | horizontal ground velocity on the body axes | m/s | every state sample, once fitted | robot origin | the robot's, `unity` | **not fitted by default**; fit it through sensor config; noise of 0.05 m/s per axis |
+
+The noise figures are the simulator's defaults, and every one of them is settable: see
+[Sensor noise](../ch06-services/03-sensor-config.md). The fields each device publishes are on
+[Sensors](../ch03-reading-state/03-sensors.md). A device keeps the robot's frame unless you
+give it one of its own through [Coordinate frames](../ch06-services/04-frames-config.md).
+<!-- VERIFY: GNSS update rate. The Sensors page describes a receiver at about 5 Hz; the simulator's notes describe a fresh fix on every physics step. -->
+
+### Cameras
+
+None by default. `mount_camera` is the way to get pixels off this plant, and
+`vrobots topic list` shows what is streaming. See
 [Cameras and images](../ch05-cameras/00-intro.md).
-<!-- VERIFY: whether a created Msd comes up with any default cameras mounted. -->
+
+### Lidars
+
+None.
+
+### Body and frame
+
+| Property | Value |
+|---|---|
+| Mass | 1 kg |
+| Spring constant `k` | 20 N/m |
+| Damping `c` | 1 N·s/m |
+| Force clamp | 100 N |
+| Dimensions | not documented |
+| Default frame | `unity`: x right, y up, z forward |
+
+Everything is SI. The plant publishes in the identity `"unity"` frame, so `kin.lin_pos[0]`
+is the position you watch in the editor and `kin.lin_vel[0]` is `x'`. The other two
+components never move.
 
 ## Known quirks
 

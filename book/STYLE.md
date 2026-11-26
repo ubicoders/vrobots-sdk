@@ -132,6 +132,22 @@ report.
 Keep node labels short. Diagrams must read in both light and dark themes, so never
 rely on colour alone to carry meaning.
 
+Scale drawings are the one exception to Mermaid. A robot's sensor layout is a standalone
+`.svg` file in an `images/` folder beside the page, embedded as a Markdown image that links
+to itself, with an italic caption on the next paragraph:
+
+```markdown
+[![Alt text that says what the drawing shows](images/truck-side.svg)](images/truck-side.svg)
+
+*Side view, forward to the right. What the reader should notice.*
+```
+
+Each file carries its own background, its own light and dark colours and a `viewBox`, and
+loads no font or script, so it renders the same wherever it is opened. A drawing comes from
+the simulator's layout sheets: never draw geometry from imagination. Where no sheet exists,
+a block schematic of boxes and labels is allowed, and its caption must say it is not to
+scale. Every number on a drawing must agree with the tables on its page.
+
 ## 7. Links
 
 - Internal links are relative paths to the `.md` file, never to the built `.html`.

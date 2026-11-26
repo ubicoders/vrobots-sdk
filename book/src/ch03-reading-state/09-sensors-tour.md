@@ -158,7 +158,7 @@ The loop body prints five labelled sections in a fixed order: `TRUTH`, `MEASURED
 `BELIEVED`, `WORLD` and `ACTUATORS`. Each section's code is quoted on its own page of
 this chapter, and the whole body is one `println!` per line with no logic between them.
 
-<!-- VERIFY: printout reconstructed from the example's format strings; the values are illustrative, not captured from a run. -->
+<!-- VERIFY: printout reconstructed from the example's format strings; the values are illustrative, not captured from a run. That includes the empty ACTUATORS arrays: what an uncommanded multirotor reports there has not been measured. -->
 
 ```text
 === multirotor sys_id=1 seq=725 t=29.000s schema=1 frame="frd" (frd) ===
@@ -189,6 +189,10 @@ ACTUATORS  command in, motion out
   normalized []
   measured   []   (rotor rad/s -- what the devices did)
 ```
+
+Do not read the empty `ACTUATORS` arrays in that printout as the mark of a robot nobody has
+commanded. The forklift, the arms and the turret report every entry from their first sample,
+as [Actuators](05-actuator.md) shows, so check the lengths on the robot you have.
 
 ## Reading the differences
 
@@ -228,6 +232,6 @@ altitude is its negation, which is the substitute the example uses for `env.agl`
 > to understand a robot; taking a control decision from those two sections is how a
 > program that works in simulation stops working anywhere else.
 
-**Next:** [Sending commands](../ch04-commands/00-intro.md)
+**Next:** [Actuator layouts and typed readers](10-actuator-layouts.md)
 
 **See also:** [Truth, measured and believed](01-truth-measured-believed.md), [Sensors](03-sensors.md), [Supported virtual robots](../ch07-robots/00-intro.md)

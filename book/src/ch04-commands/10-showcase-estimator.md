@@ -150,6 +150,6 @@ snapshot exactly as construction does, with yaw back to zero.
 
 An estimator is thread-safe and shareable across threads, like the robot it reads.
 
-**Next:** [Cameras and images](../ch05-cameras/00-intro.md)
+**Next:** [Driving the forklift](11-forklift.md)
 
 **See also:** [Publishing estimates](09-publishing-estimates.md), [Fixed wing control](05-fixed-wing.md), [Global Hawk](../ch07-robots/06-globalhawk.md), [Sensors](../ch03-reading-state/03-sensors.md)

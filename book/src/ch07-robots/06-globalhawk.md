@@ -39,10 +39,9 @@ Two control modes, selected by `SET_FW_CTRL_MODE`:
 | `FW_ONBOARD_RATE` | 0 | default; the simulator flies via a rate loop tracking `SET_ANGVEL` |
 | `FW_DIRECT_SURFACE` | 1 | the rate loop is bypassed and the six panels take your radians verbatim |
 
-Mass, inertia and wing geometry are not documented in the SDK; confirm against a live
-simulator. Mass and inertia are settable through `set_physical_params` like any other
-robot's.
-<!-- VERIFY: default mass, moments of inertia and wing geometry for the Global Hawk. -->
+The aircraft weighs 1100 kg by default. Mass and inertia are settable through
+`set_physical_params` like any other robot's, and the full list is under
+[Hardware](#hardware).
 
 ## Commands accepted
 
@@ -84,7 +83,7 @@ In `FW_DIRECT_SURFACE` the bias is ignored entirely.
 
 ## Services
 
-The common seven and nothing else. The Global Hawk adds no type-specific service: its
+The common eight and nothing else. The Global Hawk adds no type-specific service: its
 control surface is entirely command-level, so a `configure_*` call meant for another type
 answers `VrError::NoResponder`.
 
@@ -96,13 +95,14 @@ on this aircraft.
 
 This type ships no skin catalog, so every skin request is a no-op.
 
-## Frame and units
+## Hardware
 
-Everything is SI: radians for surfaces, newtons for thrust, rad/s for body rates. Pose is
-world frame and twist is body frame, as on every robot.
+The simulator's sources hold no layout drawing for the Global Hawk. Every sensor sits at the
+robot origin, and the six panels are listed in actuator order below.
 
-The actuator echo is shaped differently from every other robot's, and this is the fact to
-carry away from the page. `actuator.measured` has **panels plus one** entries:
+### Actuators
+
+The report has **panels plus one** entries, which is the fact to carry away from the page:
 
 ```text
 measured[0..=5]  per-panel deflection, RADIANS
@@ -111,24 +111,70 @@ measured[6]      the engine, NEWTONS, not normalised and not a pulse width
 
 That echo is the only receipt for anything on this aircraft, including `set_fw_thrust`.
 
+| # | Device | Kind | Driven by | `measured` | Range and rate limit |
+|---|---|---|---|---|---|
+| 0 | left outboard flap, 6.0 m² | surface | the onboard mixer (aileron), or entry 0 of `SET_FW_SURFACES` | deflection, rad | ±20 degrees by default |
+| 1 | right outboard flap, 6.0 m² | surface | the onboard mixer (aileron), or entry 1 | deflection, rad | ±20 degrees |
+| 2 | left inner flap, 3.8 m² | surface | entry 2 of `SET_FW_SURFACES` only | deflection, rad | ±20 degrees |
+| 3 | right inner flap, 3.8 m² | surface | entry 3 only | deflection, rad | ±20 degrees |
+| 4 | rear left ruddervator, 2.0 m² | surface | the onboard mixer (elevator and rudder), or entry 4 | deflection, rad | ±20 degrees |
+| 5 | rear right ruddervator, 2.0 m² | surface | the onboard mixer (elevator and rudder), or entry 5 | deflection, rad | ±20 degrees |
+| 6 | engine | unspecified | the airspeed hold, `SET_FW_THRUST` or `SET_FW_THRUST_BIAS` | thrust, N | 0 to 20 000 N |
+
+<!-- VERIFY: whether a surface or the engine has a rate limit. None is documented in the sources read for this page. -->
+
+### Sensors
+
+The standard five are fitted, all at the robot origin. The aircraft flies at about 6 km,
+so the barometer reads the pressure of that altitude, not of sea level.
+
+| Sensor | Measures | Units | Rate | Mount | Frame | What to know |
+|---|---|---|---|---|---|---|
+| Accelerometer | specific force on the body axes | m/s² | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | +1 g at rest and 0 in free fall; clips without warning at ±2 g (19.61 m/s²); resolution about 0.0006 m/s²; white noise, a turn-on bias and a slowly drifting bias |
+| Gyroscope | body rates | rad/s | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | clips at ±250 deg/s (4.36 rad/s); resolution about 0.00013 rad/s; a turn-on bias of about 0.3 deg/s, one sigma, plus drift |
+| Magnetometer | ambient magnetic field on the body axes | gauss | every state sample | robot origin, no offset, no rotation | the robot's, `frd` | clips at ±49.1 G; resolution 0.0015 G; a fixed turn-on offset of about 0.05 G, one sigma |
+| Barometer | static pressure, and the pressure altitude computed from it | Pa, m | every state sample | robot origin | none: the readings are scalars | pressure noise of 3 Pa, about 0.25 m near sea level; the altitude is computed from the noisy pressure |
+| GNSS | geodetic position and velocity | deg, deg, m and m/s | every state sample | robot origin, no antenna offset | geographic in every frame: latitude, longitude, altitude, and velocity as north, east, down | position noise of 1.5 m horizontal and 3.0 m vertical, velocity noise of 0.05 m/s horizontal and 0.08 m/s vertical, one sigma |
+| Optical flow | horizontal ground velocity on the body axes | m/s | every state sample, once fitted | robot origin | the robot's, `frd` | **not fitted by default**; fit it through sensor config; noise of 0.05 m/s per axis |
+
+The noise figures are the simulator's defaults, and every one of them is settable: see
+[Sensor noise](../ch06-services/03-sensor-config.md). The fields each device publishes are on
+[Sensors](../ch03-reading-state/03-sensors.md). A device keeps the robot's frame unless you
+give it one of its own through [Coordinate frames](../ch06-services/04-frames-config.md).
+<!-- VERIFY: GNSS update rate. The Sensors page describes a receiver at about 5 Hz; the simulator's notes describe a fresh fix on every physics step. -->
+
+### Cameras
+
+None by default. `mount_camera` is the way to get pixels off it, and `vrobots topic list`
+shows what is streaming. See [Cameras and images](../ch05-cameras/00-intro.md).
+
+### Lidars
+
+None.
+
+### Body and frame
+
+| Property | Value |
+|---|---|
+| Mass | 1100 kg |
+| Moments of inertia in `frd` | roll 8500, pitch 5000, yaw 12 000 kg·m² |
+| Centre of mass in `frd` | (-0.5, 0, -1.4) m from the robot origin |
+| Maximum thrust | 20 kN |
+| Trim cruise | 72.8 m/s at about 6 km, air density 0.660 kg/m³ |
+| Wing span and length | not documented |
+| Default frame | `frd`: x forward, y right, z down |
+
+<!-- VERIFY: Global Hawk mass, inertia and centre of mass are the shipped model's values, not measured live. -->
+
+Everything is SI: radians for surfaces, newtons for thrust, rad/s for body rates. Pose is
+world frame and twist is body frame, as on every robot.
+
 The aircraft publishes `"frd"`, with `axis_convention` reading `Axes::FRD`, verified live on
 2026-08-09 against simulator v3.0.0. The setpoint on `z/cmd` arrives in the sender's frame,
 unconverted, while the in-game IMU panel stamps the aircraft's own `frd`, so it reads
 `[p, q, r]` in rad/s and is directly subtractable from `kin.ang_vel`. No per-robot-type
 native `coord_frame_id` is defined in the SDK source, so the tag on the snapshot is the
 authority: in code, read `State::coord_frame_id`.
-
-Which sensors it carries is not documented in the SDK; confirm against a live simulator.
-<!-- VERIFY: sensor availability for the GlobalHawk. Nothing in the repository enumerates it. -->
-
-## Cameras
-
-Nothing is camera-specific to this robot type. Where a robot carries the default pair,
-`front_left` and `front_right` at 720p rgba8, `open_camera` attaches to either without
-changing anything; the IMU scene's own defaults are not documented in the SDK and may be
-none, in which case `mount_camera` is the only way to get pixels off it. `vrobots topic
-list` is the authority. See [Cameras and images](../ch05-cameras/00-intro.md).
-<!-- VERIFY: which cameras, if any, the IMU scene's Global Hawk ships by default. -->
 
 ## Known quirks
 
@@ -173,6 +219,6 @@ Take the id from `vrobots topic list`, against the IMU scene. None of them delet
 aircraft, and each hands it back to its autopilot on the way out; a Ctrl-C does not, and
 leaves it flying the last deflections.
 
-**Next:** [Known simulator issues](07-known-issues.md)
+**Next:** [Forklift](08-forklift.md)
 
 **See also:** [Fixed wing control](../ch04-commands/05-fixed-wing.md), [Reading someone else's commands](../ch04-commands/08-reading-commands.md), [The generic command](../ch04-commands/06-generic-cmd.md)

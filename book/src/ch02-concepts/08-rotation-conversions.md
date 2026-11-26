@@ -34,7 +34,7 @@ different rotations from identical numbers. There is no `[yaw, pitch, roll]` lay
 | `Yxz` | 3 | about y, then the new x, then the newest z | none |
 | `Yzx` | 4 | about y, then the new z, then the newest x | none |
 | `Zxy` | 5 | about z, then the new x, then the newest y | `"unity"` |
-| `Zyx` | 6 | about z, then the new y, then the newest x | `"frd"`, `"fru"`, `"cv"` |
+| `Zyx` | 6 | about z, then the new y, then the newest x | `"frd"`, `"fru"`, `"flu"`, `"cv"` |
 
 The values are `swarmbotix.coordinates.EulerOrder`'s, so `to_wire()` is a cast. Zero is
 `EULER_ORDER_UNSPECIFIED`, not an order and with no variant here. Python spells the
@@ -80,13 +80,57 @@ handedness `det(R)`, and north, east and down are `R` on the Unity world anchor.
 | `"unity"` | +x right, +y up, +z forward | left | `Zxy` | `Axes::UNITY` |
 | `"frd"` | +x forward, +y right, +z down | right | `Zyx` | `Axes::FRD` |
 | `"fru"` | +x forward, +y right, +z up | left | `Zyx` | none |
+| `"flu"` | +x forward, +y left, +z up | right | `Zyx` | none |
 | `"cv"` | +x right, +y down, +z forward | right | `Zyx` | `Axes::CV` |
 
 `AxisBasis` is that matrix plus the frame's reporting order; `FrameTransform` is the
-`R_to * R_from^T` product between two of them. Both have constructors for the four
-built-ins, and `AxisBasis::from_frame_def` builds one from a definition read off the wire,
-the only route that reaches a frame with no `Axes` constant. `"fru"` is that case today,
-and a scene registering a convention at runtime is the same problem further out.
+`R_to * R_from^T` product between two of them. `AxisBasis` has a constructor for each of
+the five built-ins, and `AxisBasis::from_frame_def` builds one from a definition read off
+the wire, the route that reaches any frame, including one a scene registers at runtime.
+
+`"fru"` and `"flu"` are the two built-ins with no `Axes` constant, and both are common:
+`"fru"` is the scene default and `"flu"` is what every lidar scan is tagged with. For
+those two, look the basis up by the frame id string instead of the tag:
+
+{{#tabs global="lang" }}
+{{#tab name="Rust" }}
+
+`crates/vrobots-sdk/src/rotations.rs`, in `impl AxisBasis`:
+
+```rust
+pub fn flu() -> AxisBasis
+pub fn from_frame_id(coord_frame_id: &str) -> Option<AxisBasis>
+```
+
+{{#endtab }}
+{{#tab name="C++" }}
+
+`include/vrobots_sdk.hpp`, in `vrsdk::rotations::AxisBasis`:
+
+```cpp
+[[nodiscard]] static AxisBasis flu();
+[[nodiscard]] static AxisBasis from_frame_id(const std::string& coord_frame_id);
+```
+
+{{#endtab }}
+{{#tab name="Python" }}
+
+`vrsdk/rotations.pyi`, in `class AxisBasis`:
+
+```python
+@staticmethod
+def flu() -> AxisBasis: ...
+@staticmethod
+def from_frame_id(coord_frame_id: str) -> Optional[AxisBasis]: ...
+```
+
+{{#endtab }}
+{{#endtabs }}
+
+Those are signatures, so there is no output. The lookup knows the five built-in ids,
+matched exactly and in lower case: Rust and Python return `None` for any other string and
+C++ throws. For FLU, north, east and down come out as `[1, 0, 0]`, `[0, -1, 0]` and
+`[0, 0, -1]`, and `is_right_handed` is true.
 
 ex36 reads the definition with `frame_def()` and turns it into a basis. From
 `examples/rust/src/bin/ex36_rotations.rs`:
@@ -167,7 +211,9 @@ than one it chose.
 | orientation | `M * C * M^T` | `apply_quat`, `apply_rotmat` | `quat` |
 
 Between two frames of the same handedness `det(M) = +1` and the first two rules coincide,
-which is why picking the wrong one survives testing until somebody crosses a flip. ex36
+which is why picking the wrong one survives testing until somebody crosses a flip. FLU
+makes the point twice: FLU to `"frd"` is a half turn about x with no flip, so both rules
+agree, while FLU to `"fru"` negates the second axis and flips. ex36
 converts the live gyro both ways. From `examples/rust/src/bin/ex36_rotations.rs`:
 
 
@@ -221,8 +267,9 @@ of `[0, 0, 1]` in Unity axes converts to `[-1, 0, 0]` under `apply_axial_vec3` a
 For a pair the `Axes` tags can name, `convert_vec3`, `convert_axial_vec3`,
 `convert_inertia_vec3`, `convert_quat`, `convert_rotmat` and `convert_euler` do the same in
 one call, each returning `VrResult`. Handed the truck's own `axis_convention`, which is
-`UNSPECIFIED`, they fail with `InvalidArgument` naming the three constants that exist. That
-is why `frame_def()` is there: the tag is a convenience and the nine numbers are the fact.
+`UNSPECIFIED`, they fail with `InvalidArgument` naming the three constants that exist, and a
+lidar scan's tag fails the same way. That is why `frame_def()` and the lookup by id are
+there: the tag is a convenience and the nine numbers are the fact.
 
 ## Gimbal lock has an answer, and it is the simulator's
 
@@ -254,4 +301,4 @@ hand-inlined formula as `(26.6, 90, 90)`.
 
 **Next:** [Reading state](../ch03-reading-state/00-intro.md)
 
-**See also:** [Frames, axes and units](07-frames-and-units.md), [Coordinate frames](../ch06-services/04-frames-config.md), [Publishing estimates](../ch04-commands/09-publishing-estimates.md)
+**See also:** [Frames, axes and units](07-frames-and-units.md), [Coordinate frames](../ch06-services/04-frames-config.md), [Points and frames](../ch09-lidar/03-points-and-frames.md), [Publishing estimates](../ch04-commands/09-publishing-estimates.md)
